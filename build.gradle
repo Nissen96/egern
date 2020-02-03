@@ -1,4 +1,5 @@
 plugins {
+    id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.3.61'
     id 'antlr'
 }
@@ -6,21 +7,33 @@ plugins {
 group 'com.egern'
 version '1.0-SNAPSHOT'
 
+sourceCompatibility = 1.8
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    testCompile group: 'junit', name: 'junit', version: '4.12'
     antlr 'org.antlr:antlr4:4.7.1'
 }
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.egern.MainKt'
+    }
+    // This line of code recursively collects and copies all of a project's files
+    // and adds them to the JAR itself. One can extend this task, to skip certain
+    // files or particular types at will
+    //from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 compileKotlin.dependsOn generateGrammarSource
 
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
