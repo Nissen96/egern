@@ -1,4 +1,4 @@
-package com.egern;
+package com.egern
 
 import MainLexer
 import MainParser
@@ -11,4 +11,8 @@ fun main(args: Array<String>) {
     val lexer = MainLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = MainParser(tokens)
+}
+
+fun hello(): String {
+    return "hello"
 }
