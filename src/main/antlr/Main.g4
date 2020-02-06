@@ -1,8 +1,8 @@
 grammar Main;
 
 prog:	(expr NEWLINE)* ;
-expr:	expr ('*'|'/') expr
-    |	expr ('+'|'-') expr
+expr:	expr op=('*'|'/') expr
+    |	expr op=('+'|'-') expr
     |	INT
     |	'(' expr ')'
     ;
