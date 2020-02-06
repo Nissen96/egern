@@ -11,6 +11,10 @@ fun main(args: Array<String>) {
     val lexer = MainLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = MainParser(tokens)
+
+    val cst = parser.prog()
+    val visitor = PrintVisitor()
+    cst.accept(visitor)
 }
 
 fun hello(): String {
