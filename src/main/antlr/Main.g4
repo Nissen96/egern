@@ -13,7 +13,7 @@ funcDecl:   'func' ID '(' (ID ',')* ID? ')' block ;
 funcCall:   ID '(' (ID ',')* ID? ')' ';' ;
 
 varDecl:    'var' varAssign ;
-varAssign:  (ID '=')+ (expr | funcCall) ';' ;
+varAssign:  (ID '=')+ (expr ';' | funcCall) ;
 
 ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' block
@@ -32,6 +32,7 @@ arithExpr:	arithExpr op=('*'|'/') arithExpr
     |   ID
     |	'(' arithExpr ')'
     ;
-NEWLINE : [\r\n]+ ;
+NEWLINE :'\r'? '\n' -> skip;
+WS      : (' '|'\t') -> skip;
 INT     : [0-9]+ ;
 ID      : [A-Za-z_]+[A-Za-z_0-9]* ;
