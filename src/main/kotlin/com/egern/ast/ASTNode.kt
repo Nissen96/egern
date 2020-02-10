@@ -1,5 +1,3 @@
 package com.egern.ast
 
-public open class ASTNode {
-
-}
+open class ASTNode

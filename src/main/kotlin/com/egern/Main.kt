@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
 fun main(args: Array<String>) {
-    println("Egern Compiler v0.1 - We in business! Input something + CTRL+D to run")
+    println("Egern Compiler v0.1.0 - We in business! Input something + CTRL+D to run")
     val input = CharStreams.fromStream(System.`in`)
     val lexer = MainLexer(input)
     val tokens = CommonTokenStream(lexer)

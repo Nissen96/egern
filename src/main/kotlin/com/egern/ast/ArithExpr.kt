@@ -1,7 +1,7 @@
 package com.egern.ast
 
 // TODO: REFACTOR PLEASE!
-public class ArithExpr() : Expr() {
+class ArithExpr() : Expr() {
     var lhs: ArithExpr? = null
     var rhs: ArithExpr? = null
     var op: String? = null

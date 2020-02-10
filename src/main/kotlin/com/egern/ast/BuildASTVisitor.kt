@@ -1,6 +1,6 @@
 package com.egern.ast
 
-import MainBaseVisitor;
+import MainBaseVisitor
 import java.lang.Exception
 
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
@@ -23,7 +23,11 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
-        return ReturnStmt(ctx.expr().accept(this) as Expr)
+        return if (ctx.expr() != null) {
+            ReturnStmt(ctx.expr().accept(this) as Expr)
+        } else {
+            ReturnStmt(null)
+        }
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
@@ -40,9 +44,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
         return if (ctx.expr() != null) {
-            VarAssign(ctx.ID().map { it.text }, ctx.expr().accept(this) as Expr);
+            VarAssign(ctx.ID().map { it.text }, ctx.expr().accept(this) as Expr)
         } else {
-            VarAssign(ctx.ID().map { it.text }, ctx.funcCall().accept(this) as FuncCall);
+            VarAssign(ctx.ID().map { it.text }, ctx.funcCall().accept(this) as FuncCall)
         }
     }
 
@@ -50,7 +54,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return IfElse(
             ctx.expr().accept(this) as Expr, ctx.block(0).accept(this) as Block,
             ctx.block(1).accept(this) as Block
-        );
+        )
     }
 
     override fun visitBlock(ctx: MainParser.BlockContext): ASTNode {
@@ -59,9 +63,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitExpr(ctx: MainParser.ExprContext): ASTNode {
         return if (ctx.arithExpr() != null) {
-            visitArithExpr(ctx.arithExpr());
+            visitArithExpr(ctx.arithExpr())
         } else {
-            visitCompExpr(ctx.compExpr());
+            visitCompExpr(ctx.compExpr())
         }
     }
 
@@ -83,7 +87,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                 ctx.arithExpr(1).accept(this) as ArithExpr,
                 ctx.op.text
             )
-            else -> throw Exception("Invalid Arithmetic Expression");
+            else -> throw Exception("Invalid Arithmetic Expression")
         }
     }
 }

@@ -1,4 +1,3 @@
 package com.egern.ast
 
-open class Statement : ASTNode() {
-}
+open class Statement : ASTNode()

@@ -8,7 +8,7 @@ stmt:   funcCall
     |   returnStmt
     ;
 
-returnStmt: 'return' expr ';';
+returnStmt: 'return' expr? ';' ;
 funcDecl:   'func' ID '(' paramList ')' block ;
 funcCall:   ID '(' argList ')' ';' ;
 
