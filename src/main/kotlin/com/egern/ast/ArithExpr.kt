@@ -1,5 +1,7 @@
 package com.egern.ast
 
+import com.egern.visitor.Visitor
+
 // TODO: REFACTOR PLEASE!
 class ArithExpr() : Expr() {
     var lhs: ArithExpr? = null
@@ -26,5 +28,12 @@ class ArithExpr() : Expr() {
 
     constructor(expr: ArithExpr) : this() {
         this.expr = expr
+    }
+
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+        lhs?.accept(visitor)
+        rhs?.accept(visitor)
+        expr?.accept(visitor)
     }
 }

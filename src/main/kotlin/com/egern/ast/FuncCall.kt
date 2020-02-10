@@ -1,3 +1,9 @@
 package com.egern.ast
 
-class FuncCall(val id: String, val args: List<String>) : Statement()
+import com.egern.visitor.Visitor
+
+class FuncCall(val id: String, val args: List<String>) : Statement() {
+    override fun accept(visitor: Visitor) {
+        return visitor.visit(this)
+    }
+}

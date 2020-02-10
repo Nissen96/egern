@@ -1,3 +1,5 @@
 package com.egern.ast
 
-open class ASTNode
+import com.egern.visitor.Visitable
+
+abstract class ASTNode : Visitable

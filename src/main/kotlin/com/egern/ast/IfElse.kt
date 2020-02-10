@@ -1,3 +1,12 @@
 package com.egern.ast
 
-class IfElse(val expression: Expr, val ifBlock: Block, val elseBlock: Block?) : ASTNode()
+import com.egern.visitor.Visitor
+
+class IfElse(val expression: Expr, val ifBlock: Block, val elseBlock: Block?) : ASTNode() {
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+        expression.accept(visitor)
+        ifBlock.accept(visitor)
+        elseBlock?.accept(visitor)
+    }
+}
