@@ -3,13 +3,13 @@ import com.egern.ast.*
 
 interface Visitor {
     fun visit(statement: Statement)
-    fun visit(statement: ReturnStmt)
-    fun visit(statement: Program)
-    fun visit(statement: IfElse)
-    fun visit(statement: FuncDecl)
-    fun visit(statement: FuncCall)
-    fun visit(statement: Expr)
-    fun visit(statement: CompExpr)
-    fun visit(statement: Block)
-    fun visit(statement: ArithExpr)
+    fun visit(returnStmt: ReturnStmt)
+    fun visit(program: Program)
+    fun visit(ifElse: IfElse)
+    fun visit(funcDecl: FuncDecl)
+    fun visit(funcCall: FuncCall)
+    fun visit(expr: Expr)
+    fun visit(compExpr: CompExpr)
+    fun visit(block: Block)
+    fun visit(arithExpr: ArithExpr)
 }
