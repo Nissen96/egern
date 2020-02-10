@@ -2,6 +2,7 @@ package com.egern
 
 import MainLexer
 import MainParser
+import com.egern.ast.BuildASTVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
@@ -13,8 +14,7 @@ fun main(args: Array<String>) {
     val parser = MainParser(tokens)
 
     val cst = parser.prog()
-
-
+    val ast = BuildASTVisitor().visit(cst);
 }
 
 fun hello(): String {

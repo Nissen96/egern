@@ -9,8 +9,11 @@ stmt:   funcCall
     ;
 
 returnStmt: 'return' expr ';';
-funcDecl:   'func' ID '(' (ID ',')* ID? ')' block ;
-funcCall:   ID '(' (ID ',')* ID? ')' ';' ;
+funcDecl:   'func' ID '(' paramList ')' block ;
+funcCall:   ID '(' argList ')' ';' ;
+
+paramList:  (ID ',')* ID? ;
+argList:    (ID ',')* ID? ;
 
 varDecl:    'var' varAssign ;
 varAssign:  (ID '=')+ (expr ';' | funcCall) ;
@@ -23,8 +26,7 @@ block:  '{' stmt* '}' ;
 
 expr: compExpr | arithExpr ;
 
-compExpr: comparable op=('==' | '!=' | '<' | '>' | '<=' | '>=') comparable;
-comparable: arithExpr | ID ;
+compExpr: arithExpr op=('==' | '!=' | '<' | '>' | '<=' | '>=') arithExpr;
 
 arithExpr:	arithExpr op=('*'|'/') arithExpr
     |	arithExpr op=('+'|'-') arithExpr
