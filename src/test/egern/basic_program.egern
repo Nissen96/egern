@@ -1,0 +1,7 @@
+func square(arg) {
+    return arg * arg;
+}
+
+var a = 4;
+var b = square(a);
+println(b);

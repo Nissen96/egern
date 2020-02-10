@@ -5,13 +5,15 @@ stmt:   funcCall
     |   varDecl
     |   varAssign
     |   ifElse
+    |   returnStmt
     ;
 
+returnStmt: 'return' expr ';';
 funcDecl:   'func' ID '(' (ID ',')* ID? ')' block ;
 funcCall:   ID '(' (ID ',')* ID? ')' ';' ;
 
 varDecl:    'var' varAssign ;
-varAssign:  (ID '=')+ expr ';' ;
+varAssign:  (ID '=')+ (expr | funcCall) ';' ;
 
 ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' block
