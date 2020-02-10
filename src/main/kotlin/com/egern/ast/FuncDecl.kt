@@ -1,4 +1,4 @@
 package com.egern.ast
 
-class FuncDecl(id: String, params: List<String>, block: Block) : ASTNode() {
+class FuncDecl(val id: String, val params: List<String>, val block: Block) : ASTNode() {
 }

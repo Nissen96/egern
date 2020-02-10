@@ -1,4 +1,4 @@
 package com.egern.ast
 
-class Block(statements: List<Statement>) : ASTNode() {
+class Block(val statements: List<Statement>) : ASTNode() {
 }

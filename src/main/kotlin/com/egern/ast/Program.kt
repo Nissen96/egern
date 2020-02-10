@@ -1,4 +1,4 @@
 package com.egern.ast
 
-class Program(funcDecls: List<FuncDecl>, stmts: List<Statement>) : ASTNode() {
+class Program(val funcDecls: List<FuncDecl>, val stmts: List<Statement>) : ASTNode() {
 }

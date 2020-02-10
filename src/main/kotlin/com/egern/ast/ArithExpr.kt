@@ -1,8 +1,29 @@
 package com.egern.ast
 
 public class ArithExpr() : Expr() {
-    constructor(lhs: ArithExpr, rhs: ArithExpr, op: String) : this()
-    constructor(value: Int) : this()
-    constructor(id: String) : this()
-    constructor(expr: ArithExpr) : this()
+    var lhs: ArithExpr? = null
+    var rhs: ArithExpr? = null
+    var op: String? = null
+
+    var value: Int? = null
+    var id: String? = null
+    var expr: ArithExpr? = null
+
+    constructor(lhs: ArithExpr, rhs: ArithExpr, op: String) : this() {
+        this.lhs = lhs
+        this.rhs = rhs
+        this.op = op
+    }
+
+    constructor(value: Int) : this() {
+        this.value = value
+    }
+
+    constructor(id: String) : this() {
+        this.id = id
+    }
+
+    constructor(expr: ArithExpr) : this() {
+        this.expr = expr
+    }
 }

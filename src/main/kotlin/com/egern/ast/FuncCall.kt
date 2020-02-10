@@ -1,4 +1,4 @@
 package com.egern.ast
 
-class FuncCall(id: String, args: List<String>) : Statement() {
+class FuncCall(val id: String, val args: List<String>) : Statement() {
 }

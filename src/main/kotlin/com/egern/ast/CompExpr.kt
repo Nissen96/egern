@@ -1,4 +1,4 @@
 package com.egern.ast
 
-class CompExpr(lhs: ArithExpr, rhs: ArithExpr, op: String) : Expr() {
+class CompExpr(val lhs: ArithExpr, val rhs: ArithExpr, val op: String) : Expr() {
 }

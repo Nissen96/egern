@@ -1,4 +1,4 @@
 package com.egern.ast
 
-class ReturnStmt(expr: Expr) : Statement() {
+class ReturnStmt(val expr: Expr) : Statement() {
 }

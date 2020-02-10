@@ -1,4 +1,4 @@
 package com.egern.ast
 
-public class IfElse(expression: Expr, ifBlock: Block, elseBlock: Block?) : ASTNode() {
+public class IfElse(val expression: Expr, val ifBlock: Block, val elseBlock: Block?) : ASTNode() {
 }
