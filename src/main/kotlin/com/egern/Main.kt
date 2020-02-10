@@ -13,8 +13,8 @@ fun main(args: Array<String>) {
     val parser = MainParser(tokens)
 
     val cst = parser.prog()
-    val visitor = PrintVisitor()
-    cst.accept(visitor)
+
+
 }
 
 fun hello(): String {
