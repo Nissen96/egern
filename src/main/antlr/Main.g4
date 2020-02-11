@@ -6,6 +6,7 @@ stmt:   funcCall
     |   varAssign
     |   ifElse
     |   returnStmt
+    |   printStmt
     ;
 
 returnStmt: 'return' expr? ';' ;
@@ -34,6 +35,9 @@ arithExpr:	arithExpr op=('*'|'/') arithExpr
     |   ID
     |	'(' arithExpr ')'
     ;
+
+printStmt: 'print' '(' expr ')' ;
+
 NEWLINE :'\r'? '\n' -> skip;
 WS      : (' '|'\t') -> skip;
 INT     : [0-9]+ ;

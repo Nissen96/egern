@@ -16,6 +16,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.funcCall() != null -> ctx.funcCall().accept(this)
             ctx.ifElse() != null -> ctx.ifElse().accept(this)
             ctx.returnStmt() != null -> ctx.returnStmt().accept(this)
+            ctx.printStmt() != null -> ctx.printStmt().accept(this)
             ctx.varAssign() != null -> ctx.varAssign().accept(this)
             ctx.varDecl() != null -> ctx.varDecl().accept(this)
             else -> throw Exception("Invalid Statement Type!")
@@ -28,6 +29,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         } else {
             ReturnStmt(null)
         }
+    }
+
+    override fun visitPrintStmt(ctx: MainParser.PrintStmtContext): ASTNode {
+        return PrintStmt(ctx.expr().accept(this) as Expr)
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {

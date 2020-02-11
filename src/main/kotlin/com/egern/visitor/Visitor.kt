@@ -1,8 +1,10 @@
 package com.egern.visitor
+
 import com.egern.ast.*
 
 interface Visitor {
     fun preVisit(returnStmt: ReturnStmt) {}
+    fun preVisit(printStmt: PrintStmt) {}
     fun preVisit(program: Program) {}
     fun preVisit(ifElse: IfElse) {}
     fun preVisit(funcDecl: FuncDecl) {}
@@ -14,6 +16,7 @@ interface Visitor {
     fun preVisit(varDecl: VarDecl<*>) {}
 
     fun midVisit(returnStmt: ReturnStmt) {}
+    fun midVisit(printStmt: PrintStmt) {}
     fun midVisit(program: Program) {}
     fun midVisit(ifElse: IfElse) {}
     fun midVisit(funcDecl: FuncDecl) {}
@@ -24,6 +27,7 @@ interface Visitor {
     fun midVisit(varAssign: VarAssign<*>) {}
     //fun midVisit(varDecl: VarDecl<*>) {}
 
+    fun postVisit(printStmt: PrintStmt) {}
     fun postVisit(returnStmt: ReturnStmt) {}
     fun postVisit(program: Program) {}
     fun postVisit(ifElse: IfElse) {}
