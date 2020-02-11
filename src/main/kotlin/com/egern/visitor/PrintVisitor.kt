@@ -3,12 +3,7 @@ package com.egern.visitor
 import com.egern.ast.*
 
 class PrintVisitor : Visitor {
-
     var counter = 0
-
-    override fun visit(statement: Statement) {
-        println("${counter++} Statement")
-    }
 
     override fun visit(returnStmt: ReturnStmt) {
         println("${counter++} returnStmt: has expr ${returnStmt.expr != null}")
@@ -30,10 +25,6 @@ class PrintVisitor : Visitor {
         println("${counter++} FuncCall: My ID is ${funcCall.id}, and I take ${funcCall.args.size} parameters\" ")
     }
 
-    override fun visit(expr: Expr) {
-        println("${counter++} expr")
-    }
-
     override fun visit(compExpr: CompExpr) {
         println("${counter++} compExpr: My op is ${compExpr.op}")
     }
@@ -48,6 +39,14 @@ class PrintVisitor : Visitor {
             arithExpr.value != null -> println("${counter++} arithExpr: of int ${arithExpr.value}")
             arithExpr.op != null -> println("${counter++} arithExpr: of op ${arithExpr.op}")
         }
+    }
+
+    override fun visit(varAssign: VarAssign<*>) {
+        println("${counter++} varAssign: I have ${varAssign.ids.size} id(s)")
+    }
+
+    override fun visit(varDecl: VarDecl<*>) {
+        println("${counter++} varDecl: I have ${varDecl.ids.size} id(s)")
     }
 
 }

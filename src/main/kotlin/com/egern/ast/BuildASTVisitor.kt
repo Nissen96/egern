@@ -39,7 +39,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitVarDecl(ctx: MainParser.VarDeclContext): ASTNode {
-        return visitVarAssign(ctx.varAssign())
+        val assign = ctx.varAssign();
+        return if (assign.expr() != null) {
+            VarDecl(assign.ID().map { it.text }, assign.expr().accept(this) as Expr)
+        } else {
+            VarDecl(assign.ID().map { it.text }, assign.funcCall().accept(this) as FuncCall)
+        }
     }
 
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
