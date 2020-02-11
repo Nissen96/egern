@@ -5,7 +5,7 @@ import com.egern.visitor.Visitor
 
 class VarAssign<T: Visitable>(val ids: List<String>, val expr: T) : Statement() {
     override fun accept(visitor: Visitor) {
-        visitor.visit(this)
+        visitor.preVisit(this)
         expr.accept(visitor)
     }
 }

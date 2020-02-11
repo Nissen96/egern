@@ -4,7 +4,7 @@ import com.egern.visitor.Visitor
 
 class Program(val funcDecls: List<FuncDecl>, val stmts: List<Statement>) : ASTNode() {
     override fun accept(visitor: Visitor) {
-        visitor.visit(this)
+        visitor.preVisit(this)
         for (decls in funcDecls) {
             decls.accept(visitor)
         }

@@ -31,7 +31,7 @@ class ArithExpr() : Expr() {
     }
 
     override fun accept(visitor: Visitor) {
-        visitor.visit(this)
+        visitor.preVisit(this)
         lhs?.accept(visitor)
         rhs?.accept(visitor)
         expr?.accept(visitor)
