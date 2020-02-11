@@ -6,6 +6,7 @@ import com.egern.ast.ArithExpr
 import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
 import com.egern.ast.ReturnStmt
+import com.egern.symbols.SymbolVisitor
 import com.egern.visitor.PrintVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -22,6 +23,12 @@ fun main(args: Array<String>) {
 
     val printVisitor = PrintVisitor()
     ast.accept(printVisitor)
+    val symbolVisitor = SymbolVisitor()
+    ast.accept(symbolVisitor)
+    for (id in symbolVisitor.currentTable.symbols) {
+        println(id)
+    }
+    println(symbolVisitor.currentTable.scope)
 }
 
 fun hello(): String {
