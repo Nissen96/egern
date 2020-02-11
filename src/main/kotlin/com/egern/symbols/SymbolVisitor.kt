@@ -4,13 +4,16 @@ import com.egern.ast.*
 import com.egern.visitor.Visitor
 
 class SymbolVisitor : Visitor {
-    var currentScopeLevel = 0
-    var currentTable = SymbolTable(0,null)
+    private var currentScopeLevel = 0
+    var currentTable = SymbolTable(0, null)
 
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, null))
         currentScopeLevel++
         currentTable = SymbolTable(currentScopeLevel, currentTable)
+        for (param in funcDecl.params) {
+            currentTable.insert(param, Symbol(param, SymbolType.Parameter, null))
+        }
         funcDecl.symbolTable = currentTable
     }
 
@@ -25,6 +28,4 @@ class SymbolVisitor : Visitor {
         }
         varDecl.symbolTable = currentTable
     }
-
-
 }
