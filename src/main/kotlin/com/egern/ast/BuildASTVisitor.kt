@@ -8,12 +8,13 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
         return Program(
             ctx.funcDecl().map { it.accept(this) as FuncDecl },
-            ctx.stmt().map { it.accept(this) as Statement })
+            ctx.stmt().map { it.accept(this) as Statement },
+            ctx.funcCall().map { it.accept(this) as FuncCall }
+        )
     }
 
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {
         return when {
-            ctx.funcCall() != null -> ctx.funcCall().accept(this)
             ctx.ifElse() != null -> ctx.ifElse().accept(this)
             ctx.returnStmt() != null -> ctx.returnStmt().accept(this)
             ctx.printStmt() != null -> ctx.printStmt().accept(this)
@@ -24,33 +25,11 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
-        val exprOrFuncCall = ctx.exprOrFuncCall();
-        return when {
-            exprOrFuncCall?.expr() != null -> {
-                ReturnStmt(exprOrFuncCall.expr().accept(this) as Expr)
-            }
-            exprOrFuncCall?.funcCall() != null -> {
-                ReturnStmt(exprOrFuncCall.funcCall().accept(this) as FuncCall)
-            }
-            else -> {
-                ReturnStmt()
-            }
-        }
+        return ReturnStmt(ctx.expr().accept(this) as Expr)
     }
 
     override fun visitPrintStmt(ctx: MainParser.PrintStmtContext): ASTNode {
-        val exprOrFuncCall = ctx.exprOrFuncCall();
-        return when {
-            exprOrFuncCall?.expr() != null -> {
-                PrintStmt(exprOrFuncCall.expr().accept(this) as Expr)
-            }
-            exprOrFuncCall?.funcCall() != null -> {
-                PrintStmt(exprOrFuncCall.funcCall().accept(this) as FuncCall)
-            }
-            else -> {
-                throw Exception("Invalid Statement Type in Print!");
-            }
-        }
+        return PrintStmt(ctx.expr().accept(this) as Expr)
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
@@ -62,22 +41,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitVarDecl(ctx: MainParser.VarDeclContext): ASTNode {
-        val assign = ctx.varAssign();
-        val exprOrFuncCall = assign.exprOrFuncCall();
-        return if (exprOrFuncCall.expr() != null) {
-            VarDecl(assign.ID().map { it.text }, exprOrFuncCall.expr().accept(this) as Expr)
-        } else {
-            VarDecl(assign.ID().map { it.text }, exprOrFuncCall.funcCall().accept(this) as FuncCall)
-        }
+        val assign = ctx.varAssign()
+        return VarDecl(assign.ID().map { it.text }, assign.expr().accept(this) as Expr)
     }
 
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
-        val exprOrFuncCall = ctx.exprOrFuncCall();
-        return if (exprOrFuncCall.expr() != null) {
-            VarAssign(ctx.ID().map { it.text }, exprOrFuncCall.expr().accept(this) as Expr)
-        } else {
-            VarAssign(ctx.ID().map { it.text }, exprOrFuncCall.funcCall().accept(this) as FuncCall)
-        }
+        return VarAssign(ctx.ID().map { it.text }, ctx.expr().accept(this) as Expr)
     }
 
     override fun visitIfElse(ctx: MainParser.IfElseContext): ASTNode {
@@ -92,10 +61,11 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitExpr(ctx: MainParser.ExprContext): ASTNode {
-        return if (ctx.arithExpr() != null) {
-            visitArithExpr(ctx.arithExpr())
-        } else {
-            visitCompExpr(ctx.compExpr())
+        return when {
+            ctx.arithExpr() != null -> visitArithExpr(ctx.arithExpr())
+            ctx.compExpr()  != null -> visitCompExpr(ctx.compExpr())
+            ctx.funcCall()  != null -> visitFuncCall(ctx.funcCall())
+            else -> throw Exception("Invalid Expression Type!")
         }
     }
 

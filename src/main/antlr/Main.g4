@@ -1,23 +1,22 @@
 grammar Main;
 
-prog:	(stmt | funcDecl)* ;
-stmt:   funcCall
-    |   varDecl
+prog:	(stmt | funcDecl | funcCall ';')* ;
+stmt:   varDecl
     |   varAssign
     |   ifElse
     |   returnStmt
     |   printStmt
     ;
 
-returnStmt: 'return' exprOrFuncCall? ';' ;
+returnStmt: 'return' expr? ';' ;
 funcDecl:   'func' ID '(' paramList ')' block ;
-funcCall:   ID '(' argList ')' ';' ;
+funcCall:   ID '(' argList ')' ;
 
 paramList:  (ID ',')* ID? ;
 argList:    (ID ',')* ID? ;
 
 varDecl:    'var' varAssign ;
-varAssign:  (ID '=')+ exprOrFuncCall;
+varAssign:  (ID '=')+ expr ';';
 
 ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' block
@@ -25,8 +24,7 @@ ifElse:  'if' '(' expr ')' block
 
 block:  '{' stmt* '}' ;
 
-expr: compExpr | arithExpr ;
-exprOrFuncCall: (expr ';' | funcCall) ;
+expr: compExpr | arithExpr | funcCall ;
 
 compExpr: arithExpr op=('==' | '!=' | '<' | '>' | '<=' | '>=') arithExpr;
 
@@ -37,7 +35,7 @@ arithExpr:	arithExpr op=('*'|'/') arithExpr
     |	'(' arithExpr ')'
     ;
 
-printStmt: 'print' '(' exprOrFuncCall ')' ';';
+printStmt: 'print' '(' expr? ')' ';';
 
 NEWLINE :'\r'? '\n' -> skip;
 WS      : (' '|'\t') -> skip;

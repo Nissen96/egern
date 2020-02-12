@@ -25,7 +25,7 @@ interface Visitor {
     fun midVisit(block: Block) {}
     fun midVisit(arithExpr: ArithExpr) {}
     fun midVisit(varAssign: VarAssign<*>) {}
-    //fun midVisit(varDecl: VarDecl<*>) {}
+    fun midVisit(varDecl: VarDecl<*>) {}
 
     fun postVisit(printStmt: PrintStmt) {}
     fun postVisit(returnStmt: ReturnStmt) {}

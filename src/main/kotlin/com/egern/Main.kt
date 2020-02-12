@@ -2,18 +2,16 @@ package com.egern
 
 import MainLexer
 import MainParser
-import com.egern.ast.ArithExpr
 import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
-import com.egern.ast.ReturnStmt
 import com.egern.symbols.SymbolVisitor
 import com.egern.visitor.PrintSymbolTableVisitor
 import com.egern.visitor.PrintVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
-fun main(args: Array<String>) {
-    println("Egern Compiler v0.1.0 - We in business! Input something + CTRL+D to run")
+fun main() {
+    println("Egern Compiler v0.1.0! Input something + CTRL+D to run")
     val input = CharStreams.fromStream(System.`in`)
     val lexer = MainLexer(input)
     val tokens = CommonTokenStream(lexer)

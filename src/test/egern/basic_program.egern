@@ -4,4 +4,4 @@ func square(arg) {
 
 var a = 4;
 var b = square(a);
-println(b);
+print(square(b));

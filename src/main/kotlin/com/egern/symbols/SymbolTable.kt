@@ -2,9 +2,8 @@ package com.egern.symbols
 
 import java.lang.Exception
 
-
 class SymbolTable(val scope: Int, val parent: SymbolTable?) {
-    val symbols: MutableMap<String, Symbol<*>> = mutableMapOf()
+    private val symbols: MutableMap<String, Symbol<*>> = mutableMapOf()
 
     fun insert(id: String, sym: Symbol<*>) {
         if (id in symbols) {
