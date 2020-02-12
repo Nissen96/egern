@@ -10,7 +10,7 @@ class PrintVisitor : Visitor {
     }
 
     override fun preVisit(printStmt: PrintStmt) {
-        println("${counter++} printStmt: has expr ${printStmt.expr != null}")
+        println("${counter++} printStmt: has expr ${printStmt.expr != null}, has funcCall ${printStmt.funcCall != null}")
     }
 
     override fun preVisit(program: Program) {

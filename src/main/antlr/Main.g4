@@ -9,7 +9,7 @@ stmt:   funcCall
     |   printStmt
     ;
 
-returnStmt: 'return' expr? ';' ;
+returnStmt: 'return' exprOrFuncCall? ';' ;
 funcDecl:   'func' ID '(' paramList ')' block ;
 funcCall:   ID '(' argList ')' ';' ;
 
@@ -17,7 +17,7 @@ paramList:  (ID ',')* ID? ;
 argList:    (ID ',')* ID? ;
 
 varDecl:    'var' varAssign ;
-varAssign:  (ID '=')+ (expr ';' | funcCall) ;
+varAssign:  (ID '=')+ exprOrFuncCall;
 
 ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' block
@@ -26,6 +26,7 @@ ifElse:  'if' '(' expr ')' block
 block:  '{' stmt* '}' ;
 
 expr: compExpr | arithExpr ;
+exprOrFuncCall: (expr ';' | funcCall) ;
 
 compExpr: arithExpr op=('==' | '!=' | '<' | '>' | '<=' | '>=') arithExpr;
 
@@ -36,7 +37,7 @@ arithExpr:	arithExpr op=('*'|'/') arithExpr
     |	'(' arithExpr ')'
     ;
 
-printStmt: 'print' '(' expr ')' ;
+printStmt: 'print' '(' exprOrFuncCall ')' ';';
 
 NEWLINE :'\r'? '\n' -> skip;
 WS      : (' '|'\t') -> skip;

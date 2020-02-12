@@ -24,15 +24,33 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
-        return if (ctx.expr() != null) {
-            ReturnStmt(ctx.expr().accept(this) as Expr)
-        } else {
-            ReturnStmt(null)
+        val exprOrFuncCall = ctx.exprOrFuncCall();
+        return when {
+            exprOrFuncCall?.expr() != null -> {
+                ReturnStmt(exprOrFuncCall.expr().accept(this) as Expr)
+            }
+            exprOrFuncCall?.funcCall() != null -> {
+                ReturnStmt(exprOrFuncCall.funcCall().accept(this) as FuncCall)
+            }
+            else -> {
+                ReturnStmt()
+            }
         }
     }
 
     override fun visitPrintStmt(ctx: MainParser.PrintStmtContext): ASTNode {
-        return PrintStmt(ctx.expr().accept(this) as Expr)
+        val exprOrFuncCall = ctx.exprOrFuncCall();
+        return when {
+            exprOrFuncCall?.expr() != null -> {
+                PrintStmt(exprOrFuncCall.expr().accept(this) as Expr)
+            }
+            exprOrFuncCall?.funcCall() != null -> {
+                PrintStmt(exprOrFuncCall.funcCall().accept(this) as FuncCall)
+            }
+            else -> {
+                throw Exception("Invalid Statement Type in Print!");
+            }
+        }
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
@@ -45,18 +63,20 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitVarDecl(ctx: MainParser.VarDeclContext): ASTNode {
         val assign = ctx.varAssign();
-        return if (assign.expr() != null) {
-            VarDecl(assign.ID().map { it.text }, assign.expr().accept(this) as Expr)
+        val exprOrFuncCall = assign.exprOrFuncCall();
+        return if (exprOrFuncCall.expr() != null) {
+            VarDecl(assign.ID().map { it.text }, exprOrFuncCall.expr().accept(this) as Expr)
         } else {
-            VarDecl(assign.ID().map { it.text }, assign.funcCall().accept(this) as FuncCall)
+            VarDecl(assign.ID().map { it.text }, exprOrFuncCall.funcCall().accept(this) as FuncCall)
         }
     }
 
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
-        return if (ctx.expr() != null) {
-            VarAssign(ctx.ID().map { it.text }, ctx.expr().accept(this) as Expr)
+        val exprOrFuncCall = ctx.exprOrFuncCall();
+        return if (exprOrFuncCall.expr() != null) {
+            VarAssign(ctx.ID().map { it.text }, exprOrFuncCall.expr().accept(this) as Expr)
         } else {
-            VarAssign(ctx.ID().map { it.text }, ctx.funcCall().accept(this) as FuncCall)
+            VarAssign(ctx.ID().map { it.text }, exprOrFuncCall.funcCall().accept(this) as FuncCall)
         }
     }
 
