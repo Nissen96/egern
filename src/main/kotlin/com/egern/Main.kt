@@ -5,6 +5,7 @@ import MainParser
 import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
 import com.egern.symbols.SymbolVisitor
+import com.egern.types.TypeCheckingVisitor
 import com.egern.visitor.PrintSymbolTableVisitor
 import com.egern.visitor.PrintVisitor
 import org.antlr.v4.runtime.CharStreams
@@ -30,6 +31,9 @@ fun main() {
     val printSymbolVisitor = PrintSymbolTableVisitor()
     ast.accept(printSymbolVisitor)
     println()
+
+    val typeCheckingVisitor = TypeCheckingVisitor()
+    ast.accept(typeCheckingVisitor)
 }
 
 fun hello(): String {
