@@ -1,5 +1,13 @@
 func square(arg) {
-    return arg * arg;
+    if (arg < 5) {
+        return plus(square(arg + 1), square(arg + 2));
+    } else {
+        return arg * arg;
+    }
+}
+
+func plus(a, b) {
+    return a + b;
 }
 
 var a = 4;

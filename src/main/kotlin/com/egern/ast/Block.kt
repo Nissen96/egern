@@ -11,5 +11,6 @@ class Block(val statements: List<Statement>, val funcCalls: List<FuncCall>) : AS
         for (funcCall in funcCalls) {
             funcCall.accept(visitor)
         }
+        visitor.postVisit(this)
     }
 }

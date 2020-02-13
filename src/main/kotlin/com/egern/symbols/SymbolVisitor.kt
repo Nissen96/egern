@@ -8,7 +8,7 @@ class SymbolVisitor : Visitor {
     var currentTable = SymbolTable(0, null)
 
     override fun preVisit(funcDecl: FuncDecl) {
-        currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, null))
+        currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, funcDecl))
         currentScopeLevel++
         currentTable = SymbolTable(currentScopeLevel, currentTable)
         for (param in funcDecl.params) {

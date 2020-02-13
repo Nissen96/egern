@@ -1,0 +1,9 @@
+func abc(a, b, c) {
+    print(a);
+    var x = b;
+    return c;
+}
+
+var x = 3;
+abc = 3;
+print(abc(2, abc, y));

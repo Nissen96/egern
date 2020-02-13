@@ -4,18 +4,27 @@ import com.egern.ast.*
 
 class PrintVisitor : Visitor {
     var counter = 0
+    var level = 0
+
+    fun printIndented(text: String) {
+        print(counter++)
+        for (i in 1..level) {
+            print("\t")
+        }
+        println(" $text")
+    }
 
     override fun preVisit(returnStmt: ReturnStmt) {
-        println("${counter++} ReturnStmt: has expr ${returnStmt.expr != null}")
+        printIndented("ReturnStmt: has expr ${returnStmt.expr != null}")
     }
 
     override fun preVisit(printStmt: PrintStmt) {
-        println("${counter++} PrintStmt: has expr ${printStmt.expr != null}")
+        printIndented("PrintStmt: has expr ${printStmt.expr != null}")
     }
 
     override fun preVisit(program: Program) {
-        println(
-            "${counter++} Program: " +
+        printIndented(
+            "Program: " +
                     "${program.funcDecls.size} function declaration(s), " +
                     "${program.stmts.size} statement(s), " +
                     "${program.funcCalls.size} outer function call(s)"
@@ -23,50 +32,65 @@ class PrintVisitor : Visitor {
     }
 
     override fun preVisit(ifElse: IfElse) {
-        println("${counter++} IfElse: has else block ${ifElse.elseBlock != null}")
+        printIndented("IfElse: has else block ${ifElse.elseBlock != null}")
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
-        println("${counter++} FuncDecl: My ID is ${funcDecl.id}, and I take ${funcDecl.params.size} parameter(s)")
+        printIndented("FuncDecl: My ID is ${funcDecl.id}, and I take ${funcDecl.params.size} parameter(s)")
     }
 
     override fun preVisit(funcCall: FuncCall) {
-        println("${counter++} FuncCall: My ID is ${funcCall.id}, and I take ${funcCall.args.size} parameter(s)")
+        printIndented("FuncCall: My ID is ${funcCall.id}, and I take ${funcCall.args.size} parameter(s)")
+        level++
+    }
+
+    override fun postVisit(funcCall: FuncCall) {
+        level--
     }
 
     override fun preVisit(idExpr: IdExpr) {
-        println("${counter++} IdExpr: My ID is ${idExpr.id}")
+        printIndented("IdExpr: My ID is ${idExpr.id}")
     }
 
     override fun preVisit(intExpr: IntExpr) {
-        println("${counter++} IntExpr: My value is ${intExpr.value}")
+        printIndented("IntExpr: My value is ${intExpr.value}")
     }
 
     override fun preVisit(parenExpr: ParenExpr) {
-        println("${counter++} ParenExpr: I am a parenthesized expression")
+        printIndented("ParenExpr: I am a parenthesized expression")
     }
 
     override fun preVisit(compExpr: CompExpr) {
-        println("${counter++} compExpr: My operator is ${compExpr.op}")
+        printIndented("CompExpr: My operator is ${compExpr.op}")
     }
 
     override fun preVisit(block: Block) {
-        println(
-            "${counter++} block: I have ${block.statements.size} statement(s) and " +
+        printIndented(
+            "Block: I have ${block.statements.size} statement(s) and " +
                     "${block.funcCalls.size} function call(s)"
         )
+        level++
+    }
+
+    override fun postVisit(block: Block) {
+        level--
     }
 
     override fun preVisit(arithExpr: ArithExpr) {
-        println("${counter++} arithExpr: My operator is ${arithExpr.op}")
+        printIndented("ArithExpr: My operator is ${arithExpr.op}")
     }
 
     override fun preVisit(varAssign: VarAssign<*>) {
-        println("${counter++} varAssign: I have ${varAssign.ids.size} id(s)")
+        printIndented("VarAssign: I have ${varAssign.ids.size} id(s)")
     }
 
     override fun preVisit(varDecl: VarDecl<*>) {
-        println("${counter++} varDecl: I have ${varDecl.ids.size} id(s)")
+        printIndented("VarDecl: I have ${varDecl.ids.size} id(s)")
+        level++
+    }
+
+    override fun postVisit(varDecl: VarDecl<*>) {
+        level--
     }
 
 }

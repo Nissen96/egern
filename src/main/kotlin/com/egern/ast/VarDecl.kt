@@ -8,6 +8,7 @@ class VarDecl<T: Visitable>(val ids: List<String>, val expr: T) : Statement(), S
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         expr.accept(visitor)
+        visitor.postVisit(this)
     }
 
     override lateinit var symbolTable: SymbolTable

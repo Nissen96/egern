@@ -7,7 +7,7 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
 
     fun insert(id: String, sym: Symbol<*>) {
         if (id in symbols) {
-            throw Exception("Symbol $id of type ${sym.type} has already been declared!")
+            throw Exception("Symbol $id of type ${symbols[id]?.type} has already been declared!")
         }
         symbols[id] = sym
     }

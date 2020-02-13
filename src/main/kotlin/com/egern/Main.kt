@@ -32,7 +32,7 @@ fun main() {
     ast.accept(printSymbolVisitor)
     println()
 
-    val typeCheckingVisitor = TypeCheckingVisitor()
+    val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable)
     ast.accept(typeCheckingVisitor)
 }
 
