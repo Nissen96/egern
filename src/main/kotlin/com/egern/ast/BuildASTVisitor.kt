@@ -83,7 +83,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return CompExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
-            op
+            CompOp.fromString(op)!!
         )
     }
 
@@ -91,7 +91,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ArithExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
-            op
+            ArithOp.fromString(op)!!
         )
     }
 }

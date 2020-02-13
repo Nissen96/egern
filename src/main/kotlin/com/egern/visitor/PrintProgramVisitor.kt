@@ -10,7 +10,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun midVisit(arithExpr: ArithExpr) {
-        print(" ${arithExpr.op} ")
+        print(" ${arithExpr.op.value} ")
     }
 
     override fun preVisit(block: Block) {
@@ -31,7 +31,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun midVisit(compExpr: CompExpr) {
-        print(" ${compExpr.op} ")
+        print(" ${compExpr.op.value} ")
     }
 
     override fun preVisit(funcCall: FuncCall) {
