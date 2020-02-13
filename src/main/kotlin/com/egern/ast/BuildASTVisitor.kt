@@ -37,7 +37,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFuncCall(ctx: MainParser.FuncCallContext): ASTNode {
-        return FuncCall(ctx.ID().text, ctx.argList().ID().map { it.text })
+        return FuncCall(ctx.ID().text, ctx.argList().expr().map { it.accept(this) as Expr })
     }
 
     override fun visitVarDecl(ctx: MainParser.VarDeclContext): ASTNode {
@@ -57,14 +57,17 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitBlock(ctx: MainParser.BlockContext): ASTNode {
-        return Block(ctx.stmt().map { it.accept(this) as Statement })
+        return Block(
+            ctx.stmt().map { it.accept(this) as Statement },
+            ctx.funcCall().map { it.accept(this) as FuncCall }
+        )
     }
 
     override fun visitExpr(ctx: MainParser.ExprContext): ASTNode {
         return when {
             ctx.arithExpr() != null -> visitArithExpr(ctx.arithExpr())
-            ctx.compExpr()  != null -> visitCompExpr(ctx.compExpr())
-            ctx.funcCall()  != null -> visitFuncCall(ctx.funcCall())
+            ctx.compExpr() != null -> visitCompExpr(ctx.compExpr())
+            ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             else -> throw Exception("Invalid Expression Type!")
         }
     }

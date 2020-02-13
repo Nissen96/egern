@@ -13,7 +13,7 @@ funcDecl:   'func' ID '(' paramList ')' block ;
 funcCall:   ID '(' argList ')' ;
 
 paramList:  (ID ',')* ID? ;
-argList:    (ID ',')* ID? ;
+argList:    (expr ',')* expr? ;
 
 varDecl:    'var' varAssign ;
 varAssign:  (ID '=')+ expr ';';
@@ -22,7 +22,7 @@ ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' block
       ;
 
-block:  '{' stmt* '}' ;
+block:  '{' (stmt | funcCall)* '}' ;
 
 expr: compExpr | arithExpr | funcCall ;
 

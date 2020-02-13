@@ -14,11 +14,12 @@ class PrintVisitor : Visitor {
     }
 
     override fun preVisit(program: Program) {
-        println("" +
-                "${counter++} Program: " +
-                "${program.funcDecls.size} function declarations, " +
-                "${program.stmts.size} statements, " +
-                "${program.funcCalls.size} outer function calls")
+        println(
+            "${counter++} Program: " +
+                    "${program.funcDecls.size} function declaration(s), " +
+                    "${program.stmts.size} statement(s), " +
+                    "${program.funcCalls.size} outer function call(s)"
+        )
     }
 
     override fun preVisit(ifElse: IfElse) {
@@ -26,11 +27,11 @@ class PrintVisitor : Visitor {
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
-        println("${counter++} FuncDecl: My ID is ${funcDecl.id}, and I take ${funcDecl.params.size} parameters")
+        println("${counter++} FuncDecl: My ID is ${funcDecl.id}, and I take ${funcDecl.params.size} parameter(s)")
     }
 
     override fun preVisit(funcCall: FuncCall) {
-        println("${counter++} FuncCall: My ID is ${funcCall.id}, and I take ${funcCall.args.size} parameters\" ")
+        println("${counter++} FuncCall: My ID is ${funcCall.id}, and I take ${funcCall.args.size} parameter(s)")
     }
 
     override fun preVisit(compExpr: CompExpr) {
@@ -38,7 +39,10 @@ class PrintVisitor : Visitor {
     }
 
     override fun preVisit(block: Block) {
-        println("${counter++} block: I have ${block.statements.size} statement(s)")
+        println(
+            "${counter++} block: I have ${block.statements.size} statement(s) and " +
+                    "${block.funcCalls.size} function call(s)"
+        )
     }
 
     override fun preVisit(arithExpr: ArithExpr) {
