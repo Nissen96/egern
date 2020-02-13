@@ -14,6 +14,9 @@ interface Visitor {
     fun preVisit(arithExpr: ArithExpr) {}
     fun preVisit(varAssign: VarAssign<*>) {}
     fun preVisit(varDecl: VarDecl<*>) {}
+    fun preVisit(idExpr: IdExpr) {}
+    fun preVisit(parenExpr: ParenExpr) {}
+    fun preVisit(intExpr: IntExpr) {}
 
     fun midVisit(returnStmt: ReturnStmt) {}
     fun midVisit(printStmt: PrintStmt) {}

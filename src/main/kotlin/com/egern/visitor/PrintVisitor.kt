@@ -6,11 +6,11 @@ class PrintVisitor : Visitor {
     var counter = 0
 
     override fun preVisit(returnStmt: ReturnStmt) {
-        println("${counter++} returnStmt: has expr ${returnStmt.expr != null}")
+        println("${counter++} ReturnStmt: has expr ${returnStmt.expr != null}")
     }
 
     override fun preVisit(printStmt: PrintStmt) {
-        println("${counter++} printStmt: has expr ${printStmt.expr != null}")
+        println("${counter++} PrintStmt: has expr ${printStmt.expr != null}")
     }
 
     override fun preVisit(program: Program) {
@@ -34,8 +34,20 @@ class PrintVisitor : Visitor {
         println("${counter++} FuncCall: My ID is ${funcCall.id}, and I take ${funcCall.args.size} parameter(s)")
     }
 
+    override fun preVisit(idExpr: IdExpr) {
+        println("${counter++} IdExpr: My ID is ${idExpr.id}")
+    }
+
+    override fun preVisit(intExpr: IntExpr) {
+        println("${counter++} IntExpr: My value is ${intExpr.value}")
+    }
+
+    override fun preVisit(parenExpr: ParenExpr) {
+        println("${counter++} ParenExpr: I am a parenthesized expression")
+    }
+
     override fun preVisit(compExpr: CompExpr) {
-        println("${counter++} compExpr: My op is ${compExpr.op}")
+        println("${counter++} compExpr: My operator is ${compExpr.op}")
     }
 
     override fun preVisit(block: Block) {
@@ -46,11 +58,7 @@ class PrintVisitor : Visitor {
     }
 
     override fun preVisit(arithExpr: ArithExpr) {
-        when {
-            arithExpr.id != null -> println("${counter++} arithExpr: of ID ${arithExpr.id}")
-            arithExpr.value != null -> println("${counter++} arithExpr: of int ${arithExpr.value}")
-            arithExpr.op != null -> println("${counter++} arithExpr: of op ${arithExpr.op}")
-        }
+        println("${counter++} arithExpr: My operator is ${arithExpr.op}")
     }
 
     override fun preVisit(varAssign: VarAssign<*>) {

@@ -1,6 +1,7 @@
 package com.egern.ast
 
 import MainBaseVisitor
+import com.sun.org.apache.xalan.internal.extensions.ExpressionContext
 import java.lang.Exception
 
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
@@ -65,32 +66,33 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitExpr(ctx: MainParser.ExprContext): ASTNode {
         return when {
-            ctx.arithExpr() != null -> visitArithExpr(ctx.arithExpr())
-            ctx.compExpr() != null -> visitCompExpr(ctx.compExpr())
+            ctx.intExpr() != null -> IntExpr(ctx.intExpr().INT().text.toInt())
+            ctx.idExpr() != null -> IdExpr(ctx.idExpr().ID().text)
+            ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
+            ctx.op.text in "+-*/" -> visitArithExpr(ctx.expr(), ctx.op.text)
+            ctx.op.text in listOf("==", "<", ">", "!=", "<=", ">=") -> visitCompExpr(ctx.expr(), ctx.op.text)
             else -> throw Exception("Invalid Expression Type!")
         }
     }
 
-    override fun visitCompExpr(ctx: MainParser.CompExprContext): ASTNode {
+    override fun visitParenExpr(ctx: MainParser.ParenExprContext): ASTNode {
+        return ParenExpr(visitExpr(ctx.expr()) as Expr)
+    }
+
+    fun visitCompExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
         return CompExpr(
-            ctx.arithExpr(0).accept(this) as ArithExpr,
-            ctx.arithExpr(1).accept(this) as ArithExpr,
-            ctx.op.text
+            exprs[0].accept(this) as Expr,
+            exprs[1].accept(this) as Expr,
+            op
         )
     }
 
-    override fun visitArithExpr(ctx: MainParser.ArithExprContext): ASTNode {
-        return when {
-            ctx.ID() != null -> ArithExpr(ctx.ID().text)
-            ctx.INT() != null -> ArithExpr(ctx.INT().text.toInt())
-            ctx.arithExpr().size == 1 -> ArithExpr(ctx.arithExpr(0).accept(this) as ArithExpr)
-            ctx.arithExpr().size == 2 -> ArithExpr(
-                ctx.arithExpr(0).accept(this) as ArithExpr,
-                ctx.arithExpr(1).accept(this) as ArithExpr,
-                ctx.op.text
-            )
-            else -> throw Exception("Invalid Arithmetic Expression")
-        }
+    fun visitArithExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
+        return ArithExpr(
+            exprs[0].accept(this) as Expr,
+            exprs[1].accept(this) as Expr,
+            op
+        )
     }
 }

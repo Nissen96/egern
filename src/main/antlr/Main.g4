@@ -24,16 +24,29 @@ ifElse:  'if' '(' expr ')' block
 
 block:  '{' (stmt | funcCall)* '}' ;
 
-expr: compExpr | arithExpr | funcCall ;
-
-compExpr: arithExpr op=('==' | '!=' | '<' | '>' | '<=' | '>=') arithExpr;
-
-arithExpr:	arithExpr op=('*'|'/') arithExpr
-    |	arithExpr op=('+'|'-') arithExpr
-    |	INT
-    |   ID
-    |	'(' arithExpr ')'
+expr: intExpr
+    | idExpr
+    | funcCall
+    | parenExpr
+    | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=') expr
+    | expr op=('*' | '/' | '+' | '-') expr
     ;
+
+idExpr: ID ;
+intExpr: INT ;
+parenExpr: '(' expr ')';
+
+/*expr: (idExpr | intExpr | funcCall | parenExpr) compExpr
+    | (idExpr | intExpr | funcCall | parenExpr) arithExpr
+    | funcCall
+    | intExpr
+    | idExpr
+    | parenExpr
+    ;
+
+compExpr:  op=('==' | '!=' | '<' | '>' | '<=' | '>=') expr | ;
+arithExpr: op=('*' | '/' | '+' | '-') expr | ;
+*/
 
 printStmt: 'print' '(' expr? ')' ';';
 
