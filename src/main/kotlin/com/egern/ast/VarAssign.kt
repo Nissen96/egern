@@ -7,5 +7,6 @@ class VarAssign<T : Visitable>(val ids: List<String>, val expr: T) : Statement()
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         expr.accept(visitor)
+        visitor.postVisit(this)
     }
 }

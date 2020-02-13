@@ -13,6 +13,7 @@ class Program(val funcDecls: List<FuncDecl>, val stmts: List<Statement>, val fun
         }
         for (call in funcCalls) {
             call.accept(visitor)
+            visitor.midVisit(this)
         }
     }
 }

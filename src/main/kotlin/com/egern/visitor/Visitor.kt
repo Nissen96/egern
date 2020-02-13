@@ -3,42 +3,44 @@ package com.egern.visitor
 import com.egern.ast.*
 
 interface Visitor {
-    fun preVisit(returnStmt: ReturnStmt) {}
-    fun preVisit(printStmt: PrintStmt) {}
-    fun preVisit(program: Program) {}
-    fun preVisit(ifElse: IfElse) {}
-    fun preVisit(funcDecl: FuncDecl) {}
-    fun preVisit(funcCall: FuncCall) {}
-    fun preVisit(compExpr: CompExpr) {}
+    fun midVisit(arithExpr: ArithExpr) {}
+
     fun preVisit(block: Block) {}
-    fun preVisit(arithExpr: ArithExpr) {}
-    fun preVisit(varAssign: VarAssign<*>) {}
-    fun preVisit(varDecl: VarDecl<*>) {}
+    fun postVisit(block: Block) {}
+
+    fun midVisit(compExpr: CompExpr) {}
+
+    fun preVisit(funcCall: FuncCall) {}
+    fun midVisit(funcCall: FuncCall) {}
+    fun postVisit(funcCall: FuncCall) {}
+
+    fun preVisit(funcDecl: FuncDecl) {}
+    fun postVisit(funcDecl: FuncDecl) {}
+
     fun preVisit(idExpr: IdExpr) {}
-    fun preVisit(parenExpr: ParenExpr) {}
+
+    fun preVisit(ifElse: IfElse) {}
+    fun preMidVisit(ifElse: IfElse) {}
+    fun postMidVisit(ifElse: IfElse) {}
+    fun postVisit(ifElse: IfElse) {}
+
     fun preVisit(intExpr: IntExpr) {}
 
-    fun midVisit(returnStmt: ReturnStmt) {}
-    fun midVisit(printStmt: PrintStmt) {}
-    fun midVisit(program: Program) {}
-    fun midVisit(ifElse: IfElse) {}
-    fun midVisit(funcDecl: FuncDecl) {}
-    fun midVisit(funcCall: FuncCall) {}
-    fun midVisit(compExpr: CompExpr) {}
-    fun midVisit(block: Block) {}
-    fun midVisit(arithExpr: ArithExpr) {}
-    fun midVisit(varAssign: VarAssign<*>) {}
-    fun midVisit(varDecl: VarDecl<*>) {}
+    fun preVisit(parenExpr: ParenExpr) {}
+    fun postVisit(parenExpr: ParenExpr) {}
 
+    fun preVisit(printStmt: PrintStmt) {}
     fun postVisit(printStmt: PrintStmt) {}
+
+    fun preVisit(program: Program) {}
+    fun midVisit(program: Program) {}
+
+    fun preVisit(returnStmt: ReturnStmt) {}
     fun postVisit(returnStmt: ReturnStmt) {}
-    fun postVisit(program: Program) {}
-    fun postVisit(ifElse: IfElse) {}
-    fun postVisit(funcDecl: FuncDecl) {}
-    fun postVisit(funcCall: FuncCall) {}
-    fun postVisit(compExpr: CompExpr) {}
-    fun postVisit(block: Block) {}
-    fun postVisit(arithExpr: ArithExpr) {}
+
+    fun preVisit(varAssign: VarAssign<*>) {}
     fun postVisit(varAssign: VarAssign<*>) {}
+
+    fun preVisit(varDecl: VarDecl<*>) {}
     fun postVisit(varDecl: VarDecl<*>) {}
 }

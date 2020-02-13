@@ -80,7 +80,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ParenExpr(visitExpr(ctx.expr()) as Expr)
     }
 
-    fun visitCompExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
+    private fun visitCompExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
         return CompExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
@@ -88,7 +88,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
-    fun visitArithExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
+    private fun visitArithExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
         return ArithExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,

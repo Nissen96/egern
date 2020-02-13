@@ -3,15 +3,11 @@ package com.egern.visitor
 import com.egern.ast.*
 
 class PrintVisitor : Visitor {
-    var counter = 0
-    var level = 0
+    private var counter = 0
+    private var level = 0
 
-    fun printIndented(text: String) {
-        print(counter++)
-        for (i in 1..level) {
-            print("\t")
-        }
-        println(" $text")
+    private fun printIndented(text: String) {
+        println("${counter++}" + "\t".repeat(level) + " $text")
     }
 
     override fun preVisit(returnStmt: ReturnStmt) {
@@ -60,7 +56,7 @@ class PrintVisitor : Visitor {
         printIndented("ParenExpr: I am a parenthesized expression")
     }
 
-    override fun preVisit(compExpr: CompExpr) {
+    override fun midVisit(compExpr: CompExpr) {
         printIndented("CompExpr: My operator is ${compExpr.op}")
     }
 
@@ -76,7 +72,7 @@ class PrintVisitor : Visitor {
         level--
     }
 
-    override fun preVisit(arithExpr: ArithExpr) {
+    override fun midVisit(arithExpr: ArithExpr) {
         printIndented("ArithExpr: My operator is ${arithExpr.op}")
     }
 

@@ -6,5 +6,6 @@ class PrintStmt(val expr: Expr?) : Statement() {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         expr?.accept(visitor)
+        visitor.postVisit(this)
     }
 }

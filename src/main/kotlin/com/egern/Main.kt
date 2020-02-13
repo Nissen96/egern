@@ -6,6 +6,7 @@ import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
 import com.egern.symbols.SymbolVisitor
 import com.egern.types.TypeCheckingVisitor
+import com.egern.visitor.PrintProgramVisitor
 import com.egern.visitor.PrintSymbolTableVisitor
 import com.egern.visitor.PrintVisitor
 import org.antlr.v4.runtime.CharStreams
@@ -21,16 +22,19 @@ fun main() {
     val cst = parser.prog()
     val ast = BuildASTVisitor().visit(cst) as Program
 
-    val printVisitor = PrintVisitor()
-    ast.accept(printVisitor)
-    println()
+    val printProgramVisitor = PrintProgramVisitor(4)
+    ast.accept(printProgramVisitor)
+
+    //val printVisitor = PrintVisitor()
+    //ast.accept(printVisitor)
+    //println()
+
+    //val printSymbolVisitor = PrintSymbolTableVisitor()
+    //ast.accept(printSymbolVisitor)
+    //println()
 
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)
-    
-    val printSymbolVisitor = PrintSymbolTableVisitor()
-    ast.accept(printSymbolVisitor)
-    println()
 
     val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable)
     ast.accept(typeCheckingVisitor)
