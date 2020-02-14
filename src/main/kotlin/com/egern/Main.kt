@@ -12,7 +12,9 @@ import com.egern.visitor.PrintVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
-fun main() {
+fun main(args: Array<String>) {
+    val doPrint = "-p" in args
+
     println("Egern Compiler v0.1.0! Input something + CTRL+D to run")
     val input = CharStreams.fromStream(System.`in`)
     val lexer = MainLexer(input)
@@ -22,16 +24,18 @@ fun main() {
     val cst = parser.prog()
     val ast = BuildASTVisitor().visit(cst) as Program
 
-    val printProgramVisitor = PrintProgramVisitor(4)
-    ast.accept(printProgramVisitor)
+    if (doPrint) {
+        val printProgramVisitor = PrintProgramVisitor(4)
+        ast.accept(printProgramVisitor)
 
-    //val printVisitor = PrintVisitor()
-    //ast.accept(printVisitor)
-    //println()
+        //val printVisitor = PrintVisitor()
+        //ast.accept(printVisitor)
+        //println()
 
-    //val printSymbolVisitor = PrintSymbolTableVisitor()
-    //ast.accept(printSymbolVisitor)
-    //println()
+        //val printSymbolVisitor = PrintSymbolTableVisitor()
+        //ast.accept(printSymbolVisitor)
+        //println()
+    }
 
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)

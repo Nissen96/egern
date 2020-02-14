@@ -1,0 +1,3 @@
+for i in *.egern; do
+    ./run $i
+done
