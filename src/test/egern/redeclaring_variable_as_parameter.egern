@@ -1,0 +1,6 @@
+func test(x) {
+    return x;
+}
+
+var x = 4;
+print(test(x));

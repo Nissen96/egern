@@ -1,0 +1,6 @@
+func hello() {
+    return;
+}
+
+var a = hello;
+print(a);

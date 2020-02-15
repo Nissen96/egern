@@ -1,0 +1,7 @@
+var a = 3;
+if (a == 3) {
+    print(a);
+} else {
+    print(4);
+}
+print(a);

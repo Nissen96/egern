@@ -1,0 +1,8 @@
+func hello(test) {
+    print(test);
+    func test(a) {
+        return a * a;
+    }
+    print(test(4));
+}
+print(hello(3));

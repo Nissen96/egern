@@ -1,0 +1,8 @@
+var a = 2 + 3;
+var b = 3 - 2;
+var c = 3 * 4;
+var d = 4 / 2;
+print(a);
+print(b);
+print(c);
+print(d);

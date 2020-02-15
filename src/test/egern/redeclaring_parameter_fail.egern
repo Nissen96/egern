@@ -1,0 +1,5 @@
+func sameParams(x, y, x) {
+    return x * y;
+}
+
+print(sameParams(1, 2, 3));

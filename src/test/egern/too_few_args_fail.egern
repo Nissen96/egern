@@ -5,5 +5,4 @@ func abc(a, b, c) {
 }
 
 var x = 3;
-abc = 3;
-print(abc(2, abc, y));
+print(abc(2, x));

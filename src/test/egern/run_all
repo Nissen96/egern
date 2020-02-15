@@ -1,3 +1,4 @@
 for i in *.egern; do
+    echo $i
     ./run $i
 done

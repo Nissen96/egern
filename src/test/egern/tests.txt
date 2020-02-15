@@ -1,0 +1,86 @@
+List of tests to implement
+N - Implemented
+Y - Not Implemented
+p - Partially Implemented (or does not work as expected)
+
+
+VARIABLES (SHOULD SUCCEED):
+Y - Variable declaration
+Y - Multiple variable declaration
+Y - Variable assignment
+Y - Multiple variable assignment
+Y - Redeclare variable as parameter
+Y - Redeclaring variable inside function
+Y - Declaring variable in function with function name
+
+
+FUNCTIONS (SHOULD SUCCEED):
+Y - Function with no parameters
+Y - Function with one parameter
+Y - Function with multiple parameters
+Y - Function with empty body
+Y - Function with no return
+Y - Function with empty return
+Y - Function returning value (done in many of the above)
+P - Nested functions
+
+Y - Function call
+Y - Recursive function call
+Y - Nested function call
+
+Y - Reassigning value to parameter
+Y - Redeclare function as parameter
+
+
+CONDITIONALS (SHOULD SUCEED):
+Y - If statement without else block
+Y - If-else statement
+Y - Nested if-else statements
+
+
+EXPRESSIONS (SHOULD SUCCEED):
+Y - Assign int to variable
+Y - Assign id to variable
+Y - Parenthesize expressions and check it overrides precedence
+Y - Use each possible arithmetic operator to combine two expressions (check precedence)
+Y - Use each possible comparison operator in if-statement
+Y - Assign result of function call to variable
+
+
+OTHER TESTS (SHOULD SUCCEED):
+Y - Empty program
+Y - Print integer
+Y - Print variable
+Y - Print function call
+Y - Print empty
+
+
+EXPRESSIONS (SHOULD SUCCEED/FAIL?):
+P - Non-integer division
+P - Division by zero
+P - Producing negative value
+N - Surpassing max integer value
+N - Surpassing min integer value
+
+
+TYPECHECKING (SHOULD FAIL):
+Y - Calling undeclared function
+Y - Calling nested function from outside scope
+Y - Using undeclared parameter in function
+Y - Using undeclared variable
+Y - Assigning value to undeclared variable
+Y - Assigning function name to variable
+Y - Assigning value to function name
+
+Y - Redeclare variable
+P - Redeclare variable as function (not possible - functions are declared first)
+
+Y - Redeclare parameter (two parameters of same name in same function)
+P - Redeclare parameter as function (not relevant before nested functions)
+Y - Redeclare parameter as variable
+
+Y - Redeclare function
+Y - Redeclare function as variable
+
+Y - Call function with fewer arguments than parameters
+Y - Call function with more arguments than parameters

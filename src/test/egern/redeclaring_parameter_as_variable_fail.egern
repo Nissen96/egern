@@ -1,0 +1,4 @@
+func abc(a) {
+    var a = 4;
+    return a;
+}

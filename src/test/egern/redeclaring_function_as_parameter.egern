@@ -1,0 +1,5 @@
+func abc(abc) {
+    return abc;
+}
+
+print(abc(4));

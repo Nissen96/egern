@@ -1,0 +1,3 @@
+func oneParam(arg) {
+    return arg * arg;
+}

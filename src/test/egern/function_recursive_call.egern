@@ -1,0 +1,7 @@
+func recursiveFunc(n) {
+    if (n < 1) {
+        return n;
+    }
+    return recursiveFunc(n - 1);
+}
+print(recursiveFunc(5));

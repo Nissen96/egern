@@ -1,0 +1,3 @@
+func noReturn(a) {
+    print(a);
+}

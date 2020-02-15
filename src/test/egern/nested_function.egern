@@ -1,0 +1,15 @@
+func outer(a) {
+    var b = 3;
+    var c = inner(a, b);
+    print(c);
+
+    func inner(a, b) {
+        var c = 4;
+        return a - b + c;
+    }
+
+    var d = inner(b, a);
+    return d;
+}
+
+print(outer(4));

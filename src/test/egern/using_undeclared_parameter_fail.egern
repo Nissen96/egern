@@ -1,0 +1,4 @@
+func test(a, b) {
+    return a + b + c;
+}
+print(test(3, 4));

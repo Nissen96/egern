@@ -1,0 +1,4 @@
+func hello(a) {
+    return a;
+}
+print(hello(3));

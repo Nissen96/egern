@@ -1,0 +1,95 @@
+if (2 == 2) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 == 3) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 != 3) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 != 2) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 < 1) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 < 2) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 < 3) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 > 1) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 > 2) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 > 3) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 <= 1) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 <= 2) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 <= 3) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 >= 1) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 >= 2) {
+    print(1);
+} else {
+    print(0);
+}
+
+if (2 >= 3) {
+    print(1);
+} else {
+    print(0);
+}
