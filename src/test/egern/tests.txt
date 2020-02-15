@@ -26,6 +26,7 @@ P - Nested functions
 
 Y - Function call
 Y - Recursive function call
+Y - Mutually recursive function calls
 Y - Nested function call
 
 Y - Reassigning value to parameter
