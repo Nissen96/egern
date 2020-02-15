@@ -25,11 +25,11 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
-        return ReturnStmt(ctx.expr().accept(this) as Expr)
+        return ReturnStmt(ctx.expr()?.accept(this) as? Expr)
     }
 
     override fun visitPrintStmt(ctx: MainParser.PrintStmtContext): ASTNode {
-        return PrintStmt(ctx.expr().accept(this) as Expr)
+        return PrintStmt(ctx.expr()?.accept(this) as? Expr)
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
