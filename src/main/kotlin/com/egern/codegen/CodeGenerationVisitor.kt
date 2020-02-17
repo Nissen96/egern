@@ -5,7 +5,7 @@ import com.egern.symbols.SymbolTable
 import com.egern.visitor.Visitor
 
 class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
-    private val instructions = ArrayList<Instruction>();
+    val instructions = ArrayList<Instruction>()
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
