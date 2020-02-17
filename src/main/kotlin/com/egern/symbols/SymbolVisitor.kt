@@ -8,6 +8,16 @@ class SymbolVisitor : Visitor {
     private var variableOffset = 0
     var currentTable = SymbolTable(0, null)
 
+    override fun preVisit(block: Block) {
+        currentScopeLevel++
+        currentTable = SymbolTable(currentScopeLevel, currentTable)
+    }
+
+    override fun postVisit(block: Block) {
+        currentScopeLevel--
+        currentTable = currentTable.parent!!
+    }
+
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, funcDecl))
         currentScopeLevel++
@@ -29,6 +39,6 @@ class SymbolVisitor : Visitor {
             currentTable.insert(id, Symbol(id, SymbolType.Variable, variableOffset))
         }
         varDecl.symbolTable = currentTable
-        variableOffset++;
+        variableOffset++
     }
 }

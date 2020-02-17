@@ -54,6 +54,23 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         println()
     }
 
+    override fun preVisit(funcBody: FuncBody) {
+        print("{")
+        if (funcBody.funcCalls.isNotEmpty() || funcBody.statements.isNotEmpty()) {
+            println()
+            level++
+        }
+    }
+
+    override fun postVisit(funcBody: FuncBody) {
+        if (funcBody.funcCalls.isNotEmpty() || funcBody.statements.isNotEmpty()) {
+            level--
+            printIndented("}")
+        } else {
+            print("}")
+        }
+    }
+
     override fun preVisit(idExpr: IdExpr) {
         print(idExpr.id)
     }

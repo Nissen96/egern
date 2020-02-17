@@ -33,7 +33,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
-        return FuncDecl(ctx.ID().text, ctx.paramList().ID().map { it.text }, ctx.block().accept(this) as Block)
+        return FuncDecl(ctx.ID().text, ctx.paramList().ID().map { it.text }, ctx.funcBody().accept(this) as FuncBody)
+    }
+
+    override fun visitFuncBody(ctx: MainParser.FuncBodyContext): ASTNode {
+        return FuncBody(
+            ctx.stmt().map { it.accept(this) as Statement },
+            ctx.funcCall().map { it.accept(this) as FuncCall }
+        )
     }
 
     override fun visitFuncCall(ctx: MainParser.FuncCallContext): ASTNode {

@@ -5,6 +5,9 @@ import com.egern.ast.*
 interface Visitor {
     fun midVisit(arithExpr: ArithExpr) {}
 
+    fun preVisit(funcBody: FuncBody) {}
+    fun postVisit(funcBody: FuncBody) {}
+
     fun preVisit(block: Block) {}
     fun postVisit(block: Block) {}
 
