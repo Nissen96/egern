@@ -11,6 +11,7 @@ class SymbolVisitor : Visitor {
     override fun preVisit(block: Block) {
         currentScopeLevel++
         currentTable = SymbolTable(currentScopeLevel, currentTable)
+        block.symbolTable = currentTable
     }
 
     override fun postVisit(block: Block) {

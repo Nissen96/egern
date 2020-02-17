@@ -1,5 +1,6 @@
 package com.egern.codegen
 
+import com.egern.ast.Block
 import com.egern.ast.FuncDecl
 import com.egern.symbols.SymbolTable
 import com.egern.visitor.Visitor
@@ -12,7 +13,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         const val RSL_OFFSET = "-2"
     }
 
-    fun add(instruction: Instruction) {
+    private fun add(instruction: Instruction) {
         instructions.add(instruction)
     }
 
@@ -41,6 +42,14 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable.parent!!
+    }
+
+    override fun preVisit(block: Block) {
+        symbolTable = block.symbolTable
+    }
+
+    override fun postVisit(block: Block) {
+        symbolTable = block.symbolTable.parent!!
     }
 
     // TODO: Generate code
