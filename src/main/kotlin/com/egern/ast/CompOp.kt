@@ -9,7 +9,7 @@ enum class CompOp(val value: String) {
     GTE(">=");
 
     companion object {
-        private val map = CompOp.values().associateBy(CompOp::value)
+        private val map = values().associateBy(CompOp::value)
         fun fromString(type: String) = map[type]
     }
 }

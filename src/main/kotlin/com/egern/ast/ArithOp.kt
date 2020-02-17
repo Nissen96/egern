@@ -7,7 +7,7 @@ enum class ArithOp(val value: String) {
     DIVIDE("/");
 
     companion object {
-        private val map = ArithOp.values().associateBy(ArithOp::value)
+        private val map = values().associateBy(ArithOp::value)
         fun fromString(type: String) = map[type]
     }
 }
