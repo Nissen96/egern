@@ -4,6 +4,7 @@ import MainLexer
 import MainParser
 import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
+import com.egern.codegen.CodeGenerationVisitor
 import com.egern.symbols.SymbolVisitor
 import com.egern.types.TypeCheckingVisitor
 import com.egern.visitor.PrintProgramVisitor
@@ -32,6 +33,9 @@ fun main(args: Array<String>) {
 
     val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable)
     ast.accept(typeCheckingVisitor)
+
+    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.currentTable)
+    ast.accept(codeGenVisitor)
 }
 
 fun hello(): String {
