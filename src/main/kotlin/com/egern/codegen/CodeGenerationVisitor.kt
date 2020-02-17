@@ -1,7 +1,6 @@
 package com.egern.codegen
 
-import com.egern.ast.Block
-import com.egern.ast.FuncDecl
+import com.egern.ast.*
 import com.egern.symbols.SymbolTable
 import com.egern.visitor.Visitor
 

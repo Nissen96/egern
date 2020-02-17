@@ -7,7 +7,7 @@ class FuncCall(val id: String, val args: List<Expr>) : Expr() {
         visitor.preVisit(this)
         if (args.isNotEmpty()) {
             args.dropLast(1).map {
-                it.accept(visitor);
+                it.accept(visitor)
                 visitor.midVisit(this)
             }
             args.last().accept(visitor)
