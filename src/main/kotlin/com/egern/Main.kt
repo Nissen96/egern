@@ -2,6 +2,7 @@ package com.egern
 
 import MainLexer
 import MainParser
+import com.egern.antlr.ThrowingErrorListener
 import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
 import com.egern.codegen.CodeGenerationVisitor
@@ -25,6 +26,9 @@ fun main(args: Array<String>) {
     val lexer = MainLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = MainParser(tokens)
+
+    parser.removeErrorListeners()
+    parser.addErrorListener(ThrowingErrorListener.INSTANCE)
 
     val cst = parser.prog()
     val ast = BuildASTVisitor().visit(cst) as Program
