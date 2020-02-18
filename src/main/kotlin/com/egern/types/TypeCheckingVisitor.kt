@@ -41,7 +41,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter)) }
     }
 
-    override fun preVisit(idExpr: IdExpr) {
+    override fun visit(idExpr: IdExpr) {
         lookupSymbol(idExpr.id, listOf(SymbolType.Variable, SymbolType.Parameter))
     }
 }

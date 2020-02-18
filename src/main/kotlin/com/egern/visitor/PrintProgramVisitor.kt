@@ -70,7 +70,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         }
     }
 
-    override fun preVisit(idExpr: IdExpr) {
+    override fun visit(idExpr: IdExpr) {
         print(idExpr.id)
     }
 
@@ -90,7 +90,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         println()
     }
 
-    override fun preVisit(intExpr: IntExpr) {
+    override fun visit(intExpr: IntExpr) {
         print(intExpr.value)
     }
 
