@@ -188,7 +188,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
                 arithOperator,
                 InstructionArg(Register("1"), Direct),
                 InstructionArg(Register("2"), Direct),
-                comment = "Do arithmatic operation"
+                comment = "Do arithmetic operation"
             )
         )
         add(
@@ -265,8 +265,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.LABEL,
-                InstructionArg(Memory(ifElse.elseLabel), Direct),
-                comment = "Skip else part if successful"
+                InstructionArg(Memory(ifElse.elseLabel), Direct)
             )
         )
     }
