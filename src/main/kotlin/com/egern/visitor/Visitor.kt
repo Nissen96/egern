@@ -22,14 +22,14 @@ interface Visitor {
     fun preVisit(funcDecl: FuncDecl) {}
     fun postVisit(funcDecl: FuncDecl) {}
 
-    fun preVisit(idExpr: IdExpr) {}
+    fun visit(idExpr: IdExpr) {}
 
     fun preVisit(ifElse: IfElse) {}
     fun preMidVisit(ifElse: IfElse) {}
     fun postMidVisit(ifElse: IfElse) {}
     fun postVisit(ifElse: IfElse) {}
 
-    fun preVisit(intExpr: IntExpr) {}
+    fun visit(intExpr: IntExpr) {}
 
     fun preVisit(parenExpr: ParenExpr) {}
     fun postVisit(parenExpr: ParenExpr) {}

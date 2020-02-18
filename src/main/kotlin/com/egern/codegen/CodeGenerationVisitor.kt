@@ -77,6 +77,19 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         symbolTable = block.symbolTable.parent!!
     }
 
+    override fun visit(intExpr: IntExpr) {
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue(intExpr.value.toString()), Direct),
+                comment = "Push static integer value"
+            )
+        )
+    }
+
+    override fun visit(idExpr: IdExpr) {
+        // TODO
+    }
 
     override fun postVisit(compExpr: CompExpr) {
         // Pop expressions to register 1 and 2
