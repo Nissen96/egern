@@ -7,9 +7,13 @@ import com.egern.visitor.Visitor
 class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
     val instructions = ArrayList<Instruction>()
 
+
     companion object {
         // CONSTANT OFFSETS FROM RBP
-        const val RSL_OFFSET = "-2"
+        const val LOCAL_VAR_OFFSET = "1"
+        const val RETURN_OFFSET = "-1"
+        const val STATIC_LINK_OFFSET = "-2"
+        const val PARAM_OFFSET = "-3"
     }
 
     private fun add(instruction: Instruction) {
@@ -27,7 +31,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
             add(
                 Instruction(
                     InstructionType.MOV,
-                    InstructionArg(StaticLink, IndirectRelative(RSL_OFFSET)),
+                    InstructionArg(StaticLink, IndirectRelative(STATIC_LINK_OFFSET)),
                     InstructionArg(StaticLink, Direct),
                     comment = "Following static link pointer"
                 )
@@ -35,12 +39,34 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         }
     }
 
+    override fun preVisit(program: Program) {
+        add(Instruction(InstructionType.LABEL, InstructionArg(ImmediateLabel("main"), Direct)))
+        //TODO CALLER PROLOGUE?
+    }
+
+    override fun postVisit(program: Program) {
+        //TODO CALLER EPILOGUE?
+    }
+
     override fun preVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(ImmediateLabel(funcDecl.startLabel), Direct)
+            )
+        )
+
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable.parent!!
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(ImmediateLabel(funcDecl.endLabel), Direct)
+            )
+        )
     }
 
     override fun preVisit(block: Block) {
