@@ -7,5 +7,6 @@ class ArithExpr(val lhs: Expr, val rhs: Expr, val op: ArithOp) : Expr() {
         lhs.accept(visitor)
         visitor.midVisit(this)
         rhs.accept(visitor)
+        visitor.postVisit(this)
     }
 }

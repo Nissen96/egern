@@ -77,6 +77,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         symbolTable = block.symbolTable.parent!!
     }
 
+
     override fun postVisit(compExpr: CompExpr) {
         // Pop expressions to register 1 and 2
         add(
@@ -143,6 +144,45 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.LABEL,
                 InstructionArg(Memory(endLabel), Direct)
+            )
+        )
+    }
+
+    override fun postVisit(arithExpr: ArithExpr) {
+        // Pop expressions to register 1 and 2
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register("1"), Direct),
+                comment = "Pop expression to register 1"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register("2"), Direct),
+                comment = "Pop expression to register 2"
+            )
+        )
+        val arithOperator = when (arithExpr.op) {
+            ArithOp.PLUS -> InstructionType.ADD
+            ArithOp.MINUS -> InstructionType.SUB
+            ArithOp.TIMES -> InstructionType.IMUL
+            ArithOp.DIVIDE -> InstructionType.IDIV
+        }
+        add(
+            Instruction(
+                arithOperator,
+                InstructionArg(Register("1"), Direct),
+                InstructionArg(Register("2"), Direct),
+                comment = "Do arithmatic operation"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Register("2"), Direct),
+                comment = "Push result to stack"
             )
         )
     }
