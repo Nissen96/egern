@@ -10,10 +10,10 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
-        const val LOCAL_VAR_OFFSET = "1"
-        const val RETURN_OFFSET = "-1"
-        const val STATIC_LINK_OFFSET = "-2"
-        const val PARAM_OFFSET = "-3"
+        const val LOCAL_VAR_OFFSET = 1
+        const val RETURN_OFFSET = -1
+        const val STATIC_LINK_OFFSET = -2
+        const val PARAM_OFFSET = -3
     }
 
     private fun add(instruction: Instruction) {
