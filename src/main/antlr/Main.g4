@@ -9,8 +9,8 @@ stmt:   varDecl
     ;
 
 returnStmt: 'return' expr? ';' ;
-funcDecl:   'func' ID '(' paramList ')' funcBody ;
-funcBody:   '{' ( stmt | funcCall )* '}' ;
+funcDecl:   'func' ID '(' paramList ')' '{' funcBody '}' ;
+funcBody:   ( stmt | funcCall ';' )* ;
 funcCall:   ID '(' argList ')' ;
 
 paramList:  (ID ',')* ID? ;
@@ -23,7 +23,7 @@ ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' block
       ;
 
-block:  '{' ( stmt | funcCall )* '}' ;
+block:  '{' ( stmt | funcCall ';' )* '}' ;
 
 expr: intExpr
     | idExpr
