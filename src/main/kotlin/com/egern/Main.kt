@@ -7,6 +7,7 @@ import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
 import com.egern.codegen.CodeGenerationVisitor
 import com.egern.codegen.PreCodeGenerationVisitor
+import com.egern.emit.Emitter
 import com.egern.symbols.SymbolVisitor
 import com.egern.types.TypeCheckingVisitor
 import com.egern.visitor.PrintProgramVisitor
@@ -54,6 +55,11 @@ fun main(args: Array<String>) {
 
     val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.currentTable)
     ast.accept(codeGenVisitor)
+
+    val emitter = Emitter(codeGenVisitor.instructions)
+    val code = emitter.emit()
+
+    print(code.toString())
 }
 
 fun hello(): String {
