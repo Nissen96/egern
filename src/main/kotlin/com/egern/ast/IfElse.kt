@@ -3,6 +3,8 @@ package com.egern.ast
 import com.egern.visitor.Visitor
 
 class IfElse(val expression: Expr, val ifBlock: Block, val elseBlock: Block?) : Statement() {
+    lateinit var elseLabel: String
+    lateinit var endLabel: String
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         expression.accept(visitor)

@@ -200,5 +200,85 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         )
     }
 
+    override fun postVisit(printStmt: PrintStmt) {
+        add(Instruction(InstructionType.META, MetaOperation.CallerSave))
+        add(Instruction(InstructionType.META, MetaOperation.Print))
+        add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
+    }
+
+    override fun postVisit(returnStmt: ReturnStmt) {
+        if (returnStmt.expr != null) {
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(ReturnValue, Direct),
+                    comment = "Pop expression to return value register"
+                )
+            )
+        }
+        add(Instruction(InstructionType.RET))
+    }
+
+    override fun preMidVisit(ifElse: IfElse) {
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register("1"), Direct),
+                comment = "Pop expression to register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue("1"), Direct),
+                InstructionArg(Register("2"), Direct),
+                comment = "Move true to other register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.CMP,
+                InstructionArg(Register("1"), Direct),
+                InstructionArg(Register("2"), Direct),
+                comment = "Compare the expression to true"
+            )
+        )
+        if (ifElse.elseBlock != null) {
+            add(
+                Instruction(
+                    InstructionType.JNE,
+                    InstructionArg(Memory(ifElse.elseLabel), Direct),
+                    comment = "Jump to optional else part"
+                )
+            )
+        }
+    }
+
+    override fun postMidVisit(ifElse: IfElse) {
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(ifElse.endLabel), Direct),
+                comment = "Skip else part if successful"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(ifElse.elseLabel), Direct),
+                comment = "Skip else part if successful"
+            )
+        )
+    }
+
+    override fun postVisit(ifElse: IfElse) {
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(ifElse.endLabel), Direct)
+            )
+        )
+    }
+
     // TODO: Generate code
 }
