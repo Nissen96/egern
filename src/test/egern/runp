@@ -1,1 +1,1 @@
-../../.././gradlew run -p ../../../ --args='-p' < $1
+../../.././gradlew run -p ../../../ --args='-p -q' < $1
