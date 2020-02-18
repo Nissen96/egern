@@ -2,8 +2,15 @@ package com.egern.visitor
 
 import com.egern.ast.*
 import com.egern.symbols.Symbol
+import com.egern.symbols.SymbolTable
 
-class PrintSymbolTableVisitor : Visitor {
+class PrintSymbolTableVisitor(val rootTable: SymbolTable) : Visitor {
+    override fun preVisit(program: Program) {
+        val scope = rootTable.scope
+        val symbol = rootTable.lookup("main")
+        printSymbolLine(symbol, scope - 1)
+    }
+
     override fun preVisit(funcDecl: FuncDecl) {
         val scope = funcDecl.symbolTable.scope
         val symbol = funcDecl.symbolTable.lookup(funcDecl.id)

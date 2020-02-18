@@ -37,6 +37,7 @@ interface Visitor {
 
     fun preVisit(program: Program) {}
     fun midVisit(program: Program) {}
+    fun postVisit(program: Program) {}
 
     fun preVisit(returnStmt: ReturnStmt) {}
     fun postVisit(returnStmt: ReturnStmt) {}

@@ -8,21 +8,34 @@ class SymbolVisitor : Visitor {
     private var variableOffset = 0
     var currentTable = SymbolTable(0, null)
 
-    override fun preVisit(block: Block) {
-        currentScopeLevel++
-        currentTable = SymbolTable(currentScopeLevel, currentTable)
-        block.symbolTable = currentTable
-    }
-
-    override fun postVisit(block: Block) {
+    private fun returnToParentScope() {
         currentScopeLevel--
         currentTable = currentTable.parent!!
     }
 
-    override fun preVisit(funcDecl: FuncDecl) {
-        currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, funcDecl))
+    private fun createNewScope() {
         currentScopeLevel++
         currentTable = SymbolTable(currentScopeLevel, currentTable)
+    }
+
+    override fun preVisit(block: Block) {
+        createNewScope()
+        block.symbolTable = currentTable
+    }
+
+    override fun postVisit(block: Block) {
+        returnToParentScope()
+    }
+
+    override fun preVisit(program: Program) {
+        currentTable.insert("main", Symbol("main", SymbolType.Function, program))
+        createNewScope()
+        variableOffset = 0
+    }
+
+    override fun preVisit(funcDecl: FuncDecl) {
+        currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, funcDecl))
+        createNewScope()
         for (param in funcDecl.params) {
             currentTable.insert(param, Symbol(param, SymbolType.Parameter, null))
         }
@@ -31,8 +44,7 @@ class SymbolVisitor : Visitor {
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
-        currentScopeLevel--
-        currentTable = currentTable.parent!!
+        returnToParentScope()
     }
 
     override fun preVisit(varDecl: VarDecl<*>) {

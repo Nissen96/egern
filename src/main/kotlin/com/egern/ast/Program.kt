@@ -15,5 +15,6 @@ class Program(val funcDecls: List<FuncDecl>, val stmts: List<Statement>, val fun
             call.accept(visitor)
             visitor.midVisit(this)
         }
+        visitor.postVisit(this)
     }
 }

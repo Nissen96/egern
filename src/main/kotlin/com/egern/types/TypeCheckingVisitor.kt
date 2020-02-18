@@ -12,8 +12,6 @@ import java.lang.Exception
 import java.util.*
 
 class TypeCheckingVisitor(var currentTable: SymbolTable) : Visitor {
-    val functionStack = Stack<Int>()
-
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable = funcDecl.symbolTable
     }

@@ -8,6 +8,7 @@ import com.egern.codegen.CodeGenerationVisitor
 import com.egern.symbols.SymbolVisitor
 import com.egern.types.TypeCheckingVisitor
 import com.egern.visitor.PrintProgramVisitor
+import com.egern.visitor.PrintSymbolTableVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
@@ -30,6 +31,12 @@ fun main(args: Array<String>) {
 
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)
+    val rootTable = symbolVisitor.currentTable
+
+    if (doPrint) {
+        val printVisitor = PrintSymbolTableVisitor(rootTable)
+        ast.accept(printVisitor)
+    }
 
     val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable)
     ast.accept(typeCheckingVisitor)
