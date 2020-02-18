@@ -11,7 +11,7 @@ import com.egern.visitor.Visitor
 import java.lang.Exception
 import java.util.*
 
-class TypeCheckingVisitor(var currentTable: SymbolTable) : Visitor {
+class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable = funcDecl.symbolTable
     }

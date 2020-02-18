@@ -27,12 +27,6 @@ class SymbolVisitor : Visitor {
         returnToParentScope()
     }
 
-    override fun preVisit(program: Program) {
-        currentTable.insert("main", Symbol("main", SymbolType.Function, program))
-        createNewScope()
-        variableOffset = 0
-    }
-
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, funcDecl))
         createNewScope()

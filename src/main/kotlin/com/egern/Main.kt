@@ -31,10 +31,9 @@ fun main(args: Array<String>) {
 
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)
-    val rootTable = symbolVisitor.currentTable
 
     if (doPrint) {
-        val printVisitor = PrintSymbolTableVisitor(rootTable)
+        val printVisitor = PrintSymbolTableVisitor()
         ast.accept(printVisitor)
     }
 

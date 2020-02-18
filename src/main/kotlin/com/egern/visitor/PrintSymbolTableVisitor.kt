@@ -3,12 +3,12 @@ package com.egern.visitor
 import com.egern.ast.*
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
+import com.egern.symbols.SymbolType
 
-class PrintSymbolTableVisitor(val rootTable: SymbolTable) : Visitor {
+class PrintSymbolTableVisitor() : Visitor {
     override fun preVisit(program: Program) {
-        val scope = rootTable.scope
-        val symbol = rootTable.lookup("main")
-        printSymbolLine(symbol, scope - 1)
+        val symbol = Symbol("main", SymbolType.Function, null)
+        printSymbolLine(symbol, 0)
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
