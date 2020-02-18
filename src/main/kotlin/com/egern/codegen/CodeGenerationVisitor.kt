@@ -40,7 +40,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun preVisit(program: Program) {
-        add(Instruction(InstructionType.LABEL, InstructionArg(ImmediateLabel("main"), Direct)))
+        add(Instruction(InstructionType.LABEL, InstructionArg(Memory("main"), Direct)))
         //TODO CALLER PROLOGUE?
     }
 
@@ -53,7 +53,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.LABEL,
-                InstructionArg(ImmediateLabel(funcDecl.startLabel), Direct)
+                InstructionArg(Memory(funcDecl.startLabel), Direct)
             )
         )
 
@@ -64,7 +64,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.LABEL,
-                InstructionArg(ImmediateLabel(funcDecl.endLabel), Direct)
+                InstructionArg(Memory(funcDecl.endLabel), Direct)
             )
         )
     }
@@ -75,6 +75,76 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(block: Block) {
         symbolTable = block.symbolTable.parent!!
+    }
+
+    override fun postVisit(compExpr: CompExpr) {
+        // Pop expressions to register 1 and 2
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register("2"), Direct),
+                comment = "Pop expression to register 2"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register("1"), Direct),
+                comment = "Pop expression to register 1"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.CMP,
+                InstructionArg(Register("2"), Direct),
+                InstructionArg(Register("1"), Direct),
+                comment = "Do comparison"
+            )
+        )
+        val trueLabel = LabelGenerator.nextLabel("cmp_true")
+        val endLabel = LabelGenerator.nextLabel("cmp_end");
+        val jumpOperator = when (compExpr.op) {
+            CompOp.EQ -> InstructionType.JE
+            CompOp.NEQ -> InstructionType.JNE
+            CompOp.LT -> InstructionType.JL
+            CompOp.GT -> InstructionType.JG
+            CompOp.LTE -> InstructionType.JLE
+            CompOp.GTE -> InstructionType.JGE
+        }
+        add(Instruction(jumpOperator, InstructionArg(Memory(trueLabel), Direct), comment = "Jump if true"))
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("0"), Direct),
+                comment = "Push false if comparison was false"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(endLabel), Direct),
+                comment = "Skip pushing false if success"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(trueLabel), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("1"), Direct),
+                comment = "Push true if comparison was true"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(endLabel), Direct)
+            )
+        )
     }
 
     // TODO: Generate code

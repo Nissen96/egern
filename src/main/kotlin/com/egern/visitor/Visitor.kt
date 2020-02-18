@@ -12,6 +12,7 @@ interface Visitor {
     fun postVisit(block: Block) {}
 
     fun midVisit(compExpr: CompExpr) {}
+    fun postVisit(compExpr: CompExpr) {}
 
     fun preVisit(funcCall: FuncCall) {}
     fun midVisit(funcCall: FuncCall) {}

@@ -7,5 +7,6 @@ class CompExpr(val lhs: Expr, val rhs: Expr, val op: CompOp) : Expr() {
         lhs.accept(visitor)
         visitor.midVisit(this)
         rhs.accept(visitor)
+        visitor.postVisit(this)
     }
 }
