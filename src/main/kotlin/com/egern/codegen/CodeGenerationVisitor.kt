@@ -20,7 +20,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         instructions.add(instruction)
     }
 
-    fun followStaticLink(diff: Int) {
+    private fun followStaticLink(diff: Int) {
         add(
             Instruction(
                 InstructionType.MOV, InstructionArg(RBP, Direct), InstructionArg(StaticLink, Direct),
@@ -88,7 +88,9 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun visit(idExpr: IdExpr) {
-        // TODO
+        val symbol = symbolTable.lookup(idExpr.id) ?: throw Exception("Symbol ${idExpr.id} is undefined")
+        val scopeDiff = symbolTable.scope - symbol.scope
+        followStaticLink(scopeDiff)
     }
 
     override fun postVisit(compExpr: CompExpr) {
@@ -112,7 +114,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
                 InstructionType.CMP,
                 InstructionArg(Register("2"), Direct),
                 InstructionArg(Register("1"), Direct),
-                comment = "Do comparison"
+                comment = "Compare with ${compExpr.op.value}"
             )
         )
         val trueLabel = LabelGenerator.nextLabel("cmp_true")
