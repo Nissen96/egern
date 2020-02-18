@@ -1,5 +1,25 @@
 package com.egern.codegen
 
-enum class InstructionType {
-    MOV, ADD, SUB, INC, DEC, MUL, IDIV, CMP, JMP, JNE, JE, JG, JGE, JL, JLE, PUSH, POP, CALL, RET, LABEL, META
+enum class InstructionType(val instruction: String?) {
+    MOV("movq"),
+    ADD("addq"),
+    SUB("subq"),
+    INC("incq"),
+    DEC("decq"),
+    IMUL("imulq"),
+    IDIV(null),
+    CMP("cmpq"),
+    JMP("jmp"),
+    JNE("jne"),
+    JE("je"),
+    JG("jg"),
+    JGE("jge"),
+    JL("jl"),
+    JLE("jle"),
+    PUSH("pushq"),
+    POP("popq"),
+    CALL("call"),
+    RET(null),
+    LABEL(null),
+    META(null)
 }
