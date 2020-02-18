@@ -34,7 +34,7 @@ fun main(args: Array<String>) {
     val ast = BuildASTVisitor().visit(cst) as Program
 
     if (doPrint) {
-        val printProgramVisitor = PrintProgramVisitor(4)
+        val printProgramVisitor = PrintProgramVisitor(-1)
         ast.accept(printProgramVisitor)
     }
 

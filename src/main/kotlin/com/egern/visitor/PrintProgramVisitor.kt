@@ -4,9 +4,11 @@ import com.egern.ast.*
 
 class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     private var level = 0
+    private val fib = listOf(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)
 
     private fun printIndented(text: Any) {
-        print(" ".repeat(level * indentation) + "$text")
+        val indent = if (indentation >= 0) indentation * level else fib[level] * 4
+        print(" ".repeat(indent) + "$text")
     }
 
     override fun midVisit(arithExpr: ArithExpr) {
