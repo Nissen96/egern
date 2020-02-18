@@ -1,6 +1,8 @@
-
-> Task :run
-Egern Compiler v0.1.0! Input something + CTRL+D to run
-
-BUILD SUCCESSFUL in 0s
-4 actionable tasks: 1 executed, 3 up-to-date
+var a = 2 + 3;
+var b = 3 - 2;
+var c = 3 * 4;
+var d = 4 / 2;
+print(a);
+print(b);
+print(c);
+print(d);
