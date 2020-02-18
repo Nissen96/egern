@@ -2,12 +2,11 @@ package com.egern.visitor
 
 import com.egern.ast.*
 import com.egern.symbols.Symbol
-import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 
-class PrintSymbolTableVisitor() : Visitor {
+class PrintSymbolTableVisitor : Visitor {
     override fun preVisit(program: Program) {
-        val symbol = Symbol("main", SymbolType.Function, null)
+        val symbol = Symbol("main", SymbolType.Function, 0, null)
         printSymbolLine(symbol, 0)
     }
 

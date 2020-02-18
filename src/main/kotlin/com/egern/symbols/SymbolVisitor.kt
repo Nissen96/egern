@@ -28,10 +28,10 @@ class SymbolVisitor : Visitor {
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
-        currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, funcDecl))
+        currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, currentScopeLevel, funcDecl))
         createNewScope()
         for (param in funcDecl.params) {
-            currentTable.insert(param, Symbol(param, SymbolType.Parameter, null))
+            currentTable.insert(param, Symbol(param, SymbolType.Parameter, currentScopeLevel, null))
         }
         funcDecl.symbolTable = currentTable
         variableOffset = 0
@@ -43,7 +43,7 @@ class SymbolVisitor : Visitor {
 
     override fun preVisit(varDecl: VarDecl<*>) {
         for (id in varDecl.ids) {
-            currentTable.insert(id, Symbol(id, SymbolType.Variable, variableOffset))
+            currentTable.insert(id, Symbol(id, SymbolType.Variable, currentScopeLevel, variableOffset))
         }
         varDecl.symbolTable = currentTable
         variableOffset++
