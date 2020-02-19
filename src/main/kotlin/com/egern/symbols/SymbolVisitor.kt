@@ -50,8 +50,8 @@ class SymbolVisitor : Visitor {
     override fun preVisit(varDecl: VarDecl<*>) {
         for (id in varDecl.ids) {
             currentTable.insert(id, Symbol(id, SymbolType.Variable, currentScopeLevel, varCountStack.peek()))
+            varCountStack.apply { it + 1 }
         }
         varDecl.symbolTable = currentTable
-        varCountStack.apply { +1 }
     }
 }
