@@ -70,6 +70,13 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         )
     }
 
+    override fun postVisit(funcCall: FuncCall) {
+        // TODO: Handle parameters
+        val func = symbolTable.lookup(funcCall.id)!!
+        val decl = func.info as FuncDecl
+        add(Instruction(InstructionType.CALL, InstructionArg(Memory(decl.startLabel), Direct)))
+    }
+
     override fun preVisit(block: Block) {
         symbolTable = block.symbolTable
     }
@@ -287,8 +294,9 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         for (id in varAssign.ids) {
             symbols.add(symbolTable.lookup(id))
         }
+        add(Instruction(InstructionType.POP, InstructionArg(Register(RegisterKind.DataReg), Direct)))
         for (symbol in symbols) {
-
+            // TODO: Move value to all places where symbols are stored
         }
     }
 
