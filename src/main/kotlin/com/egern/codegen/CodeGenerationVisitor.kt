@@ -3,6 +3,7 @@ package com.egern.codegen
 import com.egern.ast.*
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
+import com.egern.symbols.SymbolType
 import com.egern.visitor.Visitor
 
 class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
@@ -38,15 +39,6 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
                 )
             )
         }
-    }
-
-    override fun preVisit(program: Program) {
-        add(Instruction(InstructionType.LABEL, InstructionArg(Memory("main"), Direct)))
-        //TODO CALLER PROLOGUE?
-    }
-
-    override fun postVisit(program: Program) {
-        //TODO CALLER EPILOGUE?
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
@@ -96,9 +88,34 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun visit(idExpr: IdExpr) {
+        // Find static link address for scope containing given id
         val symbol = symbolTable.lookup(idExpr.id) ?: throw Exception("Symbol ${idExpr.id} is undefined")
         val scopeDiff = symbolTable.scope - symbol.scope
         followStaticLink(scopeDiff)
+
+        /*
+        // Find id using its offset in the scope's local variables, offset from static link
+        val symbolOffset = symbol.info as Int
+        val offset = when (symbol.type) {
+            SymbolType.Variable -> symbolOffset + LOCAL_VAR_OFFSET
+            SymbolType.Parameter -> when {
+                symbol.info < 6 -> {
+                    // Handle both local params in registers and 
+                    val numLocalVars = symbolTable.lookup
+                    symbolOffset +
+                }
+                else -> symbolOffset + PARAM_OFFSET
+            }
+            else -> throw Exception("Invalid id ${idExpr.id}")
+        }
+
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(StaticLink, IndirectRelative(offset)),
+                comment = "Push value of ${symbol.type} ${symbolOffset + 1} in scope"
+            )
+        ) */
     }
 
     override fun postVisit(compExpr: CompExpr) {
