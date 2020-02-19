@@ -70,6 +70,12 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         )
     }
 
+    override fun postVisit(funcCall: FuncCall) {
+        val func = symbolTable.lookup(funcCall.id)!!
+        val decl = func.info as FuncDecl
+        add(Instruction(InstructionType.CALL, InstructionArg(Memory(decl.startLabel), Direct)))
+    }
+
     override fun preVisit(block: Block) {
         symbolTable = block.symbolTable
     }
