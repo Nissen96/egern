@@ -7,6 +7,7 @@ class Emitter(private val instructions: List<Instruction>) {
     private val builder = StringBuilder()
 
     companion object {
+        const val VARIABLE_SIZE = 8
         const val ADDRESSING_OFFSET = -8
 
         val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
@@ -38,7 +39,7 @@ class Emitter(private val instructions: List<Instruction>) {
         when {
             instruction.instructionType.instruction != null -> emitSimpleInstruction(instruction)
             instruction.instructionType == InstructionType.LABEL -> emitLabel(instruction)
-            instruction.instructionType == InstructionType.META -> emitMetaOp(instruction.args[0] as MetaOperation)
+            instruction.instructionType == InstructionType.META -> emitMetaOp(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
         }
         // Add comment
@@ -47,15 +48,46 @@ class Emitter(private val instructions: List<Instruction>) {
         }
     }
 
-    private fun emitMetaOp(operation: MetaOperation) {
-        when (operation) {
+    private fun emitMetaOp(instruction: Instruction) {
+        when (instruction.args[0]) {
             MetaOperation.CallerSave -> emitCallerCallee(false, CALLER_SAVE_REGISTERS)
             MetaOperation.CallerRestore -> emitCallerCallee(true, CALLER_SAVE_REGISTERS)
             MetaOperation.CalleeSave -> emitCallerCallee(false, CALLEE_SAVE_REGISTERS)
             MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
             MetaOperation.Print -> emitPrint()
             MetaOperation.ProgramPrologue -> emitProgramPrologue()
+            MetaOperation.CalleePrologue -> emitCalleePrologue()
+            MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
+            MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(instruction.args[1] as MetaOperationArg)
+            MetaOperation.DeallocateStackSpace -> emitDeallocateStackSpace(instruction.args[1] as MetaOperationArg)
         }
+    }
+
+    private fun emitAllocateStackSpace(arg: MetaOperationArg) {
+        addLine(
+            "addq ${(-1) * VARIABLE_SIZE * arg.value}, %rsp",
+            "Move stack pointer to allocate space for local variables"
+        )
+    }
+
+    private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
+        addLine(
+            "addq ${VARIABLE_SIZE * arg.value}, %rsp",
+            "Move stack pointer to deallocate space for local variables"
+        )
+    }
+
+    private fun emitCalleePrologue() {
+        addLine("", "Callee Prologue")
+        addLine("pushq %rbp", "save caller's base pointer")
+        addLine("movq %rsp, %rbp", "make stack pointer new base pointer")
+    }
+
+    private fun emitCalleeEpilogue() {
+        addLine("", "Callee Epilogue")
+        addLine("movq %rbp, %rsp", "Restore stack pointer")
+        addLine("popq %rbp", "Restore base pointer")
+        addLine("ret", "Return from call")
     }
 
     private fun emitProgramPrologue() {
