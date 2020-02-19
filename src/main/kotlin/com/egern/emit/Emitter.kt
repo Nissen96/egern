@@ -163,10 +163,8 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     private fun emitArg(argument: Arg) {
-        when (argument) {
-            is InstructionArg -> emitInstructionArg(argument)
-            else -> throw Exception("Trying to emit an argument that cant be emitted!")
-        }
+        if (argument is InstructionArg) emitInstructionArg(argument)
+        else throw Exception("Trying to emit an argument that cant be emitted!")
     }
 
     private fun emitInstructionArg(argument: InstructionArg) {
