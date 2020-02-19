@@ -1,6 +1,7 @@
 package com.egern.codegen
 
 import com.egern.ast.*
+import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.visitor.Visitor
 
@@ -98,22 +99,22 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register("2"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg2), Direct),
                 comment = "Pop expression to register 2"
             )
         )
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register("1"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg1), Direct),
                 comment = "Pop expression to register 1"
             )
         )
         add(
             Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register("2"), Direct),
-                InstructionArg(Register("1"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg2), Direct),
+                InstructionArg(Register(RegisterKind.OpReg1), Direct),
                 comment = "Compare with ${compExpr.op.value}"
             )
         )
@@ -168,14 +169,14 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register("1"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg1), Direct),
                 comment = "Pop expression to register 1"
             )
         )
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register("2"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg2), Direct),
                 comment = "Pop expression to register 2"
             )
         )
@@ -188,15 +189,15 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 arithOperator,
-                InstructionArg(Register("1"), Direct),
-                InstructionArg(Register("2"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg1), Direct),
+                InstructionArg(Register(RegisterKind.OpReg2), Direct),
                 comment = "Do arithmetic operation"
             )
         )
         add(
             Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Register("2"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg2), Direct),
                 comment = "Push result to stack"
             )
         )
@@ -225,7 +226,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register("1"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg1), Direct),
                 comment = "Pop expression to register"
             )
         )
@@ -233,15 +234,15 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(ImmediateValue("1"), Direct),
-                InstructionArg(Register("2"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg2), Direct),
                 comment = "Move true to other register"
             )
         )
         add(
             Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register("1"), Direct),
-                InstructionArg(Register("2"), Direct),
+                InstructionArg(Register(RegisterKind.OpReg1), Direct),
+                InstructionArg(Register(RegisterKind.OpReg2), Direct),
                 comment = "Compare the expression to true"
             )
         )
@@ -279,6 +280,16 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
                 InstructionArg(Memory(ifElse.endLabel), Direct)
             )
         )
+    }
+
+    override fun postVisit(varAssign: VarAssign<*>) {
+        val symbols = ArrayList<Symbol<*>?>()
+        for (id in varAssign.ids) {
+            symbols.add(symbolTable.lookup(id))
+        }
+        for (symbol in symbols) {
+
+        }
     }
 
     // TODO: Generate code
