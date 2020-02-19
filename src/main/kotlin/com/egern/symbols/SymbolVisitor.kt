@@ -10,12 +10,10 @@ class SymbolVisitor : Visitor {
     var currentTable = SymbolTable(0, null)
 
     private fun returnToParentScope() {
-        currentScopeLevel--
         currentTable = currentTable.parent!!
     }
 
     private fun createNewScope() {
-        currentScopeLevel++
         currentTable = SymbolTable(currentScopeLevel, currentTable)
     }
 
@@ -34,6 +32,7 @@ class SymbolVisitor : Visitor {
 
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable.insert(funcDecl.id, Symbol(funcDecl.id, SymbolType.Function, currentScopeLevel, funcDecl))
+        currentScopeLevel++
         createNewScope()
         for ((paramOffset, param) in funcDecl.params.withIndex()) {
             currentTable.insert(param, Symbol(param, SymbolType.Parameter, currentScopeLevel, paramOffset))
@@ -43,6 +42,7 @@ class SymbolVisitor : Visitor {
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
+        currentScopeLevel--
         returnToParentScope()
         funcDecl.variableCount = varCountStack.pop()!!
     }
