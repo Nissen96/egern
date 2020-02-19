@@ -29,7 +29,7 @@ class Emitter(private val instructions: List<Instruction>) {
     private fun addLine(s: String, comment: String? = null) {
         builder.append(s)
         if (comment != null) {
-            builder.append(" # ")
+            builder.append("\t# ")
             builder.append(comment)
         }
         builder.appendln()
@@ -65,7 +65,7 @@ class Emitter(private val instructions: List<Instruction>) {
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
         addLine(
-            "addq ${(-1) * VARIABLE_SIZE * arg.value}, %rsp",
+            "addq ${-VARIABLE_SIZE * arg.value}, %rsp",
             "Move stack pointer to allocate space for local variables"
         )
     }
@@ -133,9 +133,9 @@ class Emitter(private val instructions: List<Instruction>) {
 
     private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
         val op = if (restore) InstructionType.POP.instruction!! else InstructionType.PUSH.instruction!!
-        addLine("# Caller/Callee Save/Restore")
+        addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
-            addLine("$op %$register")
+            addLine("$op $register")
         }
     }
 
@@ -146,7 +146,7 @@ class Emitter(private val instructions: List<Instruction>) {
 
     private fun emitSimpleInstruction(instruction: Instruction) {
         add(instruction.instructionType.instruction!!)
-        emitArgs(instruction.args);
+        emitArgs(instruction.args)
     }
 
     private fun emitArgs(arguments: Array<out Arg>) {
@@ -172,9 +172,10 @@ class Emitter(private val instructions: List<Instruction>) {
             is ImmediateValue -> "$${argument.instructionTarget.value}"
             is Memory -> argument.instructionTarget.address
             is Register -> when (argument.instructionTarget.register) {
-                RegisterKind.OpReg1 -> "%r12"
-                RegisterKind.OpReg2 -> "%r13"
-                RegisterKind.DataReg -> "%r14"
+                OpReg1 -> "%r12"
+                OpReg2 -> "%r13"
+                DataReg -> "%r14"
+                is ParamReg -> "%${CALLER_SAVE_REGISTERS[argument.instructionTarget.register.paramNum]}"
             }
             RBP -> "%rbp"
             RSP -> "%rsp"

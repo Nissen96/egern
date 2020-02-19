@@ -4,11 +4,13 @@ import com.egern.ast.*
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
+import com.egern.util.*
 import com.egern.visitor.Visitor
+import kotlin.collections.ArrayList
 
-class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
+class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     val instructions = ArrayList<Instruction>()
-
+    private val callStack = stackOf<FuncDecl>()
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
@@ -43,6 +45,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
 
     override fun preVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable
+        callStack.push(funcDecl)
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -54,6 +57,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable.parent!!
+        callStack.pop()
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -87,63 +91,32 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         )
     }
 
-    override fun visit(idExpr: IdExpr) {
-        // Find static link address for scope containing given id
-        val symbol = symbolTable.lookup(idExpr.id) ?: throw Exception("Symbol ${idExpr.id} is undefined")
-        val scopeDiff = symbolTable.scope - symbol.scope
-        followStaticLink(scopeDiff)
-
-        /*
-        // Find id using its offset in the scope's local variables, offset from static link
-        val symbolOffset = symbol.info as Int
-        val offset = when (symbol.type) {
-            SymbolType.Variable -> symbolOffset + LOCAL_VAR_OFFSET
-            SymbolType.Parameter -> when {
-                symbol.info < 6 -> {
-                    // Handle both local params in registers and 
-                    val numLocalVars = symbolTable.lookup
-                    symbolOffset +
-                }
-                else -> symbolOffset + PARAM_OFFSET
-            }
-            else -> throw Exception("Invalid id ${idExpr.id}")
-        }
-
-        add(
-            Instruction(
-                InstructionType.PUSH,
-                InstructionArg(StaticLink, IndirectRelative(offset)),
-                comment = "Push value of ${symbol.type} ${symbolOffset + 1} in scope"
-            )
-        ) */
-    }
-
     override fun postVisit(compExpr: CompExpr) {
         // Pop expressions to register 1 and 2
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(RegisterKind.OpReg2), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Pop expression to register 2"
             )
         )
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(RegisterKind.OpReg1), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Pop expression to register 1"
             )
         )
         add(
             Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register(RegisterKind.OpReg2), Direct),
-                InstructionArg(Register(RegisterKind.OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Compare with ${compExpr.op.value}"
             )
         )
         val trueLabel = LabelGenerator.nextLabel("cmp_true")
-        val endLabel = LabelGenerator.nextLabel("cmp_end");
+        val endLabel = LabelGenerator.nextLabel("cmp_end")
         val jumpOperator = when (compExpr.op) {
             CompOp.EQ -> InstructionType.JE
             CompOp.NEQ -> InstructionType.JNE
@@ -193,14 +166,14 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(RegisterKind.OpReg1), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Pop expression to register 1"
             )
         )
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(RegisterKind.OpReg2), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Pop expression to register 2"
             )
         )
@@ -213,15 +186,15 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 arithOperator,
-                InstructionArg(Register(RegisterKind.OpReg1), Direct),
-                InstructionArg(Register(RegisterKind.OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Do arithmetic operation"
             )
         )
         add(
             Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Register(RegisterKind.OpReg2), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Push result to stack"
             )
         )
@@ -250,7 +223,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(RegisterKind.OpReg1), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Pop expression to register"
             )
         )
@@ -258,15 +231,15 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(ImmediateValue("1"), Direct),
-                InstructionArg(Register(RegisterKind.OpReg2), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Move true to other register"
             )
         )
         add(
             Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register(RegisterKind.OpReg1), Direct),
-                InstructionArg(Register(RegisterKind.OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Compare the expression to true"
             )
         )
@@ -311,7 +284,7 @@ class CodeGenerationVisitor(var symbolTable: SymbolTable) : Visitor {
         for (id in varAssign.ids) {
             symbols.add(symbolTable.lookup(id))
         }
-        add(Instruction(InstructionType.POP, InstructionArg(Register(RegisterKind.DataReg), Direct)))
+        add(Instruction(InstructionType.POP, InstructionArg(Register(DataReg), Direct)))
         for (symbol in symbols) {
             // TODO: Move value to all places where symbols are stored
         }
