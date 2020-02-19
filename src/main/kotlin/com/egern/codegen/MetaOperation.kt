@@ -6,8 +6,6 @@ enum class MetaOperation : Arg {
     CallerRestore,
     CalleeRestore,
     Print,
-    MainCalleeSave,
-    MainCalleeRestore,
     ProgramPrologue,
     CalleePrologue,
     CalleeEpilogue,

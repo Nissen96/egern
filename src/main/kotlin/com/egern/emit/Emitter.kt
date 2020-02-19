@@ -8,6 +8,9 @@ class Emitter(private val instructions: List<Instruction>) {
 
     companion object {
         const val ADDRESSING_OFFSET = -8
+
+        val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
+        val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
     }
 
     fun emit(): StringBuilder {
@@ -22,15 +25,43 @@ class Emitter(private val instructions: List<Instruction>) {
         builder.append(s)
     }
 
+    private fun addLine(s: String) {
+        builder.appendln(s)
+    }
+
     private fun emitInstruction(instruction: Instruction) {
         when {
             instruction.instructionType.instruction != null -> emitSimpleInstruction(instruction)
             instruction.instructionType == InstructionType.LABEL -> emitLabel(instruction)
+            instruction.instructionType == InstructionType.META -> emitMeta(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
         }
         // Add comment
         if (instruction.comment != null) {
             add(" # ${instruction.comment}")
+        }
+    }
+
+    private fun emitMeta(instruction: Instruction) {
+        when {
+            instruction.args[0] is MetaOperation -> emitMetaOp(instruction.args[0] as MetaOperation)
+        }
+    }
+
+    private fun emitMetaOp(operation: MetaOperation) {
+        when (operation) {
+            MetaOperation.CallerSave -> emitCallerCallee(false, CALLER_SAVE_REGISTERS)
+            MetaOperation.CallerRestore -> emitCallerCallee(true, CALLER_SAVE_REGISTERS)
+            MetaOperation.CalleeSave -> emitCallerCallee(false, CALLEE_SAVE_REGISTERS)
+            MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
+        }
+    }
+
+    private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
+        val op = if (restore) InstructionType.POP.instruction!! else InstructionType.PUSH.instruction!!
+        addLine("# Caller/Callee Save/Restore")
+        for (register in if (restore) registers.reversed() else registers) {
+            addLine("$op %$register")
         }
     }
 

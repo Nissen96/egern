@@ -19,7 +19,7 @@ enum class InstructionType(val instruction: String?) {
     PUSH("pushq"),
     POP("popq"),
     CALL("call"),
-    RET(null),
+    RET("ret"),
     LABEL(null),
     META(null)
 }
