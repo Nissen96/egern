@@ -91,6 +91,54 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
     }
 
+    override fun visit(idExpr: IdExpr) {
+        val idLocation = getIdLocation(idExpr.id)
+        println(idLocation)
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                idLocation,
+                comment = "Push value of ${idExpr.id} in scope"
+            )
+        )
+    }
+
+    private fun getIdLocation(id: String): InstructionArg {
+        /**
+         * Get the location of a local variable or parameter from id
+         * The id can be in the current scope or any parent scope of this,
+         * so potentially a number of static links must first be followed to locate the correct stack frame
+         *
+         * For local variables and for the 7th+ parameter, the position is some offset from the static link register
+         * First 6 parameters are for the current scope saved in registers
+         * For any enclosing scope, they have been saved at the top of the relevant stack frame
+         */
+        // Find static link address for scope containing given id
+        val symbol = symbolTable.lookup(id) ?: throw Exception("Symbol $id is undefined")
+        val scopeDiff = symbolTable.scope - symbol.scope
+        val symbolOffset = symbol.info as Int
+
+        // Symbol is a parameter (1-6) in current scope - value is in register
+        if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < 6) {
+            return InstructionArg(Register(ParamReg(symbolOffset)), Direct)
+        }
+
+        // Get base pointer of scope containing symbol and find offset for symbol location
+        followStaticLink(scopeDiff)
+        val containingFunction = callStack.peek(scopeDiff)!!
+        val offset = symbolOffset + when (symbol.type) {
+            SymbolType.Variable -> LOCAL_VAR_OFFSET
+            SymbolType.Parameter -> when {
+                // Param saved by caller after its local variables
+                symbolOffset < 6 -> LOCAL_VAR_OFFSET + containingFunction.variableCount
+                else -> PARAM_OFFSET
+            }
+            else -> throw Exception("Invalid id $id")
+        }
+
+        return InstructionArg(StaticLink, IndirectRelative(offset))
+    }
+
     override fun postVisit(compExpr: CompExpr) {
         // Pop expressions to register 1 and 2
         add(
