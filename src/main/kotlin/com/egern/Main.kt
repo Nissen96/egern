@@ -59,7 +59,9 @@ fun main(args: Array<String>) {
     val emitter = Emitter(codeGenVisitor.instructions)
     val code = emitter.emit()
 
-    print(code.toString())
+    if (!doPrint) {
+        print(code.toString())
+    }
 }
 
 fun hello(): String {

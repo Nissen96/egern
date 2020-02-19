@@ -3,6 +3,7 @@ package com.egern.ast
 import com.egern.visitor.Visitor
 
 class Program(val funcDecls: List<FuncDecl>, val stmts: List<Statement>, val funcCalls: List<FuncCall>) : ASTNode() {
+    var variableCount: Int = 0
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         for (decl in funcDecls) {

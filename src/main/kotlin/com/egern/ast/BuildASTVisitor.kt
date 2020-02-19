@@ -38,6 +38,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitFuncBody(ctx: MainParser.FuncBodyContext): ASTNode {
         return FuncBody(
+            ctx.funcDecl().map { it.accept(this) as FuncDecl },
             ctx.stmt().map { it.accept(this) as Statement },
             ctx.funcCall().map { it.accept(this) as FuncCall }
         )

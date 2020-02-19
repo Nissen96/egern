@@ -5,11 +5,6 @@ import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolType
 
 class PrintSymbolTableVisitor : Visitor {
-    override fun preVisit(program: Program) {
-        val symbol = Symbol("main", SymbolType.Function, 0, null)
-        printSymbolLine(symbol, 0)
-    }
-
     override fun preVisit(funcDecl: FuncDecl) {
         val scope = funcDecl.symbolTable.scope
         val symbol = funcDecl.symbolTable.lookup(funcDecl.id)

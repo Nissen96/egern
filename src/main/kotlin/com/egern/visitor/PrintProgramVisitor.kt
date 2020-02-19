@@ -4,7 +4,7 @@ import com.egern.ast.*
 
 class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     private var level = 0
-    private val fib = listOf(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)
+    private val fib = listOf(0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)
 
     private fun printIndented(text: Any) {
         val indent = if (indentation >= 0) indentation * level else fib[level] * 4
@@ -64,7 +64,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(funcBody: FuncBody) {
-        if (funcBody.funcCalls.isNotEmpty() || funcBody.statements.isNotEmpty()) {
+        if (funcBody.funcCalls.isNotEmpty() || funcBody.statements.isNotEmpty() || funcBody.funcDecls.isNotEmpty()) {
             level--
             printIndented("}")
         } else {
@@ -113,7 +113,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(program: Program) {
-        print("func main() {\n")
+        print("Main Scope {\n")
         level++
     }
 

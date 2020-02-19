@@ -10,7 +10,7 @@ stmt:   varDecl
 
 returnStmt: 'return' expr? ';' ;
 funcDecl:   'func' ID '(' paramList ')' '{' funcBody '}' ;
-funcBody:   ( stmt | funcCall ';' )* ;
+funcBody:   ( stmt | funcDecl | funcCall ';' )* ;
 funcCall:   ID '(' argList ')' ;
 
 paramList:  (ID ',')* ID? ;
