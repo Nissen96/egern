@@ -8,6 +8,9 @@ class Emitter(private val instructions: List<Instruction>) {
 
     companion object {
         const val ADDRESSING_OFFSET = -8
+
+        val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
+        val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
     }
 
     fun emit(): StringBuilder {
@@ -22,15 +25,85 @@ class Emitter(private val instructions: List<Instruction>) {
         builder.append(s)
     }
 
+    private fun addLine(s: String, comment: String? = null) {
+        builder.append(s)
+        if (comment != null) {
+            builder.append(" # ")
+            builder.append(comment)
+        }
+        builder.appendln()
+    }
+
     private fun emitInstruction(instruction: Instruction) {
         when {
             instruction.instructionType.instruction != null -> emitSimpleInstruction(instruction)
             instruction.instructionType == InstructionType.LABEL -> emitLabel(instruction)
+            instruction.instructionType == InstructionType.META -> emitMetaOp(instruction.args[0] as MetaOperation)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
         }
         // Add comment
         if (instruction.comment != null) {
             add(" # ${instruction.comment}")
+        }
+    }
+
+    private fun emitMetaOp(operation: MetaOperation) {
+        when (operation) {
+            MetaOperation.CallerSave -> emitCallerCallee(false, CALLER_SAVE_REGISTERS)
+            MetaOperation.CallerRestore -> emitCallerCallee(true, CALLER_SAVE_REGISTERS)
+            MetaOperation.CalleeSave -> emitCallerCallee(false, CALLEE_SAVE_REGISTERS)
+            MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
+            MetaOperation.Print -> emitPrint()
+            MetaOperation.ProgramPrologue -> emitProgramPrologue()
+        }
+    }
+
+    private fun emitProgramPrologue() {
+        addLine("")
+        addLine(".data")
+        addLine("")
+        addLine("form:")
+        addLine(".string '%d\\n'", "form string for C printf")
+        addLine("")
+        addLine(".text")
+        addLine("")
+        addLine(".globl main")
+        addLine("")
+    }
+
+    // Stjålet fra Kim
+    private fun emitPrint() {
+        addLine("", " # PRINTING USING PRINTF")
+        addLine("movq \$form, %rdi", "pass 1. argument in %rdi")
+        addLine(
+            "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
+            "pass 2. argument in %rsi"
+        )
+        addLine("movq $0, %rax", "no floating point registers used")
+        addLine("movq %rsp, %rcx", "saving stack pointer for change check")
+        addLine("andq $-16, %rsp", "aligning stack pointer for call")
+        addLine("movq $0, %rbx", "preparing check indicator")
+        addLine("cmpq %rsp, %rcx", "checking for alignment change")
+        var label = LabelGenerator.nextLabel("aligned")
+        addLine("je $label", "jump if correctly aligned")
+        addLine("incq %rbx", "it was not aligned, indicate by '1'")
+        addLine("$label:")
+        addLine("pushq %rbx", "pushing 0/1 on the stack")
+        addLine("call printf", "call function printf")
+        addLine("popq %rbx", "get alignment indicator")
+        addLine("cmpq $0, %rbx", "checking for alignment change")
+        label = LabelGenerator.nextLabel("aligned")
+        addLine("je $label", "jump if correctly aligned")
+        addLine("addq $8, %rsp", "revert earlier alignment change")
+        addLine("$label:")
+        addLine("addq $8, %rsp", "remove printed expression from stack")
+    }
+
+    private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
+        val op = if (restore) InstructionType.POP.instruction!! else InstructionType.PUSH.instruction!!
+        addLine("# Caller/Callee Save/Restore")
+        for (register in if (restore) registers.reversed() else registers) {
+            addLine("$op %$register")
         }
     }
 
