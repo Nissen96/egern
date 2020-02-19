@@ -50,7 +50,7 @@ class Emitter(private val instructions: List<Instruction>) {
             emitArg(arguments[0])
         }
         if (arguments.size > 1) {
-            for (arg in arguments.slice(1..arguments.size)) {
+            for (arg in arguments.slice(1 until arguments.size)) {
                 add(", ")
                 emitArg(arg)
             }
