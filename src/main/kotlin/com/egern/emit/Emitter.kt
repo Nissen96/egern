@@ -68,7 +68,11 @@ class Emitter(private val instructions: List<Instruction>) {
         val target = when (argument.instructionTarget) {
             is ImmediateValue -> "$${argument.instructionTarget.value}"
             is Memory -> argument.instructionTarget.address
-            is Register -> TODO()
+            is Register -> when (argument.instructionTarget.register) {
+                RegisterKind.OpReg1 -> "%r12"
+                RegisterKind.OpReg2 -> "%r13"
+                RegisterKind.DataReg -> "%r14"
+            }
             RBP -> "%rbp"
             RSP -> "%rsp"
             ReturnValue -> "%rax"
