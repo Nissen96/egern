@@ -5,6 +5,7 @@ import com.egern.visitor.Visitor
 
 class FuncDecl(val id: String, val params: List<String>, private val funcBody: FuncBody) : ASTNode(), Scopable {
     override lateinit var symbolTable: SymbolTable
+    var variableCount: Int = 0
     lateinit var startLabel: String
     lateinit var endLabel: String
 

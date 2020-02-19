@@ -5,7 +5,7 @@ import com.egern.visitor.Visitor
 
 class SymbolVisitor : Visitor {
     private var currentScopeLevel = 0
-    private var variableOffset = 0
+    private var currentFunc: FuncDecl? = null
     var currentTable = SymbolTable(0, null)
 
     private fun returnToParentScope() {
@@ -34,7 +34,7 @@ class SymbolVisitor : Visitor {
             currentTable.insert(param, Symbol(param, SymbolType.Parameter, currentScopeLevel, paramOffset))
         }
         funcDecl.symbolTable = currentTable
-        variableOffset = 0
+        currentFunc = funcDecl
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
@@ -43,9 +43,9 @@ class SymbolVisitor : Visitor {
 
     override fun preVisit(varDecl: VarDecl<*>) {
         for (id in varDecl.ids) {
-            currentTable.insert(id, Symbol(id, SymbolType.Variable, currentScopeLevel, variableOffset))
+            currentTable.insert(id, Symbol(id, SymbolType.Variable, currentScopeLevel, currentFunc!!.variableCount))
         }
         varDecl.symbolTable = currentTable
-        variableOffset++
+        currentFunc!!.variableCount++
     }
 }

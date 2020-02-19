@@ -105,7 +105,7 @@ class Emitter(private val instructions: List<Instruction>) {
 
     // Stjålet fra Kim
     private fun emitPrint() {
-        addLine("", " # PRINTING USING PRINTF")
+        addLine("", "PRINTING USING PRINTF")
         addLine("movq \$form, %rdi", "pass 1. argument in %rdi")
         addLine(
             "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
