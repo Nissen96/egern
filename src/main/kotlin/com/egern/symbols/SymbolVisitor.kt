@@ -1,12 +1,12 @@
 package com.egern.symbols
 
 import com.egern.ast.*
+import com.egern.util.*
 import com.egern.visitor.Visitor
-import java.util.*
 
 class SymbolVisitor : Visitor {
     private var currentScopeLevel = 0
-    private var varCountStack = Stack<Int>()
+    private var varCountStack = stackOf(0)
     var currentTable = SymbolTable(0, null)
 
     private fun returnToParentScope() {
@@ -19,12 +19,8 @@ class SymbolVisitor : Visitor {
         currentTable = SymbolTable(currentScopeLevel, currentTable)
     }
 
-    override fun preVisit(program: Program) {
-        varCountStack.push(0)
-    }
-
     override fun postVisit(program: Program) {
-        program.variableCount = varCountStack.pop()
+        program.variableCount = varCountStack.pop()!!
     }
 
     override fun preVisit(block: Block) {
@@ -48,7 +44,7 @@ class SymbolVisitor : Visitor {
 
     override fun postVisit(funcDecl: FuncDecl) {
         returnToParentScope()
-        funcDecl.variableCount = varCountStack.pop()
+        funcDecl.variableCount = varCountStack.pop()!!
     }
 
     override fun preVisit(varDecl: VarDecl<*>) {
@@ -56,6 +52,6 @@ class SymbolVisitor : Visitor {
             currentTable.insert(id, Symbol(id, SymbolType.Variable, currentScopeLevel, varCountStack.peek()))
         }
         varDecl.symbolTable = currentTable
-        varCountStack[0]++
+        varCountStack.apply { +1 }
     }
 }
