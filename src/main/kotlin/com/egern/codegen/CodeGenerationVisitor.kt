@@ -45,6 +45,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun preVisit(program: Program) {
         numVariablesStack.push(program.variableCount)
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateStackSpace,
+                MetaOperationArg(program.variableCount)
+            )
+        )
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
@@ -56,7 +63,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 InstructionArg(Memory(funcDecl.startLabel), Direct)
             )
         )
-
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateStackSpace,
+                MetaOperationArg(funcDecl.variableCount)
+            )
+        )
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
