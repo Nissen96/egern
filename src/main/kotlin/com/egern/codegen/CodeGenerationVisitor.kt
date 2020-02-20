@@ -10,7 +10,7 @@ import kotlin.collections.ArrayList
 
 class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     val instructions = ArrayList<Instruction>()
-    private val callStack = stackOf<FuncDecl>()
+    private val numVariablesStack = stackOf<Int>()
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
@@ -43,9 +43,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         }
     }
 
+    override fun preVisit(program: Program) {
+        numVariablesStack.push(program.variableCount)
+    }
+
     override fun preVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable
-        callStack.push(funcDecl)
+        numVariablesStack.push(funcDecl.variableCount)
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -57,7 +61,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable.parent!!
-        callStack.pop()
+        numVariablesStack.pop()
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -93,7 +97,6 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun visit(idExpr: IdExpr) {
         val idLocation = getIdLocation(idExpr.id)
-        println(idLocation)
         add(
             Instruction(
                 InstructionType.PUSH,
@@ -125,12 +128,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
         // Get base pointer of scope containing symbol and find offset for symbol location
         followStaticLink(scopeDiff)
-        val containingFunction = callStack.peek(scopeDiff)!!
+        val containerNumVariables = numVariablesStack.peek(scopeDiff)!!
         val offset = symbolOffset + when (symbol.type) {
             SymbolType.Variable -> LOCAL_VAR_OFFSET
             SymbolType.Parameter -> when {
                 // Param saved by caller after its local variables
-                symbolOffset < 6 -> LOCAL_VAR_OFFSET + containingFunction.variableCount
+                symbolOffset < 6 -> LOCAL_VAR_OFFSET + containerNumVariables
                 else -> PARAM_OFFSET
             }
             else -> throw Exception("Invalid id $id")
