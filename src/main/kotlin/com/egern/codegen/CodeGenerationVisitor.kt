@@ -331,15 +331,19 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(varAssign: VarAssign<*>) {
-        val symbols = ArrayList<Symbol<*>?>()
-        for (id in varAssign.ids) {
-            symbols.add(symbolTable.lookup(id))
-        }
-        add(Instruction(InstructionType.POP, InstructionArg(Register(DataReg), Direct)))
+        // Find each variable/parameter location and set their value to the expression result
+        add(Instruction(InstructionType.POP, InstructionArg(Register(DataReg), Direct), comment = "Expression result"))
+        val symbols = varAssign.ids.map { symbolTable.lookup(it)!! }
         for (symbol in symbols) {
-            // TODO: Move value to all places where symbols are stored
+            val idLocation = getIdLocation(symbol.id)
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(DataReg), Direct),
+                    idLocation,
+                    comment = "Set value of ${symbol.type.toString().toLowerCase()} ${symbol.id} to expression result"
+                )
+            )
         }
     }
-
-    // TODO: Generate code
 }
