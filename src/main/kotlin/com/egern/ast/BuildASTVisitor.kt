@@ -7,9 +7,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
         return Program(
-            ctx.funcDecl().map { it.accept(this) as FuncDecl },
-            ctx.stmt().map { it.accept(this) as Statement },
-            ctx.funcCall().map { it.accept(this) as FuncCall }
+            ctx.children?.map { it.accept(this) } ?: emptyList()
         )
     }
 
@@ -38,9 +36,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitFuncBody(ctx: MainParser.FuncBodyContext): ASTNode {
         return FuncBody(
-            ctx.funcDecl().map { it.accept(this) as FuncDecl },
-            ctx.stmt().map { it.accept(this) as Statement },
-            ctx.funcCall().map { it.accept(this) as FuncCall }
+            ctx.children?.map { it.accept(this) } ?: emptyList()
         )
     }
 
@@ -66,8 +62,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitBlock(ctx: MainParser.BlockContext): ASTNode {
         return Block(
-            ctx.stmt().map { it.accept(this) as Statement },
-            ctx.funcCall().map { it.accept(this) as FuncCall }
+            ctx.children?.map { it.accept(this) } ?: emptyList()
         )
     }
 

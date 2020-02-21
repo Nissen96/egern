@@ -6,7 +6,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     private var level = 0
     private val fib = listOf(0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)
 
-    private fun printIndented(text: Any) {
+    private fun printIndented(text: Any = "") {
         val indent = if (indentation >= 0) indentation * level else fib[level] * 4
         print(" ".repeat(indent) + "$text")
     }
@@ -17,14 +17,22 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun preVisit(block: Block) {
         print("{")
-        if (block.funcCalls.isNotEmpty() || block.statements.isNotEmpty()) {
+        if (block.children.isNotEmpty()) {
             println()
             level++
         }
     }
 
+    override fun preMidVisit(block: Block) {
+        printIndented()
+    }
+
+    override fun postMidVisit(block: Block) {
+        println(";")
+    }
+
     override fun postVisit(block: Block) {
-        if (block.funcCalls.isNotEmpty() || block.statements.isNotEmpty()) {
+        if (block.children.isNotEmpty()) {
             level--
             printIndented("}")
         } else {
@@ -34,6 +42,30 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun midVisit(compExpr: CompExpr) {
         print(" ${compExpr.op.value} ")
+    }
+
+    override fun preVisit(funcBody: FuncBody) {
+        if (funcBody.children.isNotEmpty()) {
+            println()
+            level++
+        }
+    }
+
+    override fun preMidVisit(funcBody: FuncBody) {
+        printIndented()
+    }
+
+    override fun postMidVisit(funcBody: FuncBody) {
+        println(";")
+    }
+
+    override fun postVisit(funcBody: FuncBody) {
+        if (funcBody.children.isNotEmpty()) {
+            level--
+            printIndented("}")
+        } else {
+            print("}")
+        }
     }
 
     override fun preVisit(funcCall: FuncCall) {
@@ -54,22 +86,6 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun postVisit(funcDecl: FuncDecl) {
         println()
-    }
-
-    override fun preVisit(funcBody: FuncBody) {
-        if (funcBody.funcCalls.isNotEmpty() || funcBody.statements.isNotEmpty()) {
-            println()
-            level++
-        }
-    }
-
-    override fun postVisit(funcBody: FuncBody) {
-        if (funcBody.funcCalls.isNotEmpty() || funcBody.statements.isNotEmpty() || funcBody.funcDecls.isNotEmpty()) {
-            level--
-            printIndented("}")
-        } else {
-            print("}")
-        }
     }
 
     override fun visit(idExpr: IdExpr) {
@@ -109,21 +125,33 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(printStmt: PrintStmt) {
-        print(");\n")
+        println(");")
     }
 
     override fun preVisit(program: Program) {
-        print("Main Scope {\n")
-        level++
+        print("Main Scope {")
+        if (program.children.isNotEmpty()) {
+            println()
+            level++
+        }
+    }
+
+    override fun preMidVisit(program: Program) {
+        printIndented()
+    }
+
+    override fun postMidVisit(program: Program) {
+        println(";")
     }
 
     override fun postVisit(program: Program) {
-        level--
-        print("}\n")
-    }
-
-    override fun midVisit(program: Program) {
-        print(";\n")
+        if (program.children.isNotEmpty()) {
+            level--
+            printIndented("}")
+        } else {
+            print("}")
+        }
+        println()
     }
 
     override fun preVisit(returnStmt: ReturnStmt) {
@@ -140,7 +168,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(varAssign: VarAssign<*>) {
-        print(";\n")
+        println(";")
     }
 
     override fun preVisit(varDecl: VarDecl<*>) {
@@ -148,6 +176,6 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(varDecl: VarDecl<*>) {
-        print(";\n")
+        println(";")
     }
 }

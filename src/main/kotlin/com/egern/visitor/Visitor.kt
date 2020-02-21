@@ -6,14 +6,18 @@ interface Visitor {
     fun midVisit(arithExpr: ArithExpr) {}
     fun postVisit(arithExpr: ArithExpr) {}
 
-    fun preVisit(funcBody: FuncBody) {}
-    fun postVisit(funcBody: FuncBody) {}
-
     fun preVisit(block: Block) {}
+    fun preMidVisit(block: Block) {}
+    fun postMidVisit(block: Block) {}
     fun postVisit(block: Block) {}
 
     fun midVisit(compExpr: CompExpr) {}
     fun postVisit(compExpr: CompExpr) {}
+
+    fun preVisit(funcBody: FuncBody) {}
+    fun preMidVisit(funcBody: FuncBody) {}
+    fun postMidVisit(funcBody: FuncBody) {}
+    fun postVisit(funcBody: FuncBody) {}
 
     fun preVisit(funcCall: FuncCall) {}
     fun midVisit(funcCall: FuncCall) {}
@@ -38,7 +42,8 @@ interface Visitor {
     fun postVisit(printStmt: PrintStmt) {}
 
     fun preVisit(program: Program) {}
-    fun midVisit(program: Program) {}
+    fun preMidVisit(program: Program) {}
+    fun postMidVisit(program: Program) {}
     fun postVisit(program: Program) {}
 
     fun preVisit(returnStmt: ReturnStmt) {}

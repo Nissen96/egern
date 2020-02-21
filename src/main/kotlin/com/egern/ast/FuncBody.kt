@@ -2,18 +2,20 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class FuncBody(val funcDecls: List<FuncDecl>, val statements: List<Statement>, val funcCalls: List<FuncCall>) :
+class FuncBody(val children: List<ASTNode>) :
     ASTNode() {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        for (statement in statements) {
-            statement.accept(visitor)
-        }
-        for (funcCall in funcCalls) {
-            funcCall.accept(visitor)
-        }
-        for (funcDecl in funcDecls) {
-            funcDecl.accept(visitor)
+        children.forEach {
+            when (it) {
+                is FuncDecl -> it.accept(visitor)
+                is Statement -> it.accept(visitor)
+                is FuncCall -> {
+                    visitor.preMidVisit(this)
+                    it.accept(visitor)
+                    visitor.postMidVisit(this)
+                }
+            }
         }
         visitor.postVisit(this)
     }
