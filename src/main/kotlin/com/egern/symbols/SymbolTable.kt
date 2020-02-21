@@ -1,5 +1,6 @@
 package com.egern.symbols
 
+import com.egern.error.ErrorLogger
 import java.lang.Exception
 
 class SymbolTable(val scope: Int, val parent: SymbolTable?) {
@@ -7,7 +8,7 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
 
     fun insert(id: String, sym: Symbol<*>) {
         if (id in symbols) {
-            throw Exception("Symbol $id of type ${symbols[id]?.type} has already been declared!")
+            ErrorLogger.log(Exception("Symbol $id of type ${symbols[id]?.type} has already been declared!"))
         }
         symbols[id] = sym
     }

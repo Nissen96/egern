@@ -4,6 +4,7 @@ import com.egern.ast.FuncCall
 import com.egern.ast.FuncDecl
 import com.egern.ast.IdExpr
 import com.egern.ast.VarAssign
+import com.egern.error.ErrorLogger
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
@@ -23,7 +24,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     private fun lookupSymbol(id: String, validTypes: List<SymbolType>): Symbol<*> {
         val sym = currentTable.lookup(id) ?: throw Exception("Symbol '$id' not defined")
         if (sym.type !in validTypes) {
-            throw Exception("Symbol '$id' should be one of types $validTypes but is not")
+            ErrorLogger.log(Exception("Symbol '$id' should be one of types $validTypes but is not"))
         }
         return sym
     }
@@ -33,7 +34,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         val nArgs = funcCall.args.size
         val nParams = (sym.info as FuncDecl).params.size
         if (nArgs != nParams) {
-            throw Exception("Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected")
+            ErrorLogger.log(Exception("Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected"))
         }
     }
 

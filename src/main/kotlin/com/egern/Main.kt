@@ -8,12 +8,14 @@ import com.egern.ast.Program
 import com.egern.codegen.CodeGenerationVisitor
 import com.egern.codegen.PreCodeGenerationVisitor
 import com.egern.emit.Emitter
+import com.egern.error.ErrorLogger
 import com.egern.symbols.SymbolVisitor
 import com.egern.types.TypeCheckingVisitor
 import com.egern.visitor.PrintProgramVisitor
 import com.egern.visitor.PrintSymbolTableVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import java.lang.Exception
 
 fun main(args: Array<String>) {
     val quiet = "-q" !in args
@@ -59,7 +61,10 @@ fun main(args: Array<String>) {
     val emitter = Emitter(codeGenVisitor.instructions)
     val code = emitter.emit()
 
-    if (!doPrint) {
+    if (ErrorLogger.hasErrors()) {
+        ErrorLogger.print()
+        throw Exception("One or more errors occurred while compiling")
+    } else if (!doPrint) {
         print(code.toString())
     }
 }
