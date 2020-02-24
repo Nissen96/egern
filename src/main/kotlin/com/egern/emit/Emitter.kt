@@ -58,7 +58,6 @@ class Emitter(private val instructions: List<Instruction>) {
             MetaOperation.CalleeSave -> emitCallerCallee(false, CALLEE_SAVE_REGISTERS)
             MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
             MetaOperation.Print -> emitPrint()
-            MetaOperation.ProgramPrologue -> emitProgramPrologue()
             MetaOperation.CalleePrologue -> emitCalleePrologue()
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(instruction.args[1] as MetaOperationArg)
