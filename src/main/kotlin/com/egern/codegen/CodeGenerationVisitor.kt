@@ -7,6 +7,7 @@ import com.egern.symbols.SymbolType
 import com.egern.util.*
 import com.egern.visitor.Visitor
 import kotlin.collections.ArrayList
+import kotlin.math.max
 
 class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     val instructions = ArrayList<Instruction>()
@@ -18,6 +19,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         const val RETURN_OFFSET = -1
         const val STATIC_LINK_OFFSET = -2
         const val PARAM_OFFSET = -3
+
+        const val PARAMS_IN_REGISTERS = 6
     }
 
     private fun add(instruction: Instruction) {
@@ -112,7 +115,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         val func = symbolTable.lookup(funcCall.id)!!
         val decl = func.info as FuncDecl
         val scopeDiff = symbolTable.scope - decl.symbolTable.scope
-        for (arg in funcCall.args.take(6)) {
+        for (arg in funcCall.args.take(PARAMS_IN_REGISTERS)) {
             val index = funcCall.args.indexOf(arg)
             add(
                 Instruction(
@@ -134,6 +137,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             add(Instruction(InstructionType.PUSH, InstructionArg(StaticLink, IndirectRelative(STATIC_LINK_OFFSET))))
         }
         add(Instruction(InstructionType.CALL, InstructionArg(Memory(decl.startLabel), Direct)))
+        val parametersOnStack = max(funcCall.args.size - PARAMS_IN_REGISTERS, 0)
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.DeallocateStackSpace,
+                MetaOperationArg(parametersOnStack + 1)
+            )
+        )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
         // Push return value to stack as FuncCall can be used as an expression
         add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct)))
@@ -184,19 +195,19 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         val symbolOffset = symbol.info as Int
 
         // Symbol is a parameter (1-6) in current scope - value is in register
-        if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < 6) {
+        if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {
             return InstructionArg(Register(ParamReg(symbolOffset)), Direct)
         }
 
         // Get base pointer of scope containing symbol and find offset for symbol location
         followStaticLink(scopeDiff)
         val containerNumVariables = numVariablesStack.peek(scopeDiff)!!
-        val offset = symbolOffset + when (symbol.type) {
-            SymbolType.Variable -> LOCAL_VAR_OFFSET
+        val offset = when (symbol.type) {
+            SymbolType.Variable -> symbolOffset + LOCAL_VAR_OFFSET
             SymbolType.Parameter -> when {
                 // Param saved by caller after its local variables
-                symbolOffset < 6 -> LOCAL_VAR_OFFSET + containerNumVariables
-                else -> PARAM_OFFSET
+                symbolOffset < PARAMS_IN_REGISTERS -> symbolOffset + LOCAL_VAR_OFFSET + containerNumVariables
+                else -> PARAM_OFFSET - PARAMS_IN_REGISTERS // TOTAL SYMBOLS - offset - 1
             }
             else -> throw Exception("Invalid id $id")
         }
