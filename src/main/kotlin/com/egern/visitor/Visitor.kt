@@ -42,8 +42,9 @@ interface Visitor {
     fun postVisit(printStmt: PrintStmt) {}
 
     fun preVisit(program: Program) {}
-    fun preMidVisit(program: Program) {}
-    fun postMidVisit(program: Program) {}
+    fun preFuncCallVisit(program: Program) {}
+    fun postFuncCallVisit(program: Program) {}
+    fun midVisit(program: Program) {}
     fun postVisit(program: Program) {}
 
     fun preVisit(returnStmt: ReturnStmt) {}

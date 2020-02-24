@@ -10,12 +10,13 @@ class Program(val children: List<ASTNode>) : ASTNode() {
             when (it) {
                 is Statement -> it.accept(visitor)
                 is FuncCall -> {
-                    visitor.preMidVisit(this)
+                    visitor.preFuncCallVisit(this)
                     it.accept(visitor)
-                    visitor.postMidVisit(this)
+                    visitor.postFuncCallVisit(this)
                 }
             }
         }
+        visitor.midVisit(this)
         children.forEach {
             when (it) {
                 is FuncDecl -> it.accept(visitor)

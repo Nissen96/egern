@@ -47,9 +47,33 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         numVariablesStack.push(program.variableCount)
         add(
             Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory("main"), Direct)
+            )
+        )
+        add(
+            Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateStackSpace,
                 MetaOperationArg(program.variableCount)
+            )
+        )
+    }
+
+    override fun midVisit(program: Program) {
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory("main_end"), Direct)
+            )
+        )
+    }
+
+    override fun postVisit(program: Program) {
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory("main_end"), Direct)
             )
         )
     }

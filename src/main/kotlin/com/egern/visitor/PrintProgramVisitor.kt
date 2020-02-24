@@ -136,11 +136,11 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         }
     }
 
-    override fun preMidVisit(program: Program) {
+    override fun preFuncCallVisit(program: Program) {
         printIndented()
     }
 
-    override fun postMidVisit(program: Program) {
+    override fun postFuncCallVisit(program: Program) {
         println(";")
     }
 
