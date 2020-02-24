@@ -1,7 +1,6 @@
 package com.egern.codegen
 
 import com.egern.ast.*
-import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.util.*
@@ -11,7 +10,7 @@ import kotlin.math.max
 
 class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     val instructions = ArrayList<Instruction>()
-    private val numVariablesStack = stackOf<Int>()
+    private val functionStack = stackOf<FuncDecl>()
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
@@ -47,7 +46,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun preVisit(program: Program) {
-        numVariablesStack.push(program.variableCount)
+        functionStack.push(null)
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -83,7 +82,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun preVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable
-        numVariablesStack.push(funcDecl.variableCount)
+        functionStack.push(funcDecl)
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -101,7 +100,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable.parent!!
-        numVariablesStack.pop()
+        functionStack.pop()
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -201,13 +200,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
         // Get base pointer of scope containing symbol and find offset for symbol location
         followStaticLink(scopeDiff)
-        val containerNumVariables = numVariablesStack.peek(scopeDiff)!!
+        val container = functionStack.peek(scopeDiff)
         val offset = when (symbol.type) {
             SymbolType.Variable -> symbolOffset + LOCAL_VAR_OFFSET
             SymbolType.Parameter -> when {
                 // Param saved by caller after its local variables
-                symbolOffset < PARAMS_IN_REGISTERS -> symbolOffset + LOCAL_VAR_OFFSET + containerNumVariables
-                else -> PARAM_OFFSET - PARAMS_IN_REGISTERS // TOTAL SYMBOLS - offset - 1
+                symbolOffset < PARAMS_IN_REGISTERS -> symbolOffset + LOCAL_VAR_OFFSET + container!!.variableCount
+                // Calculate offset for params on stack (in non-reversed order)
+                else -> PARAM_OFFSET + container!!.params.size - symbolOffset - 1
             }
             else -> throw Exception("Invalid id $id")
         }
