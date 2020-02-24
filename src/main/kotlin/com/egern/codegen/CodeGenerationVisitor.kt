@@ -84,8 +84,10 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(funcCall: FuncCall) {
+        add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         val func = symbolTable.lookup(funcCall.id)!!
         val decl = func.info as FuncDecl
+        val scopeDiff = symbolTable.scope - decl.symbolTable.scope
         for (arg in funcCall.args.take(6)) {
             val index = funcCall.args.indexOf(arg)
             add(
@@ -96,7 +98,21 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 )
             )
         }
+        if (scopeDiff < 0) {
+            // Call is in nested func declaration
+            add(Instruction(InstructionType.PUSH, InstructionArg(RBP, Direct)))
+        } else {
+            // Call is recursive or outwards
+            followStaticLink(scopeDiff)
+            // Find static link in parent
+            // Follow static link is always 1 scope short of the scope we need when considering functions
+            // We compare with the scope level of another function which is nested by at least 1
+            add(Instruction(InstructionType.PUSH, InstructionArg(StaticLink, IndirectRelative(STATIC_LINK_OFFSET))))
+        }
         add(Instruction(InstructionType.CALL, InstructionArg(Memory(decl.startLabel), Direct)))
+        add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
+        // Push return value to stack as FuncCall can be used as an expression
+        add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct)))
     }
 
     override fun preVisit(block: Block) {
