@@ -84,9 +84,18 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(funcCall: FuncCall) {
-        // TODO: Handle parameters
         val func = symbolTable.lookup(funcCall.id)!!
         val decl = func.info as FuncDecl
+        for (arg in funcCall.args.take(6)) {
+            val index = funcCall.args.indexOf(arg)
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(ParamReg(index)), Direct),
+                    comment = "Pop expression to param register $index"
+                )
+            )
+        }
         add(Instruction(InstructionType.CALL, InstructionArg(Memory(decl.startLabel), Direct)))
     }
 
