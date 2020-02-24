@@ -8,13 +8,17 @@ class FuncBody(val children: List<ASTNode>) :
         visitor.preVisit(this)
         children.forEach {
             when (it) {
-                is FuncDecl -> it.accept(visitor)
                 is Statement -> it.accept(visitor)
                 is FuncCall -> {
                     visitor.preMidVisit(this)
                     it.accept(visitor)
                     visitor.postMidVisit(this)
                 }
+            }
+        }
+        children.forEach {
+            when (it) {
+                is FuncDecl -> it.accept(visitor)
             }
         }
         visitor.postVisit(this)
