@@ -15,6 +15,7 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     fun emit(): StringBuilder {
+        emitProgramPrologue()
         for (instruction in instructions) {
             emitInstruction(instruction)
             builder.appendln()
@@ -36,10 +37,12 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     private fun emitInstruction(instruction: Instruction) {
+        val type = instruction.instructionType
         when {
-            instruction.instructionType.instruction != null -> emitSimpleInstruction(instruction)
-            instruction.instructionType == InstructionType.LABEL -> emitLabel(instruction)
-            instruction.instructionType == InstructionType.META -> emitMetaOp(instruction)
+            type == InstructionType.IDIV -> emitDivision(instruction)
+            type.instruction != null -> emitSimpleInstruction(instruction)
+            type == InstructionType.LABEL -> emitLabel(instruction)
+            type == InstructionType.META -> emitMetaOp(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
         }
         // Add comment
@@ -65,16 +68,29 @@ class Emitter(private val instructions: List<Instruction>) {
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
         addLine(
-            "addq ${-VARIABLE_SIZE * arg.value}, %rsp",
+            "addq $${-VARIABLE_SIZE * arg.value}, %rsp",
             "Move stack pointer to allocate space for local variables"
         )
     }
 
     private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
         addLine(
-            "addq ${VARIABLE_SIZE * arg.value}, %rsp",
+            "addq $${VARIABLE_SIZE * arg.value}, %rsp",
             "Move stack pointer to deallocate space for local variables"
         )
+    }
+
+    private fun emitDivision(inst: Instruction) {
+        add("movq ")
+        emitArg(inst.args[0])
+        addLine(", %rax", "Setup dividend")
+        addLine("cqo", "Sign extend into %rdx")
+        add("idiv ")
+        emitArg(inst.args[1])
+        addLine("", "Divide")
+        add("movq %rax, ")
+        emitArg(inst.args[0])
+        addLine("", "Move resulting quotient")
     }
 
     private fun emitCalleePrologue() {
@@ -95,7 +111,7 @@ class Emitter(private val instructions: List<Instruction>) {
         addLine(".data")
         addLine("")
         addLine("form:")
-        addLine(".string '%d\\n'", "form string for C printf")
+        addLine(".string \"%d\\n\"", "form string for C printf")
         addLine("")
         addLine(".text")
         addLine("")
@@ -135,12 +151,12 @@ class Emitter(private val instructions: List<Instruction>) {
         val op = if (restore) InstructionType.POP.instruction!! else InstructionType.PUSH.instruction!!
         addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
-            addLine("$op $register")
+            addLine("$op %$register")
         }
     }
 
     private fun emitLabel(instruction: Instruction) {
-        emitArgs(instruction.args)
+        emitArg(instruction.args[0])
         add(":")
     }
 

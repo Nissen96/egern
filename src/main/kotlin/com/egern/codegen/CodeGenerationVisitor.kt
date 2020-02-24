@@ -7,6 +7,7 @@ import com.egern.util.*
 import com.egern.visitor.Visitor
 import kotlin.collections.ArrayList
 import kotlin.math.max
+import kotlin.math.min
 
 class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     val instructions = ArrayList<Instruction>()
@@ -20,6 +21,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         const val PARAM_OFFSET = -3
 
         const val PARAMS_IN_REGISTERS = 6
+        const val CALLER_SAVED_REGISTERS = 8
     }
 
     private fun add(instruction: Instruction) {
@@ -33,7 +35,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 comment = "Prepare to follow static link pointer"
             )
         )
-        for (i in 0..diff) {
+        for (i in 0 until diff) {
             add(
                 Instruction(
                     InstructionType.MOV,
@@ -51,6 +53,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.LABEL,
                 InstructionArg(Memory("main"), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.CalleePrologue
             )
         )
         add(
@@ -76,6 +84,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.LABEL,
                 InstructionArg(Memory("main_end"), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.CalleeEpilogue
             )
         )
     }
@@ -114,16 +128,34 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         val func = symbolTable.lookup(funcCall.id)!!
         val decl = func.info as FuncDecl
         val scopeDiff = symbolTable.scope - decl.symbolTable.scope
-        for (arg in funcCall.args.take(PARAMS_IN_REGISTERS)) {
-            val index = funcCall.args.indexOf(arg)
+        val numArgs = funcCall.args.size
+
+        // Move first params (after caller saved registers) to registers
+        for (index in (0 until min(PARAMS_IN_REGISTERS, numArgs))) {
             add(
                 Instruction(
-                    InstructionType.POP,
+                    InstructionType.MOV,
+                    InstructionArg(RSP, IndirectRelative(-(numArgs + CALLER_SAVED_REGISTERS) + index + 1)),
                     InstructionArg(Register(ParamReg(index)), Direct),
                     comment = "Pop expression to param register $index"
                 )
             )
         }
+
+        // Push remaining params to stack in reverse order
+        for (index in (PARAMS_IN_REGISTERS until numArgs)) {
+            add(
+                Instruction(
+                    InstructionType.PUSH,
+                    InstructionArg(
+                        RSP,
+                        IndirectRelative(-(CALLER_SAVED_REGISTERS + 2 * index))
+                    ),
+                    comment = "Push parameter to stack"
+                )
+            )
+        }
+
         if (scopeDiff < 0) {
             // Call is in nested func declaration
             add(Instruction(InstructionType.PUSH, InstructionArg(RBP, Direct)))
@@ -136,7 +168,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             add(Instruction(InstructionType.PUSH, InstructionArg(StaticLink, IndirectRelative(STATIC_LINK_OFFSET))))
         }
         add(Instruction(InstructionType.CALL, InstructionArg(Memory(decl.startLabel), Direct)))
-        val parametersOnStack = max(funcCall.args.size - PARAMS_IN_REGISTERS, 0)
+        val parametersOnStack = max(numArgs - PARAMS_IN_REGISTERS, 0)
         add(
             Instruction(
                 InstructionType.META,
@@ -145,6 +177,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
+        add(Instruction(InstructionType.META, MetaOperation.DeallocateStackSpace, MetaOperationArg(numArgs)))
+
         // Push return value to stack as FuncCall can be used as an expression
         add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct)))
     }
@@ -286,18 +320,18 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(arithExpr: ArithExpr) {
-        // Pop expressions to register 1 and 2
+        // Pop expressions to register 1 and 2 in reverse order
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Pop expression to register 1"
             )
         )
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Pop expression to register 2"
             )
         )
