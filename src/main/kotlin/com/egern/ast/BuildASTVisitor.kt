@@ -72,6 +72,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.idExpr() != null -> IdExpr(ctx.idExpr().ID().text)
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
+            ctx.expr().size < 2 -> ArithExpr(IntExpr(-1), ctx.expr()[0].accept(this) as Expr, ArithOp.TIMES)
             ctx.op.text in "+-*/" -> visitArithExpr(ctx.expr(), ctx.op.text)
             ctx.op.text in listOf("==", "<", ">", "!=", "<=", ">=") -> visitCompExpr(ctx.expr(), ctx.op.text)
             else -> throw Exception("Invalid Expression Type!")
