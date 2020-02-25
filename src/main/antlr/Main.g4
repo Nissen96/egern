@@ -30,7 +30,8 @@ expr: intExpr
     | funcCall
     | parenExpr
     | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=') expr
-    | expr op=('*' | '/' | '+' | '-') expr
+    | expr op=('*' | '/') expr
+    | expr op=('+' | '-') expr
     ;
 
 idExpr: ID ;

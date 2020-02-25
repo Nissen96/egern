@@ -88,7 +88,7 @@ class Emitter(private val instructions: List<Instruction>) {
         emitArg(inst.args[1])
         addLine("", "Divide")
         add("movq %rax, ")
-        emitArg(inst.args[0])
+        emitArg(inst.args[1])
         addLine("", "Move resulting quotient")
     }
 
