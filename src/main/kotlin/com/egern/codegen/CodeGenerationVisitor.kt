@@ -159,36 +159,39 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
     }
 
-    override fun postVisit(funcCall: FuncCall) {
+    override fun preVisit(funcCall: FuncCall) {
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
+    }
+
+    override fun postVisit(funcCall: FuncCall) {
         val func = symbolTable.lookup(funcCall.id)!!
         val decl = func.info as FuncDecl
         val scopeDiff = symbolTable.scope - decl.symbolTable.scope
         val numArgs = funcCall.args.size
 
-        // Move first params (after caller saved registers) to registers
+        // Move first arguments (after caller saved registers) to registers
         for (index in (0 until min(PARAMS_IN_REGISTERS, numArgs))) {
             add(
                 Instruction(
                     InstructionType.MOV,
-                    InstructionArg(RSP, IndirectRelative(-(numArgs + CALLER_SAVED_REGISTERS) + index + 1)),
+                    InstructionArg(RSP, IndirectRelative(-numArgs + index + 1)),
                     InstructionArg(Register(ParamReg(index)), Direct),
-                    comment = "Move expression to param register $index"
+                    comment = "Move argument to parameter register $index"
                 )
             )
         }
 
 
-        // Push remaining params to stack in reverse order
+        // Push remaining arguments to stack in reverse order
         for (index in (0 until numArgs - PARAMS_IN_REGISTERS)) {
             add(
                 Instruction(
                     InstructionType.PUSH,
                     InstructionArg(
                         RSP,
-                        IndirectRelative(-(CALLER_SAVED_REGISTERS + 2 * index))
+                        IndirectRelative(-(2 * index))
                     ),
-                    comment = "Push parameter to stack"
+                    comment = "Push argument to stack"
                 )
             )
         }
@@ -210,7 +213,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.META,
                 MetaOperation.DeallocateStackSpace,
-                MetaOperationArg(parametersOnStack + 1)
+                MetaOperationArg(parametersOnStack + 1),
+                comment = "Deallocate pushed arguments"
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
@@ -278,7 +282,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 // Param saved by caller after its local variables
                 symbolOffset < PARAMS_IN_REGISTERS -> symbolOffset + LOCAL_VAR_OFFSET + container!!.variableCount
                 // Calculate offset for params on stack (in non-reversed order)
-                else -> PARAM_OFFSET + container!!.params.size - symbolOffset - 1
+                else -> PARAM_OFFSET - (symbolOffset - PARAMS_IN_REGISTERS)
             }
             else -> throw Exception("Invalid id $id")
         }
