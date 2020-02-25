@@ -198,7 +198,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
         if (scopeDiff < 0) {
             // Call is in nested func declaration
-            add(Instruction(InstructionType.PUSH, InstructionArg(RBP, Direct), comment = "Push static link (outwards)"))
+            add(Instruction(InstructionType.PUSH, InstructionArg(RBP, Direct), comment = "Push static link (inwards)"))
         } else {
             // Call is recursive or outwards
             followStaticLink(scopeDiff)
@@ -209,7 +209,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 Instruction(
                     InstructionType.PUSH,
                     InstructionArg(StaticLink, IndirectRelative(STATIC_LINK_OFFSET)),
-                    comment = "Push static link (inwards)"
+                    comment = "Push static link (outwards)"
                 )
             )
         }
