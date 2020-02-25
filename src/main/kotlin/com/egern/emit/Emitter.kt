@@ -127,7 +127,7 @@ class Emitter(private val instructions: List<Instruction>) {
             "pass 2. argument in %rsi"
         )
         addLine("movq $0, %rax", "no floating point registers used")
-        addLine("movq %rsp, %rcx", "saving stack pointer for change check")
+        /*addLine("movq %rsp, %rcx", "saving stack pointer for change check")
         addLine("andq $-16, %rsp", "aligning stack pointer for call")
         addLine("movq $0, %rbx", "preparing check indicator")
         addLine("cmpq %rsp, %rcx", "checking for alignment change")
@@ -135,8 +135,9 @@ class Emitter(private val instructions: List<Instruction>) {
         addLine("je $label", "jump if correctly aligned")
         addLine("incq %rbx", "it was not aligned, indicate by '1'")
         addLine("$label:")
-        addLine("pushq %rbx", "pushing 0/1 on the stack")
+        addLine("pushq %rbx", "pushing 0/1 on the stack")*/
         addLine("call printf", "call function printf")
+        /*
         addLine("popq %rbx", "get alignment indicator")
         addLine("cmpq $0, %rbx", "checking for alignment change")
         label = LabelGenerator.nextLabel("aligned")
@@ -144,6 +145,7 @@ class Emitter(private val instructions: List<Instruction>) {
         addLine("addq $8, %rsp", "revert earlier alignment change")
         addLine("$label:")
         addLine("addq $8, %rsp", "remove printed expression from stack")
+         */
     }
 
     private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
