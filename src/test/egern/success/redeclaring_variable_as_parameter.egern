@@ -1,6 +1,7 @@
 func test(x) {
-    return x;
+    return x - 1;
 }
 
 var x = 4;
 print(test(x));
+print(x);

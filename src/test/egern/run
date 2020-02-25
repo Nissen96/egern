@@ -1,1 +1,4 @@
-../../.././gradlew -q run -p ../../../ --args="-q" < $1
+./compile $1 > ko.s
+gcc -no-pie ko.s
+./a.out
+rm ko.s

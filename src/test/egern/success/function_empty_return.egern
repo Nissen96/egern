@@ -2,3 +2,4 @@ func emptyReturn(b) {
     var a = 4;
     return;
 }
+print(emptyReturn(5));

@@ -1,11 +1,4 @@
-echo "Should succeed:"
 for i in success/*.egern; do
     echo $i
-    ./run $i 2>&1 | grep -o "FAILED"
-done
-
-echo "\nShould fail:"
-for i in fail/*.egern; do
-    echo $i
-    ./run $i 2>&1 | grep -o "FAILED"
+    ./run $i 2>&1
 done

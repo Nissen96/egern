@@ -1,3 +1,4 @@
 func oneParam(arg) {
     return arg * arg;
 }
+print(oneParam(6));

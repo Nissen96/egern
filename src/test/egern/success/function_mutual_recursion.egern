@@ -1,4 +1,5 @@
 func recursiveA(n) {
+    print(n);
     if (n < 1) {
         return n;
     }
@@ -6,10 +7,11 @@ func recursiveA(n) {
 }
 
 func recursiveB(m) {
+    print(m);
     if (m < 1) {
         return m;
     }
     return recursiveA(m - 1);
 }
 
-print(recursiveA(5));
+recursiveA(5);

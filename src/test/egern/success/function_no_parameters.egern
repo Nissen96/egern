@@ -2,3 +2,4 @@ func noParams() {
     var a = 4;
     return a;
 }
+print(noParams());
