@@ -229,8 +229,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 comment = "Deallocate pushed arguments"
             )
         )
-        add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
         add(Instruction(InstructionType.META, MetaOperation.DeallocateStackSpace, MetaOperationArg(numArgs)))
+        add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
 
         // Push return value to stack as FuncCall can be used as an expression
         add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct)))
