@@ -68,6 +68,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 MetaOperationArg(program.variableCount)
             )
         )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.CalleeSave
+            )
+        )
     }
 
     override fun midVisit(program: Program) {
@@ -84,6 +90,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.LABEL,
                 InstructionArg(Memory("main_end"), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.CalleeRestore
             )
         )
         add(
@@ -106,8 +118,20 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.META,
+                MetaOperation.CalleePrologue
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
                 MetaOperation.AllocateStackSpace,
                 MetaOperationArg(funcDecl.variableCount)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.CalleeSave
             )
         )
     }
@@ -119,6 +143,18 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.LABEL,
                 InstructionArg(Memory(funcDecl.endLabel), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.CalleeRestore
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.CalleeEpilogue
             )
         )
     }
