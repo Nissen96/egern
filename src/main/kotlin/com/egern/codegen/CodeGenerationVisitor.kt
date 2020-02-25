@@ -173,13 +173,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                     InstructionType.MOV,
                     InstructionArg(RSP, IndirectRelative(-(numArgs + CALLER_SAVED_REGISTERS) + index + 1)),
                     InstructionArg(Register(ParamReg(index)), Direct),
-                    comment = "Pop expression to param register $index"
+                    comment = "Move expression to param register $index"
                 )
             )
         }
 
+
         // Push remaining params to stack in reverse order
-        for (index in (PARAMS_IN_REGISTERS until numArgs)) {
+        for (index in (0 until numArgs - PARAMS_IN_REGISTERS)) {
             add(
                 Instruction(
                     InstructionType.PUSH,
@@ -410,7 +411,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 )
             )
         }
-        add(Instruction(InstructionType.RET))
+        val endLabel = functionStack.peek()!!.endLabel
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(endLabel), Direct),
+                comment = "Jump to end of function"
+            )
+        )
     }
 
     override fun preMidVisit(ifElse: IfElse) {
