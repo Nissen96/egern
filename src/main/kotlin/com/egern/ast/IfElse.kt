@@ -10,10 +10,8 @@ class IfElse(val expression: Expr, val ifBlock: Block, val elseBlock: Block?) : 
         expression.accept(visitor)
         visitor.preMidVisit(this)
         ifBlock.accept(visitor)
-        if (elseBlock != null) {
-            visitor.postMidVisit(this)
-            elseBlock.accept(visitor)
-        }
+        visitor.postMidVisit(this)
+        elseBlock?.accept(visitor)
         visitor.postVisit(this)
     }
 }

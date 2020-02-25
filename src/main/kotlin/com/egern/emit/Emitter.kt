@@ -81,11 +81,11 @@ class Emitter(private val instructions: List<Instruction>) {
 
     private fun emitDivision(inst: Instruction) {
         add("movq ")
-        emitArg(inst.args[0])
+        emitArg(inst.args[1])
         addLine(", %rax", "Setup dividend")
         addLine("cqo", "Sign extend into %rdx")
         add("idiv ")
-        emitArg(inst.args[1])
+        emitArg(inst.args[0])
         addLine("", "Divide")
         add("movq %rax, ")
         emitArg(inst.args[1])
@@ -197,7 +197,7 @@ class Emitter(private val instructions: List<Instruction>) {
             RBP -> "%rbp"
             RSP -> "%rsp"
             ReturnValue -> "%rax"
-            StaticLink -> "%rdx"
+            StaticLink -> "%r15"
         }
 
         add(

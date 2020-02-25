@@ -198,16 +198,28 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
         if (scopeDiff < 0) {
             // Call is in nested func declaration
-            add(Instruction(InstructionType.PUSH, InstructionArg(RBP, Direct)))
+            add(Instruction(InstructionType.PUSH, InstructionArg(RBP, Direct), comment = "Push static link (outwards)"))
         } else {
             // Call is recursive or outwards
             followStaticLink(scopeDiff)
             // Find static link in parent
             // Follow static link is always 1 scope short of the scope we need when considering functions
             // We compare with the scope level of another function which is nested by at least 1
-            add(Instruction(InstructionType.PUSH, InstructionArg(StaticLink, IndirectRelative(STATIC_LINK_OFFSET))))
+            add(
+                Instruction(
+                    InstructionType.PUSH,
+                    InstructionArg(StaticLink, IndirectRelative(STATIC_LINK_OFFSET)),
+                    comment = "Push static link (inwards)"
+                )
+            )
         }
-        add(Instruction(InstructionType.CALL, InstructionArg(Memory(decl.startLabel), Direct)))
+        add(
+            Instruction(
+                InstructionType.CALL,
+                InstructionArg(Memory(decl.startLabel), Direct),
+                comment = "Call function"
+            )
+        )
         val parametersOnStack = max(numArgs - PARAMS_IN_REGISTERS, 0)
         add(
             Instruction(
@@ -385,15 +397,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 arithOperator,
-                InstructionArg(Register(OpReg1), Direct),
                 InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Do arithmetic operation"
             )
         )
         add(
             Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Push result to stack"
             )
         )
@@ -449,15 +461,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 comment = "Compare the expression to true"
             )
         )
-        if (ifElse.elseBlock != null) {
-            add(
-                Instruction(
-                    InstructionType.JNE,
-                    InstructionArg(Memory(ifElse.elseLabel), Direct),
-                    comment = "Jump to optional else part"
-                )
+        add(
+            Instruction(
+                InstructionType.JNE,
+                InstructionArg(Memory(ifElse.elseLabel), Direct),
+                comment = "Jump to optional else part"
             )
-        }
+        )
     }
 
     override fun postMidVisit(ifElse: IfElse) {
