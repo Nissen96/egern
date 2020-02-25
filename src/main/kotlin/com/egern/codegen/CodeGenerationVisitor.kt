@@ -325,14 +325,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.POP,
                 InstructionArg(Register(OpReg2), Direct),
-                comment = "Pop expression to register 1"
+                comment = "Pop expression to register 2"
             )
         )
         add(
             Instruction(
                 InstructionType.POP,
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Pop expression to register 2"
+                comment = "Pop expression to register 1"
             )
         )
         val arithOperator = when (arithExpr.op) {
@@ -437,10 +437,18 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
     }
 
+    override fun postVisit(varDecl: VarDecl<*>) {
+        variableAssignment(varDecl.ids)
+    }
+
     override fun postVisit(varAssign: VarAssign<*>) {
+        variableAssignment(varAssign.ids)
+    }
+
+    private fun variableAssignment(ids: List<String>) {
         // Find each variable/parameter location and set their value to the expression result
         add(Instruction(InstructionType.POP, InstructionArg(Register(DataReg), Direct), comment = "Expression result"))
-        val symbols = varAssign.ids.map { symbolTable.lookup(it)!! }
+        val symbols = ids.map { symbolTable.lookup(it)!! }
         for (symbol in symbols) {
             val idLocation = getIdLocation(symbol.id)
             add(
