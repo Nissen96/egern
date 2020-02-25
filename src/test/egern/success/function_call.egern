@@ -2,4 +2,4 @@ func square(arg) {
     return arg * arg;
 }
 
-square(4);
+print(square(4));
