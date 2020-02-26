@@ -23,7 +23,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
-        return ReturnStmt(ctx.expr()?.accept(this) as? Expr)
+        // Return 0 implicitly if return value is undefined
+        return ReturnStmt((if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0)) as Expr)
     }
 
     override fun visitPrintStmt(ctx: MainParser.PrintStmtContext): ASTNode {
