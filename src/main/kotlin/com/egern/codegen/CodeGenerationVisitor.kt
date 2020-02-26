@@ -413,7 +413,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(printStmt: PrintStmt) {
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
-        add(Instruction(InstructionType.META, MetaOperation.Print))
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.Print,
+                MetaOperationArg(if (printStmt.expr != null) 1 else 0)
+            )
+        )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
     }
 

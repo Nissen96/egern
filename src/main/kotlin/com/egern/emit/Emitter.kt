@@ -27,7 +27,7 @@ class Emitter(private val instructions: List<Instruction>) {
         builder.append(s)
     }
 
-    private fun addLine(s: String, comment: String? = null) {
+    private fun addLine(s: String = "", comment: String? = null) {
         builder.append(s)
         if (comment != null) {
             builder.append("\t# ")
@@ -57,7 +57,7 @@ class Emitter(private val instructions: List<Instruction>) {
             MetaOperation.CallerRestore -> emitCallerCallee(true, CALLER_SAVE_REGISTERS)
             MetaOperation.CalleeSave -> emitCallerCallee(false, CALLEE_SAVE_REGISTERS)
             MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
-            MetaOperation.Print -> emitPrint()
+            MetaOperation.Print -> emitPrint(instruction.args[1] as MetaOperationArg)
             MetaOperation.CalleePrologue -> emitCalleePrologue()
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(instruction.args[1] as MetaOperationArg)
@@ -106,26 +106,29 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     private fun emitProgramPrologue() {
-        addLine("")
         addLine(".data")
-        addLine("")
-        addLine("form:")
-        addLine(".string \"%d\\n\"", "form string for C printf")
-        addLine("")
+        addLine()
+        addLine("format_int:")
+        addLine(".string \"%d\\n\"", "integer format string for C printf")
+        addLine("format_newline:")
+        addLine(".string \"\\n\"", "empty format string for C printf")
+        addLine()
         addLine(".text")
-        addLine("")
+        addLine()
         addLine(".globl main")
-        addLine("")
+        addLine()
     }
 
-    // Stjålet fra Kim
-    private fun emitPrint() {
+    private fun emitPrint(arg: MetaOperationArg) {
+        val empty = arg.value == 0
         addLine("", "PRINTING USING PRINTF")
-        addLine("movq \$form, %rdi", "pass 1. argument in %rdi")
-        addLine(
-            "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
-            "pass 2. argument in %rsi"
-        )
+        addLine("movq \$format_${if (empty) "newline" else "int"}, %rdi", "pass 1. argument in %rdi")
+        if (!empty) {
+            addLine(
+                "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
+                "pass 2. argument in %rsi"
+            )
+        }
         addLine("movq $0, %rax", "no floating point registers used")
         /*addLine("movq %rsp, %rcx", "saving stack pointer for change check")
         addLine("andq $-16, %rsp", "aligning stack pointer for call")
