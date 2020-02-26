@@ -255,7 +255,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun visit(idExpr: IdExpr) {
-        val idLocation = getIdLocation(idExpr.id)
+        val idLocation = getIdLocation(idExpr.id, true)
         add(
             Instruction(
                 InstructionType.PUSH,
@@ -265,7 +265,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
     }
 
-    private fun getIdLocation(id: String): InstructionArg {
+    private fun getIdLocation(id: String, checkDeclared: Boolean = false): InstructionArg {
         /**
          * Get the location of a local variable or parameter from id
          * The id can be in the current scope or any parent scope of this,
@@ -276,7 +276,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
          * For any enclosing scope, they have been saved at the top of the relevant stack frame
          */
         // Find static link address for scope containing given id
-        val symbol = symbolTable.lookup(id) ?: throw Exception("Symbol $id is undefined")
+        val symbol = symbolTable.lookup(id, checkDeclared) ?: throw Exception("Symbol $id is undefined")
         val scopeDiff = symbolTable.scope - symbol.scope
         val symbolOffset = symbol.info as Int
 
@@ -496,6 +496,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(varDecl: VarDecl<*>) {
+        // First declaration of variable in this scope
+        varDecl.ids.forEach { symbolTable.lookup(it)?.isDeclared = true }
         variableAssignment(varDecl.ids)
     }
 
