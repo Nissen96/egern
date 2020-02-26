@@ -20,8 +20,4 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
             parent?.lookup(id)
         }
     }
-
-    fun lookupCurrentScope(id: String): Symbol<*>? {
-        return if (id in symbols) symbols[id] else null
-    }
 }

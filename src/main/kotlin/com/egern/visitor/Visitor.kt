@@ -7,16 +7,17 @@ interface Visitor {
     fun postVisit(arithExpr: ArithExpr) {}
 
     fun preVisit(block: Block) {}
-    fun preMidVisit(block: Block) {}
-    fun postMidVisit(block: Block) {}
+    fun preFuncCallVisit(block: Block) {}
+    fun postFuncCallVisit(block: Block) {}
     fun postVisit(block: Block) {}
 
     fun midVisit(compExpr: CompExpr) {}
     fun postVisit(compExpr: CompExpr) {}
 
     fun preVisit(funcBody: FuncBody) {}
-    fun preMidVisit(funcBody: FuncBody) {}
-    fun postMidVisit(funcBody: FuncBody) {}
+    fun preFuncCallVisit(funcBody: FuncBody) {}
+    fun postFuncCallVisit(funcBody: FuncBody) {}
+    fun midVisit(funcBody: FuncBody) {}
     fun postVisit(funcBody: FuncBody) {}
 
     fun preVisit(funcCall: FuncCall) {}

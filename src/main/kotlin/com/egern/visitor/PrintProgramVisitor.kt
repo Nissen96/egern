@@ -23,11 +23,11 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         }
     }
 
-    override fun preMidVisit(block: Block) {
+    override fun preFuncCallVisit(block: Block) {
         printIndented()
     }
 
-    override fun postMidVisit(block: Block) {
+    override fun postFuncCallVisit(block: Block) {
         println(";")
     }
 
@@ -51,11 +51,11 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         }
     }
 
-    override fun preMidVisit(funcBody: FuncBody) {
+    override fun preFuncCallVisit(funcBody: FuncBody) {
         printIndented()
     }
 
-    override fun postMidVisit(funcBody: FuncBody) {
+    override fun postFuncCallVisit(funcBody: FuncBody) {
         println(";")
     }
 

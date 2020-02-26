@@ -10,9 +10,9 @@ class FuncBody(val children: List<ASTNode>) :
             when (it) {
                 is Statement -> it.accept(visitor)
                 is FuncCall -> {
-                    visitor.preMidVisit(this)
+                    visitor.preFuncCallVisit(this)
                     it.accept(visitor)
-                    visitor.postMidVisit(this)
+                    visitor.postFuncCallVisit(this)
                 }
             }
         }

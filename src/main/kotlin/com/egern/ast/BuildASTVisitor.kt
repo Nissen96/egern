@@ -35,9 +35,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFuncBody(ctx: MainParser.FuncBodyContext): ASTNode {
-        return FuncBody(
-            ctx.children?.map { it.accept(this) } ?: emptyList()
-        )
+        val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
+        children.add(ReturnStmt(IntExpr(0)))  // Implicit "return 0"
+        return FuncBody(children)
     }
 
     override fun visitFuncCall(ctx: MainParser.FuncCallContext): ASTNode {
