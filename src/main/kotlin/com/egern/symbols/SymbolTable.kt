@@ -7,7 +7,6 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
     private val symbols: MutableMap<String, Symbol<*>> = mutableMapOf()
 
     fun insert(id: String, sym: Symbol<*>) {
-        println("Insert $id of type ${sym.type}")
         if (id in symbols) {
             ErrorLogger.log(Exception("Symbol $id of type ${symbols[id]?.type} has already been declared!"))
         }
