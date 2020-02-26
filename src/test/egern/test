@@ -1,0 +1,20 @@
+# Find expected output
+filename="${1##*/}"
+expected="expected/${filename%.*}"
+
+# Compile and run
+./compile $1 > ko.s
+gcc -no-pie ko.s
+./a.out > result
+
+# Compare results
+diff result $expected >/dev/null 2>&1
+if [ $? -gt 0 ]
+then
+    echo "Expected:"
+    cat $expected
+    echo "Actual:"
+    cat result
+fi
+
+rm a.out ko.s result >/dev/null 2>&1

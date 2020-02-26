@@ -1,0 +1,4 @@
+for i in success/*.egern; do
+    echo $i
+    ./test $i 2>&1
+done
