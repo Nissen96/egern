@@ -1,0 +1,13 @@
+func hello(a) {
+    if (a <= 0) {
+        return 0;
+    }
+    print(hello(a - 1));
+    func hello(a) {
+        return a;
+    }
+    print(hello(a + 1));
+}
+
+var x = 4;
+print(hello(x));
