@@ -1,1 +1,2 @@
 func empty() { }
+print(empty());

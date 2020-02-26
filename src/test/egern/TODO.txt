@@ -1,4 +1,0 @@
-TODO:
-redeclaring_variable_inside_function.egern
-update_ids_from_different_scopes.egern
-function_empty_return.egern
