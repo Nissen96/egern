@@ -1,7 +1,8 @@
 var a = 3;
+print(a);
 if (a == 3) {
-    print(a);
+    print(1);
 } else {
-    print(4);
+    print(0);
 }
 print(a);

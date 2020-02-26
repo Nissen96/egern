@@ -2,4 +2,4 @@ func get(a) {
     return -a;
 }
 var a = -4;
-print(-a * -get(-a));
+print(-(-a * -get(-a)));

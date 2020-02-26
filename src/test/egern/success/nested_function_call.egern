@@ -1,5 +1,6 @@
 func sum(a, b) {
-    return a + b;
+    var c = a + b;
+    print(c);
+    return c;
 }
-var c = sum(sum(1, 2), sum(3, sum(4, 2)));
-print(c);
+sum(sum(1, 2), sum(3, sum(4, 2)));

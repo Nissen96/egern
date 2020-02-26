@@ -1,6 +1,6 @@
 func hello(a) {
     if (a <= 0) {
-        return 0;
+        return 10;
     }
     print(hello(a - 1));
     func hello(a) {
