@@ -9,7 +9,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
-class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
+class CodeGenerationVisitor(private var symbolTable: SymbolTable, private var mainLabel: String) : Visitor {
     val instructions = ArrayList<Instruction>()
     private val functionStack = stackOf<FuncDecl>()
 
@@ -52,7 +52,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.LABEL,
-                InstructionArg(Memory("main"), Direct)
+                InstructionArg(Memory(mainLabel), Direct)
             )
         )
         add(

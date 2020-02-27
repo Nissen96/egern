@@ -1,44 +1,45 @@
 package com.egern.emit
 
 import com.egern.codegen.*
-import java.lang.Exception
 
-abstract class Emitter(protected val instructions: List<Instruction>, protected val builder: AsmStringBuilder) {
-    abstract fun emit(): String
-    abstract fun mapInstructionType(type: InstructionType): String?
-
-    protected companion object {
-        const val VARIABLE_SIZE = 8
-        const val ADDRESSING_OFFSET = -8
-
-        val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
-        val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
-    }
-}
-
-/*
-class Emitter(private val instructions: List<Instruction>) {
-    private val builder = StringBuilder()
-
-    companion object {
-        const val VARIABLE_SIZE = 8
-        const val ADDRESSING_OFFSET = -8
-
-        val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
-        val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
+class LinuxEmitter(instructions: List<Instruction>): Emitter(instructions, AsmStringBuilder(";")) {
+    override fun emit(): String {
+        return ""
     }
 
-    fun emit(): StringBuilder {
+    override fun mapInstructionType(type: InstructionType): String? {
+        return when (type) {
+            InstructionType.MOV -> "movq"
+            InstructionType.ADD -> "addq"
+            InstructionType.SUB -> "subq"
+            InstructionType.INC -> "incq"
+            InstructionType.DEC -> "decq"
+            InstructionType.IMUL -> "imulq"
+            InstructionType.IDIV -> null
+            InstructionType.CMP -> "cmpq"
+            InstructionType.JMP -> "jmp"
+            InstructionType.JNE -> "jne"
+            InstructionType.JE -> "je"
+            InstructionType.JG -> "jg"
+            InstructionType.JGE -> "jge"
+            InstructionType.JL -> "jl"
+            InstructionType.JLE -> "jle"
+            InstructionType.PUSH -> "pushq"
+            InstructionType.POP -> "popq"
+            InstructionType.CALL -> "call"
+            InstructionType.RET -> "ret"
+            InstructionType.LABEL -> null
+            InstructionType.META -> null
+        }
+    }
+    /*
+    override fun emit(): String {
         emitProgramPrologue()
         for (instruction in instructions) {
             emitInstruction(instruction)
             builder.appendln()
         }
-        return builder
-    }
-
-    private fun add(s: String) {
-        builder.append(s)
+        return builder.toString()
     }
 
     private fun addLine(s: String, comment: String? = null) {
@@ -54,7 +55,7 @@ class Emitter(private val instructions: List<Instruction>) {
         val type = instruction.instructionType
         when {
             type == InstructionType.IDIV -> emitDivision(instruction)
-            type.instruction != null -> emitSimpleInstruction(instruction)
+            mapInstructionType(type) != null -> emitSimpleInstruction(instruction)
             type == InstructionType.LABEL -> emitLabel(instruction)
             type == InstructionType.META -> emitMetaOp(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
@@ -163,10 +164,10 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
-        val op = if (restore) InstructionType.POP.instruction!! else InstructionType.PUSH.instruction!!
+        val op = if (restore) InstructionType.POP else InstructionType.PUSH
         addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
-            addLine("$op %$register")
+            addLine("${mapInstructionType(op)} %$register")
         }
     }
 
@@ -176,7 +177,7 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
-        add(instruction.instructionType.instruction!!)
+        add(mapInstructionType(instruction.instructionType)!!)
         emitArgs(instruction.args)
     }
 
@@ -222,4 +223,5 @@ class Emitter(private val instructions: List<Instruction>) {
             }
         )
     }
-} */
+     */
+}
