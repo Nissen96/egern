@@ -1,1 +1,2 @@
+#!/bin/sh
 ../../.././gradlew run -p ../../../ --args='-p -q' < $1

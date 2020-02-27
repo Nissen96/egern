@@ -1,11 +1,15 @@
+#!/bin/sh
+
 # Find expected output
 filename="${1##*/}"
 expected="expected/${filename%.*}"
 
 # Compile and run
-./compile $1 > ko.s
-gcc -no-pie ko.s
-./a.out > result
+./compile $1 > ko.s || exit 1
+gcc -no-pie ko.s || exit 1
+rm ko.s >/dev/null 2>&1
+./a.out > result 2>&1 || exit 1
+rm a.out >/dev/null 2>&1
 
 # Compare results
 diff result $expected >/dev/null 2>&1
@@ -15,6 +19,9 @@ then
     cat $expected
     echo "Actual:"
     cat result
+    rm result >/dev/null 2>&1
+    exit 1
 fi
 
-rm a.out ko.s result >/dev/null 2>&1
+rm result >/dev/null 2>&1
+exit 0
