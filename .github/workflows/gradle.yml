@@ -4,9 +4,8 @@ on: [push]
 
 jobs:
   build:
-
+    name: Build
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
     - name: Set up JDK 1.8
@@ -14,9 +13,17 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Gradle
-      working-directory: .
       run: ./gradlew build -x test
-      
-    - name: Run tests
-      working-directory: .
-      run: ./gradlew test
+  
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Compile tests
+      working-directory: src/test/egern
+      run: for i in success/*.egern; do echo $i; ./run $i; done
+    - name: Test outputs
+      working-directory: src/test/egern
+      run: for i in success/*.egern; do echo $i; ./test $i; done
