@@ -58,14 +58,14 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         val type = instruction.instructionType
         when {
             type == InstructionType.IDIV -> emitDivision(instruction)
-            mapInstructionType(type) != null -> emitSimpleInstruction(instruction)
+            mapInstructionType(type) != null -> emitSimpleInstruction(instruction) // TODO: fix double work
             type == InstructionType.LABEL -> emitLabel(instruction)
             type == InstructionType.META -> emitMetaOp(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
         }
         // Add comment
         if (instruction.comment != null) {
-            add(" # ${instruction.comment}")
+            builder.add("# ${instruction.comment}")
         }
     }
 
@@ -84,110 +84,113 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
     }
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
-        addLine(
-            "addq $${-VARIABLE_SIZE * arg.value}, %rsp",
+        builder.addLine(
+            "addq", Pair("$${-VARIABLE_SIZE * arg.value}", "%rsp"),
             "Move stack pointer to allocate space for local variables"
         )
     }
 
     private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
-        addLine(
-            "addq $${VARIABLE_SIZE * arg.value}, %rsp",
+        builder.addLine(
+            "addq", Pair("$${VARIABLE_SIZE * arg.value}", "%rsp"),
             "Move stack pointer to deallocate space for local variables"
         )
     }
 
     private fun emitDivision(inst: Instruction) {
         add("movq ")
-        emitArg(inst.args[1])
+        add(emitArg(inst.args[1]))
         addLine(", %rax", "Setup dividend")
         addLine("cqo", "Sign extend into %rdx")
         add("idiv ")
-        emitArg(inst.args[0])
+        add(emitArg(inst.args[0]))
         addLine("", "Divide")
         add("movq %rax, ")
-        emitArg(inst.args[1])
+        add(emitArg(inst.args[1]))
         addLine("", "Move resulting quotient")
     }
 
     private fun emitCalleePrologue() {
-        addLine("", "Callee Prologue")
-        addLine("pushq %rbp", "save caller's base pointer")
-        addLine("movq %rsp, %rbp", "make stack pointer new base pointer")
+        builder
+            .addLine("# Callee Prologue")
+            .addLine("pushq", Pair("%rbp", null), "save caller's base pointer")
+            .addLine("movq", Pair("%rsp", "%rbp"), "make stack pointer new base pointer")
     }
 
     private fun emitCalleeEpilogue() {
-        addLine("", "Callee Epilogue")
-        addLine("movq %rbp, %rsp", "Restore stack pointer")
-        addLine("popq %rbp", "Restore base pointer")
-        addLine("ret", "Return from call")
+        builder
+            .addLine("# Callee Epilogue")
+            .addLine("movq", Pair("%rbp", "%rsp"), "Restore stack pointer")
+            .addLine("popq", Pair("%rbp", null), "Restore base pointer")
+            .addLine("ret", comment = "Return from call")
     }
 
     private fun emitProgramPrologue() {
-        addLine(".data")
-        addLine()
-        addLine("format_int:")
-        addLine(".string \"%d\\n\"", "integer format string for C printf")
-        addLine("format_newline:")
-        addLine(".string \"\\n\"", "empty format string for C printf")
-        addLine()
-        addLine(".text")
-        addLine()
-        addLine(".globl main")
-        addLine()
+        builder
+            .addLine(".data")
+            .addLine("format_int:")
+            .addLine(".string \"%d\\n\"", comment = "integer format string for C printf")
+            .addLine("format_newline:")
+            .addLine(".string \"\\n\"", comment = "empty format string for C printf")
+            .newline()
+            .addLine(".text")
+            .addLine(".globl", Pair("main", null))
+            .newline()
     }
 
     private fun emitPrint(arg: MetaOperationArg) {
         val empty = arg.value == 0
-        addLine("", "PRINTING USING PRINTF")
-        addLine("movq \$format_${if (empty) "newline" else "int"}, %rdi", "pass 1. argument in %rdi")
+        builder
+            .addLine("# PRINTING USING PRINTF")
+            .addLine(
+                "movq", Pair("\$format_${if (empty) "newline" else "int"}", "%rdi"),
+                "Pass 1st argument in %rdi"
+            )
         if (!empty) {
-            addLine(
-                "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
-                "pass 2. argument in %rsi"
+            builder.addLine(
+                "movq", Pair("${8 * CALLER_SAVE_REGISTERS.size}(%rsp)", "%rsi"),
+                "Pass 2nd argument in %rsi"
             )
         }
-        addLine("movq $0, %rax", "no floating point registers used")
-        addLine("call printf", "call function printf")
+        builder
+            .addLine("xor", Pair("%rax", "%rax"), "No floating point registers used")
+            .addLine("call", Pair("printf", null), "Call function printf")
     }
 
+
     private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
-        val op = if (restore) mapInstructionType(InstructionType.POP)!! else mapInstructionType(InstructionType.PUSH)!!
-        addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
+        val op = if (restore) InstructionType.POP else InstructionType.PUSH
+        builder.addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
-            addLine("$op %$register")
+            builder.addLine(mapInstructionType(op)!!, Pair("%$register", null))
         }
     }
 
     private fun emitLabel(instruction: Instruction) {
-        emitArg(instruction.args[0])
-        add(":")
+        builder.add(emitArg(instruction.args[0]) + ":", AsmStringBuilder.OP_OFFSET)
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
-        add(mapInstructionType(instruction.instructionType)!!)
+        val instr = mapInstructionType(instruction.instructionType)
+            ?: throw Exception("Assembly operation for ${instruction.instructionType} not defined")
+        builder.add(instr, AsmStringBuilder.OP_OFFSET)
         emitArgs(instruction.args)
     }
 
     private fun emitArgs(arguments: Array<out Arg>) {
-        if (arguments.isNotEmpty()) {
-            add(" ")
-            emitArg(arguments[0])
-        }
-        if (arguments.size > 1) {
-            for (arg in arguments.slice(1 until arguments.size)) {
-                add(", ")
-                emitArg(arg)
-            }
+        when (arguments.size) {
+            1 -> builder.add(emitArg(arguments[0]), AsmStringBuilder.REGS_OFFSET)
+            2 -> builder.add(emitArg(arguments[0]) + ", " + emitArg(arguments[1]), AsmStringBuilder.REGS_OFFSET)
+            else -> throw Exception("Unexpected number of arguments")
         }
     }
 
-    private fun emitArg(argument: Arg) {
-        if (argument is InstructionArg) emitInstructionArg(argument)
+    private fun emitArg(argument: Arg): String {
+        if (argument is InstructionArg) return emitInstructionArg(argument)
         else throw Exception("Trying to emit an argument that cant be emitted!")
     }
 
-    private fun emitInstructionArg(argument: InstructionArg) {
+    private fun emitInstructionArg(argument: InstructionArg): String {
         val target = when (argument.instructionTarget) {
             is ImmediateValue -> "$${argument.instructionTarget.value}"
             is Memory -> argument.instructionTarget.address
@@ -204,12 +207,10 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             MainLabel -> "main"
         }
 
-        add(
-            when (argument.addressingMode) {
-                Direct -> target
-                Indirect -> "($target)"
-                is IndirectRelative -> "${ADDRESSING_OFFSET * argument.addressingMode.offset}($target)"
-            }
-        )
+        return when (argument.addressingMode) {
+            Direct -> target
+            Indirect -> "($target)"
+            is IndirectRelative -> "${ADDRESSING_OFFSET * argument.addressingMode.offset}($target)"
+        }
     }
 }
