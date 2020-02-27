@@ -6,9 +6,9 @@ import java.lang.Exception
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
-        return Program(
-            ctx.children?.map { it.accept(this) } ?: emptyList()
-        )
+        val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
+        children.add(ReturnStmt(IntExpr(0)))  // Implicit "return 0"
+        return Program(children)
     }
 
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {

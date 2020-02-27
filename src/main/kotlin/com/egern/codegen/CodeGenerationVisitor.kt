@@ -433,14 +433,16 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 )
             )
         }
-        val endLabel = functionStack.peek()!!.endLabel
-        add(
-            Instruction(
-                InstructionType.JMP,
-                InstructionArg(Memory(endLabel), Direct),
-                comment = "Jump to end of function"
+        val endLabel = functionStack.peek()?.endLabel
+        if (endLabel != null) {
+            add(
+                Instruction(
+                    InstructionType.JMP,
+                    InstructionArg(Memory(endLabel), Direct),
+                    comment = "Jump to end of function"
+                )
             )
-        )
+        }
     }
 
     override fun preMidVisit(ifElse: IfElse) {
