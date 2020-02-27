@@ -16,11 +16,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(block: Block) {
-        print("{")
-        if (block.children.isNotEmpty()) {
-            println()
-            level++
-        }
+        println("{")
+        level++
     }
 
     override fun preFuncCallVisit(block: Block) {
@@ -32,12 +29,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(block: Block) {
-        if (block.children.isNotEmpty()) {
-            level--
-            printIndented("}")
-        } else {
-            print("}")
-        }
+        level--
+        printIndented("}")
     }
 
     override fun midVisit(compExpr: CompExpr) {
@@ -45,10 +38,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(funcBody: FuncBody) {
-        if (funcBody.children.isNotEmpty()) {
-            println()
-            level++
-        }
+        println("{")
+        level++
     }
 
     override fun preFuncCallVisit(funcBody: FuncBody) {
@@ -60,12 +51,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(funcBody: FuncBody) {
-        if (funcBody.children.isNotEmpty()) {
-            level--
-            printIndented("}")
-        } else {
-            print("}")
-        }
+        level--
+        printIndented("}")
     }
 
     override fun preVisit(funcCall: FuncCall) {
@@ -81,11 +68,12 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
-        printIndented("func ${funcDecl.id}(${funcDecl.params.joinToString(", ")}) {")
+        println()
+        printIndented("func ${funcDecl.id}(${funcDecl.params.joinToString(", ")}) ")
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
-        println()
+        println("\n")
     }
 
     override fun visit(idExpr: IdExpr) {
@@ -129,11 +117,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(program: Program) {
-        print("Main Scope {")
-        if (program.children.isNotEmpty()) {
-            println()
-            level++
-        }
+        println("Main Scope {")
+        level++
     }
 
     override fun preFuncCallVisit(program: Program) {
@@ -145,12 +130,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(program: Program) {
-        if (program.children.isNotEmpty()) {
-            level--
-            printIndented("}")
-        } else {
-            print("}")
-        }
+        level--
+        printIndented("}")
         println()
     }
 

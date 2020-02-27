@@ -1,4 +1,8 @@
+#!/bin/sh
+
 for i in success/*.egern; do
     echo $i
-    ./test $i 2>&1
+    ./test $i
 done
+
+rm ko.s a.out >/dev/null 2>&1

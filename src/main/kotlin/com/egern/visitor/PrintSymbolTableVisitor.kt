@@ -23,11 +23,11 @@ class PrintSymbolTableVisitor : Visitor {
         val scope = varDecl.symbolTable.scope
         for (id in varDecl.ids) {
             val symbol = varDecl.symbolTable.lookup(id)
-            printSymbolLine(symbol, scope, "offset", symbol?.info as Int)
+            printSymbolLine(symbol, scope, "offset", symbol?.info as? Int)
         }
     }
 
-    private fun printSymbolLine(symbol: Symbol<*>?, scope: Int, infoText: String, infoValue: Int) {
+    private fun printSymbolLine(symbol: Symbol<*>?, scope: Int, infoText: String, infoValue: Int?) {
         println("${symbol?.type} '${symbol?.id}' at scope $scope - $infoText: $infoValue")
     }
 }
