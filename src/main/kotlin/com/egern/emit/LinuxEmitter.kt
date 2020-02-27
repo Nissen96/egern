@@ -1,11 +1,9 @@
 package com.egern.emit
 
 import com.egern.codegen.*
+import java.lang.Exception
 
-class LinuxEmitter(instructions: List<Instruction>): Emitter(instructions, AsmStringBuilder(";")) {
-    override fun emit(): String {
-        return ""
-    }
+class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmStringBuilder("#")) {
 
     override fun mapInstructionType(type: InstructionType): String? {
         return when (type) {
@@ -32,23 +30,28 @@ class LinuxEmitter(instructions: List<Instruction>): Emitter(instructions, AsmSt
             InstructionType.META -> null
         }
     }
-    /*
+
     override fun emit(): String {
         emitProgramPrologue()
         for (instruction in instructions) {
             emitInstruction(instruction)
-            builder.appendln()
+            builder.newline()
         }
-        return builder.toString()
+
+        return builder.toFinalStr()
     }
 
-    private fun addLine(s: String, comment: String? = null) {
-        builder.append(s)
+    private fun add(s: String) {
+        builder.add(s)
+    }
+
+    private fun addLine(s: String = "", comment: String? = null) {
+        builder.add(s)
         if (comment != null) {
-            builder.append("\t# ")
-            builder.append(comment)
+            builder.add("\t# ")
+            builder.add(comment)
         }
-        builder.appendln()
+        builder.newline()
     }
 
     private fun emitInstruction(instruction: Instruction) {
@@ -72,7 +75,7 @@ class LinuxEmitter(instructions: List<Instruction>): Emitter(instructions, AsmSt
             MetaOperation.CallerRestore -> emitCallerCallee(true, CALLER_SAVE_REGISTERS)
             MetaOperation.CalleeSave -> emitCallerCallee(false, CALLEE_SAVE_REGISTERS)
             MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
-            MetaOperation.Print -> emitPrint()
+            MetaOperation.Print -> emitPrint(instruction.args[1] as MetaOperationArg)
             MetaOperation.CalleePrologue -> emitCalleePrologue()
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(instruction.args[1] as MetaOperationArg)
@@ -121,53 +124,38 @@ class LinuxEmitter(instructions: List<Instruction>): Emitter(instructions, AsmSt
     }
 
     private fun emitProgramPrologue() {
-        addLine("")
         addLine(".data")
-        addLine("")
-        addLine("form:")
-        addLine(".string \"%d\\n\"", "form string for C printf")
-        addLine("")
+        addLine()
+        addLine("format_int:")
+        addLine(".string \"%d\\n\"", "integer format string for C printf")
+        addLine("format_newline:")
+        addLine(".string \"\\n\"", "empty format string for C printf")
+        addLine()
         addLine(".text")
-        addLine("")
+        addLine()
         addLine(".globl main")
-        addLine("")
+        addLine()
     }
 
-    // Stjålet fra Kim
-    private fun emitPrint() {
+    private fun emitPrint(arg: MetaOperationArg) {
+        val empty = arg.value == 0
         addLine("", "PRINTING USING PRINTF")
-        addLine("movq \$form, %rdi", "pass 1. argument in %rdi")
-        addLine(
-            "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
-            "pass 2. argument in %rsi"
-        )
+        addLine("movq \$format_${if (empty) "newline" else "int"}, %rdi", "pass 1. argument in %rdi")
+        if (!empty) {
+            addLine(
+                "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
+                "pass 2. argument in %rsi"
+            )
+        }
         addLine("movq $0, %rax", "no floating point registers used")
-        /*addLine("movq %rsp, %rcx", "saving stack pointer for change check")
-        addLine("andq $-16, %rsp", "aligning stack pointer for call")
-        addLine("movq $0, %rbx", "preparing check indicator")
-        addLine("cmpq %rsp, %rcx", "checking for alignment change")
-        var label = LabelGenerator.nextLabel("aligned")
-        addLine("je $label", "jump if correctly aligned")
-        addLine("incq %rbx", "it was not aligned, indicate by '1'")
-        addLine("$label:")
-        addLine("pushq %rbx", "pushing 0/1 on the stack")*/
         addLine("call printf", "call function printf")
-        /*
-        addLine("popq %rbx", "get alignment indicator")
-        addLine("cmpq $0, %rbx", "checking for alignment change")
-        label = LabelGenerator.nextLabel("aligned")
-        addLine("je $label", "jump if correctly aligned")
-        addLine("addq $8, %rsp", "revert earlier alignment change")
-        addLine("$label:")
-        addLine("addq $8, %rsp", "remove printed expression from stack")
-         */
     }
 
     private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
-        val op = if (restore) InstructionType.POP else InstructionType.PUSH
+        val op = if (restore) mapInstructionType(InstructionType.POP)!! else mapInstructionType(InstructionType.PUSH)!!
         addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
-            addLine("${mapInstructionType(op)} %$register")
+            addLine("$op %$register")
         }
     }
 
@@ -223,5 +211,4 @@ class LinuxEmitter(instructions: List<Instruction>): Emitter(instructions, AsmSt
             }
         )
     }
-     */
 }
