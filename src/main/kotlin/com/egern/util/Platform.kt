@@ -15,11 +15,4 @@ class PlatformManager {
         "Linux" -> Platform.Linux
         else -> throw Exception("Unsupported platform")
     }
-
-    fun mainLabel(): String {
-        return when (platform) {
-            Platform.MacOS -> "_main"
-            else -> "main"
-        }
-    }
 }

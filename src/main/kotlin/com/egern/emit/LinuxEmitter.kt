@@ -201,6 +201,7 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             RSP -> "%rsp"
             ReturnValue -> "%rax"
             StaticLink -> "%r15"
+            MainLabel -> "main"
         }
 
         add(
