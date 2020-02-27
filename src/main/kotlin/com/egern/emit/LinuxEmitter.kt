@@ -1,47 +1,48 @@
 package com.egern.emit
 
 import com.egern.codegen.*
-import java.lang.Exception
 
-abstract class Emitter(protected val instructions: List<Instruction>, protected val builder: AsmStringBuilder) {
-    abstract fun emit(): String
-    abstract fun mapInstructionType(type: InstructionType): String?
-
-    protected companion object {
-        const val VARIABLE_SIZE = 8
-        const val ADDRESSING_OFFSET = -8
-
-        val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
-        val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
-    }
-}
-
-/*
-class Emitter(private val instructions: List<Instruction>) {
-    private val builder = StringBuilder()
-
-    companion object {
-        const val VARIABLE_SIZE = 8
-        const val ADDRESSING_OFFSET = -8
-
-        val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
-        val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
+class LinuxEmitter(instructions: List<Instruction>): Emitter(instructions, AsmStringBuilder(";")) {
+    override fun emit(): String {
+        return ""
     }
 
-    fun emit(): StringBuilder {
+    override fun mapInstructionType(type: InstructionType): String? {
+        return when (type) {
+            InstructionType.MOV -> "movq"
+            InstructionType.ADD -> "addq"
+            InstructionType.SUB -> "subq"
+            InstructionType.INC -> "incq"
+            InstructionType.DEC -> "decq"
+            InstructionType.IMUL -> "imulq"
+            InstructionType.IDIV -> null
+            InstructionType.CMP -> "cmpq"
+            InstructionType.JMP -> "jmp"
+            InstructionType.JNE -> "jne"
+            InstructionType.JE -> "je"
+            InstructionType.JG -> "jg"
+            InstructionType.JGE -> "jge"
+            InstructionType.JL -> "jl"
+            InstructionType.JLE -> "jle"
+            InstructionType.PUSH -> "pushq"
+            InstructionType.POP -> "popq"
+            InstructionType.CALL -> "call"
+            InstructionType.RET -> "ret"
+            InstructionType.LABEL -> null
+            InstructionType.META -> null
+        }
+    }
+    /*
+    override fun emit(): String {
         emitProgramPrologue()
         for (instruction in instructions) {
             emitInstruction(instruction)
             builder.appendln()
         }
-        return builder
+        return builder.toString()
     }
 
-    private fun add(s: String) {
-        builder.append(s)
-    }
-
-    private fun addLine(s: String = "", comment: String? = null) {
+    private fun addLine(s: String, comment: String? = null) {
         builder.append(s)
         if (comment != null) {
             builder.append("\t# ")
@@ -54,8 +55,7 @@ class Emitter(private val instructions: List<Instruction>) {
         val type = instruction.instructionType
         when {
             type == InstructionType.IDIV -> emitDivision(instruction)
-            type == InstructionType.MOD -> emitModulo(instruction)
-            type.instruction != null -> emitSimpleInstruction(instruction)
+            mapInstructionType(type) != null -> emitSimpleInstruction(instruction)
             type == InstructionType.LABEL -> emitLabel(instruction)
             type == InstructionType.META -> emitMetaOp(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
@@ -72,7 +72,7 @@ class Emitter(private val instructions: List<Instruction>) {
             MetaOperation.CallerRestore -> emitCallerCallee(true, CALLER_SAVE_REGISTERS)
             MetaOperation.CalleeSave -> emitCallerCallee(false, CALLEE_SAVE_REGISTERS)
             MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
-            MetaOperation.Print -> emitPrint(instruction.args[1] as MetaOperationArg)
+            MetaOperation.Print -> emitPrint()
             MetaOperation.CalleePrologue -> emitCalleePrologue()
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(instruction.args[1] as MetaOperationArg)
@@ -94,7 +94,7 @@ class Emitter(private val instructions: List<Instruction>) {
         )
     }
 
-    private fun emitPerformDivision(inst: Instruction, resultReg: String) {
+    private fun emitDivision(inst: Instruction) {
         add("movq ")
         emitArg(inst.args[1])
         addLine(", %rax", "Setup dividend")
@@ -102,18 +102,9 @@ class Emitter(private val instructions: List<Instruction>) {
         add("idiv ")
         emitArg(inst.args[0])
         addLine("", "Divide")
-        add("movq $resultReg, ")
+        add("movq %rax, ")
         emitArg(inst.args[1])
-    }
-
-    private fun emitDivision(inst: Instruction) {
-        emitPerformDivision(inst, "%rax")
         addLine("", "Move resulting quotient")
-    }
-
-    private fun emitModulo(inst: Instruction) {
-        emitPerformDivision(inst, "%rdx")
-        addLine("", "Move resulting remainder")
     }
 
     private fun emitCalleePrologue() {
@@ -130,29 +121,26 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     private fun emitProgramPrologue() {
+        addLine("")
         addLine(".data")
-        addLine()
-        addLine("format_int:")
-        addLine(".string \"%d\\n\"", "integer format string for C printf")
-        addLine("format_newline:")
-        addLine(".string \"\\n\"", "empty format string for C printf")
-        addLine()
+        addLine("")
+        addLine("form:")
+        addLine(".string \"%d\\n\"", "form string for C printf")
+        addLine("")
         addLine(".text")
-        addLine()
+        addLine("")
         addLine(".globl main")
-        addLine()
+        addLine("")
     }
 
-    private fun emitPrint(arg: MetaOperationArg) {
-        val empty = arg.value == 0
+    // Stjålet fra Kim
+    private fun emitPrint() {
         addLine("", "PRINTING USING PRINTF")
-        addLine("movq \$format_${if (empty) "newline" else "int"}, %rdi", "pass 1. argument in %rdi")
-        if (!empty) {
-            addLine(
-                "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
-                "pass 2. argument in %rsi"
-            )
-        }
+        addLine("movq \$form, %rdi", "pass 1. argument in %rdi")
+        addLine(
+            "movq ${8 * CALLER_SAVE_REGISTERS.size}(%rsp), %rsi",
+            "pass 2. argument in %rsi"
+        )
         addLine("movq $0, %rax", "no floating point registers used")
         /*addLine("movq %rsp, %rcx", "saving stack pointer for change check")
         addLine("andq $-16, %rsp", "aligning stack pointer for call")
@@ -176,10 +164,10 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
-        val op = if (restore) InstructionType.POP.instruction!! else InstructionType.PUSH.instruction!!
+        val op = if (restore) InstructionType.POP else InstructionType.PUSH
         addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
-            addLine("$op %$register")
+            addLine("${mapInstructionType(op)} %$register")
         }
     }
 
@@ -189,7 +177,7 @@ class Emitter(private val instructions: List<Instruction>) {
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
-        add(instruction.instructionType.instruction!!)
+        add(mapInstructionType(instruction.instructionType)!!)
         emitArgs(instruction.args)
     }
 
@@ -235,4 +223,5 @@ class Emitter(private val instructions: List<Instruction>) {
             }
         )
     }
-} */
+     */
+}
