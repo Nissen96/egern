@@ -197,6 +197,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             RSP -> "rsp"
             ReturnValue -> "rax"
             StaticLink -> "r15"
+            MainLabel -> "_main"
         }
         return when (argument.addressingMode) {
             Direct -> target
