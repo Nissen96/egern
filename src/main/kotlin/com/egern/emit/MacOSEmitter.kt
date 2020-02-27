@@ -2,7 +2,7 @@ package com.egern.emit
 
 import com.egern.codegen.*
 
-    class MacOSEmitter(instructions: List<Instruction>): Emitter(instructions, AsmStringBuilder(";")) {
+class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmStringBuilder(";")) {
 
     override fun mapInstructionType(type: InstructionType): String? {
         return when (type) {
@@ -113,13 +113,13 @@ import com.egern.codegen.*
             .addLine("; Callee Epilogue")
             .addLine("mov", Pair("rsp", "rbp"), "Restore stack pointer")
             .addLine("pop", Pair("rbp", null), "Restore base pointer")
-            .addLine("ret", comment="Return from call")
+            .addLine("ret", comment = "Return from call")
     }
 
     private fun emitProgramPrologue() {
         builder
             .addLine("global", Pair("_main", null))
-            .addLine("extern", Pair("_printf",null))
+            .addLine("extern", Pair("_printf", null))
             .addLine("default rel")
             .addLine("section .text")
 
@@ -153,7 +153,8 @@ import com.egern.codegen.*
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
-        val instr = mapInstructionType(instruction.instructionType) ?: throw Exception("Assembly operation for ${instruction.instructionType} not defined")
+        val instr = mapInstructionType(instruction.instructionType)
+            ?: throw Exception("Assembly operation for ${instruction.instructionType} not defined")
         builder.add(instr, AsmStringBuilder.OP_OFFSET)
         emitArgs(instruction.args)
     }
