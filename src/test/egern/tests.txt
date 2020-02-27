@@ -22,7 +22,7 @@ Y - Function with empty body
 Y - Function with no return
 Y - Function with empty return
 Y - Function returning value (done in many of the above)
-P - Nested functions
+Y - Nested functions
 
 Y - Function call
 Y - Recursive function call
@@ -31,6 +31,7 @@ Y - Nested function call
 
 Y - Reassigning value to parameter
 Y - Redeclare function as parameter
+Y - Redeclare parameter as variable
 
 
 CONDITIONALS (SHOULD SUCEED):
@@ -59,7 +60,7 @@ Y - Print empty
 EXPRESSIONS (SHOULD SUCCEED/FAIL?):
 P - Non-integer division
 P - Division by zero
-P - Producing negative value
+Y - Producing negative value
 N - Surpassing max integer value
 N - Surpassing min integer value
 
@@ -77,8 +78,7 @@ Y - Redeclare variable
 P - Redeclare variable as function (not possible - functions are declared first)
 
 Y - Redeclare parameter (two parameters of same name in same function)
-P - Redeclare parameter as function (not relevant before nested functions)
-Y - Redeclare parameter as variable
+P - Redeclare parameter as function
 
 Y - Redeclare function
 Y - Redeclare function as variable
