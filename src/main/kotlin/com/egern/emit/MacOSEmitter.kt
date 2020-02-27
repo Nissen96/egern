@@ -126,7 +126,7 @@ import com.egern.codegen.*
     }
 
     private fun emitProgramEpilogue() {
-        builder.addLine("format: db \"num: %d\", 10, 0")
+        builder.addLine("format: db \"%d\", 10, 0")
     }
 
     private fun emitPrint() {
