@@ -5,3 +5,4 @@ for i in success/*.egern; do
     ./run $i
 done
 rm ko.s a.out >/dev/null 2>&1
+exit 0
