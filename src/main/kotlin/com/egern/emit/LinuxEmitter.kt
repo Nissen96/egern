@@ -160,14 +160,18 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
 
     private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
         val op = if (restore) InstructionType.POP else InstructionType.PUSH
-        builder.addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
+        builder
+            .newline()
+            .addLine("# Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
             builder.addLine(mapInstructionType(op)!!, Pair("%$register", null))
         }
     }
 
     private fun emitLabel(instruction: Instruction) {
-        builder.add(emitArg(instruction.args[0]) + ":", AsmStringBuilder.OP_OFFSET)
+        builder
+            .newline()
+            .add(emitArg(instruction.args[0]) + ":", AsmStringBuilder.OP_OFFSET)
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
