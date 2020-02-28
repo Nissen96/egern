@@ -159,4 +159,16 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     override fun postVisit(varDecl: VarDecl<*>) {
         println(";")
     }
+
+    override fun preVisit(whileLoop: WhileLoop) {
+        printIndented("while (")
+    }
+
+    override fun midVisit(whileLoop: WhileLoop) {
+        print(") ")
+    }
+
+    override fun postVisit(whileLoop: WhileLoop) {
+        println()
+    }
 }
