@@ -80,7 +80,7 @@ class Emitter(private val instructions: List<Instruction>) {
         )
     }
 
-    private fun emitDivision(inst: Instruction) {
+    private fun emitPerformDivision(inst: Instruction, resultReg: String) {
         add("movq ")
         emitArg(inst.args[1])
         addLine(", %rax", "Setup dividend")
@@ -88,22 +88,18 @@ class Emitter(private val instructions: List<Instruction>) {
         add("idiv ")
         emitArg(inst.args[0])
         addLine("", "Divide")
-        add("movq %rax, ")
+        add("movq $resultReg, ")
         emitArg(inst.args[1])
+    }
+
+    private fun emitDivision(inst: Instruction) {
+        emitPerformDivision(inst, "%rax")
         addLine("", "Move resulting quotient")
     }
 
     private fun emitModulo(inst: Instruction) {
-        add("movq ")
-        emitArg(inst.args[1])
-        addLine(", %rax", "Setup dividend")
-        addLine("cqo", "Sign extend into %rdx")
-        add("idiv ")
-        emitArg(inst.args[0])
-        addLine("", "Divide")
-        add("movq %rdx, ")
-        emitArg(inst.args[1])
-        addLine("", "Move resulting quotient")
+        emitPerformDivision(inst, "%rdx")
+        addLine("", "Move resulting remainder")
     }
 
     private fun emitCalleePrologue() {
