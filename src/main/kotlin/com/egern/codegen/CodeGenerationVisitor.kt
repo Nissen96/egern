@@ -464,14 +464,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register(OpReg1), Direct),
                 InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Compare the expression to true"
             )
         )
         add(
             Instruction(
-                InstructionType.JNE,
+                InstructionType.JL,
                 InstructionArg(Memory(ifElse.elseLabel), Direct),
                 comment = "Jump to optional else part"
             )
@@ -499,6 +499,64 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.LABEL,
                 InstructionArg(Memory(ifElse.endLabel), Direct)
+            )
+        )
+    }
+
+    override fun preVisit(whileLoop: WhileLoop) {
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(whileLoop.startLabel), Direct)
+            )
+        )
+    }
+
+    override fun preMidVisit(whileLoop: WhileLoop) {
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop expression to register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue("1"), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Move true to other register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.CMP,
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Compare the expression to true"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.JL,
+                InstructionArg(Memory(whileLoop.endLabel), Direct),
+                comment = "Jump to end label if false"
+            )
+        )
+    }
+
+    override fun postVisit(whileLoop: WhileLoop) {
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(whileLoop.startLabel), Direct),
+                comment = "Jump back to continue loop"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(whileLoop.endLabel), Direct)
             )
         )
     }

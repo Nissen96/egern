@@ -34,6 +34,11 @@ interface Visitor {
     fun postMidVisit(ifElse: IfElse) {}
     fun postVisit(ifElse: IfElse) {}
 
+    fun preVisit(whileLoop: WhileLoop) {}
+    fun preMidVisit(whileLoop: WhileLoop) {}
+    fun postMidVisit(whileLoop: WhileLoop) {}
+    fun postVisit(whileLoop: WhileLoop) {}
+
     fun visit(intExpr: IntExpr) {}
 
     fun preVisit(parenExpr: ParenExpr) {}
