@@ -6,6 +6,7 @@ stmt:   varDecl
     |   ifElse
     |   returnStmt
     |   printStmt
+    |   whileLoop
     ;
 
 returnStmt: 'return' expr? ';' ;
@@ -22,6 +23,8 @@ varAssign:  (ID '=')+ expr ';';
 ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' block
       ;
+
+whileLoop: 'while' '(' expr ')' block ;
 
 block:  '{' ( stmt | funcCall ';' )* '}' ;
 
