@@ -4,6 +4,7 @@ sealed class InstructionTarget
 data class ImmediateValue(val value: String) : InstructionTarget()
 data class Memory(val address: String) : InstructionTarget()
 data class Register(val register: RegisterKind) : InstructionTarget()
+object MainLabel : InstructionTarget()
 object RBP : InstructionTarget()
 object RSP : InstructionTarget()
 object ReturnValue : InstructionTarget()
