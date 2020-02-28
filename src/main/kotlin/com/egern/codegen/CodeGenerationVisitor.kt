@@ -52,7 +52,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.LABEL,
-                InstructionArg(MainLabel, Direct)
+                InstructionArg(Memory("main"), Direct)
             )
         )
         add(
