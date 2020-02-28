@@ -393,6 +393,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             ArithOp.MINUS -> InstructionType.SUB
             ArithOp.TIMES -> InstructionType.IMUL
             ArithOp.DIVIDE -> InstructionType.IDIV
+            ArithOp.MODULO -> InstructionType.MOD
         }
         add(
             Instruction(

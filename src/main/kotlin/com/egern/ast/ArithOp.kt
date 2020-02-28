@@ -4,7 +4,8 @@ enum class ArithOp(val value: String) {
     PLUS("+"),
     MINUS("-"),
     TIMES("*"),
-    DIVIDE("/");
+    DIVIDE("/"),
+    MODULO("%");
 
     companion object {
         private val map = values().associateBy(ArithOp::value)

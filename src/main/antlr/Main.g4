@@ -30,7 +30,7 @@ block:  '{' ( stmt | funcCall ';' )* '}' ;
 
 expr: funcCall
     | '-' expr
-    | expr op=('*' | '/') expr
+    | expr op=('*' | '/' | '%') expr
     | expr op=('+' | '-') expr
     | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=') expr
     | idExpr

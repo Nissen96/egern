@@ -40,6 +40,7 @@ class Emitter(private val instructions: List<Instruction>) {
         val type = instruction.instructionType
         when {
             type == InstructionType.IDIV -> emitDivision(instruction)
+            type == InstructionType.MOD -> emitModulo(instruction)
             type.instruction != null -> emitSimpleInstruction(instruction)
             type == InstructionType.LABEL -> emitLabel(instruction)
             type == InstructionType.META -> emitMetaOp(instruction)
@@ -88,6 +89,19 @@ class Emitter(private val instructions: List<Instruction>) {
         emitArg(inst.args[0])
         addLine("", "Divide")
         add("movq %rax, ")
+        emitArg(inst.args[1])
+        addLine("", "Move resulting quotient")
+    }
+
+    private fun emitModulo(inst: Instruction) {
+        add("movq ")
+        emitArg(inst.args[1])
+        addLine(", %rax", "Setup dividend")
+        addLine("cqo", "Sign extend into %rdx")
+        add("idiv ")
+        emitArg(inst.args[0])
+        addLine("", "Divide")
+        add("movq %rdx, ")
         emitArg(inst.args[1])
         addLine("", "Move resulting quotient")
     }

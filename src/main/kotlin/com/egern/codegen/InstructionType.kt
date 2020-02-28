@@ -8,6 +8,7 @@ enum class InstructionType(val instruction: String?) {
     DEC("decq"),
     IMUL("imulq"),
     IDIV(null),
+    MOD(null),
     CMP("cmpq"),
     JMP("jmp"),
     JNE("jne"),
