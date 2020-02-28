@@ -13,6 +13,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             InstructionType.DEC -> "dec"
             InstructionType.IMUL -> "imul"
             InstructionType.IDIV -> null
+            InstructionType.MOD -> null
             InstructionType.CMP -> "cmp"
             InstructionType.JMP -> "jmp"
             InstructionType.JNE -> "jne"
@@ -46,6 +47,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         val type = instruction.instructionType
         when {
             type == InstructionType.IDIV -> emitDivision(instruction)
+            type == InstructionType.MOD -> emitModulo(instruction)
             mapInstructionType(type) != null -> emitSimpleInstruction(instruction) // TODO: fix double work
             type == InstructionType.LABEL -> emitLabel(instruction)
             type == InstructionType.META -> emitMetaOp(instruction)
@@ -98,6 +100,22 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         add("mov %rax, ")
         emitArg(inst.args[1])
         addLine("", "Move resulting quotient")
+         */
+    }
+
+    private fun emitModulo(inst: Instruction) {
+        /*
+        // TODO: fix order
+        add("mov ")
+        emitArg(inst.args[1])
+        addLine(", %rax", "Setup dividend")
+        addLine("cqo", "Sign extend into %rdx")
+        add("idiv ")
+        emitArg(inst.args[0])
+        addLine("", "Divide")
+        add("mov %rax, ")
+        emitArg(inst.args[1])
+        addLine("", "Move resulting remainder")
          */
     }
 

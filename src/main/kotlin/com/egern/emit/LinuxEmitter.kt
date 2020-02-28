@@ -14,6 +14,7 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             InstructionType.DEC -> "decq"
             InstructionType.IMUL -> "imulq"
             InstructionType.IDIV -> null
+            InstructionType.MOD -> null
             InstructionType.CMP -> "cmpq"
             InstructionType.JMP -> "jmp"
             InstructionType.JNE -> "jne"
@@ -58,6 +59,7 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         val type = instruction.instructionType
         when {
             type == InstructionType.IDIV -> emitDivision(instruction)
+            type == InstructionType.MOD -> emitModulo(instruction)
             mapInstructionType(type) != null -> emitSimpleInstruction(instruction) // TODO: fix double work
             type == InstructionType.LABEL -> emitLabel(instruction)
             type == InstructionType.META -> emitMetaOp(instruction)
@@ -108,6 +110,19 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         add("movq %rax, ")
         add(emitArg(inst.args[1]))
         addLine("", "Move resulting quotient")
+    }
+
+    private fun emitModulo(inst: Instruction) {
+        add("movq ")
+        add(emitArg(inst.args[1]))
+        addLine(", %rax", "Setup dividend")
+        addLine("cqo", "Sign extend into %rdx")
+        add("idiv ")
+        add(emitArg(inst.args[0]))
+        addLine("", "Divide")
+        add("movq %rdx, ")
+        add(emitArg(inst.args[1]))
+        addLine("", "Move resulting remainder")
     }
 
     private fun emitCalleePrologue() {
