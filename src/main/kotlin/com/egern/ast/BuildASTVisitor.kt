@@ -18,6 +18,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.printStmt() != null -> ctx.printStmt().accept(this)
             ctx.varAssign() != null -> ctx.varAssign().accept(this)
             ctx.varDecl() != null -> ctx.varDecl().accept(this)
+            ctx.whileLoop() != null -> ctx.whileLoop().accept(this)
             else -> throw Exception("Invalid Statement Type!")
         }
     }
@@ -58,6 +59,13 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return IfElse(
             ctx.expr().accept(this) as Expr, ctx.block(0).accept(this) as Block,
             ctx.block(1)?.accept(this) as? Block
+        )
+    }
+
+    override fun visitWhileLoop(ctx: MainParser.WhileLoopContext): ASTNode {
+        return WhileLoop(
+            ctx.expr().accept(this) as Expr,
+            ctx.block().accept(this) as Block
         )
     }
 

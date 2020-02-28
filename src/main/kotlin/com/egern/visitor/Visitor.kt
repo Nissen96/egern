@@ -56,4 +56,8 @@ interface Visitor {
 
     fun preVisit(varDecl: VarDecl<*>) {}
     fun postVisit(varDecl: VarDecl<*>) {}
+
+    fun preVisit(whileLoop: WhileLoop) {}
+    fun midVisit(whileLoop: WhileLoop) {}
+    fun postVisit(whileLoop: WhileLoop) {}
 }
