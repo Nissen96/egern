@@ -144,12 +144,16 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         val op = if (restore) InstructionType.POP else InstructionType.PUSH
         builder.addLine("; Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
-            builder.addLine(mapInstructionType(op)!!, Pair(register, null))
+            builder
+                .newline()
+                .addLine(mapInstructionType(op)!!, Pair(register, null))
         }
     }
 
     private fun emitLabel(instruction: Instruction) {
-        builder.add(emitArg(instruction.args[0]) + ":", AsmStringBuilder.OP_OFFSET)
+        builder
+            .newline()
+            .add(emitArg(instruction.args[0]) + ":", AsmStringBuilder.OP_OFFSET)
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
