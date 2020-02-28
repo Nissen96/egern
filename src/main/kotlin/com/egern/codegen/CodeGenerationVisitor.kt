@@ -471,7 +471,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
         add(
             Instruction(
-                InstructionType.JNE,
+                InstructionType.JL,
                 InstructionArg(Memory(ifElse.elseLabel), Direct),
                 comment = "Jump to optional else part"
             )
@@ -538,7 +538,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
         add(
             Instruction(
-                InstructionType.JNE,
+                InstructionType.JL,
                 InstructionArg(Memory(whileLoop.endLabel), Direct),
                 comment = "Jump to end label if false"
             )
