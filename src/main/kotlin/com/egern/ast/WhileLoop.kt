@@ -8,9 +8,8 @@ class WhileLoop(val expression: Expr, val block: Block) : Statement() {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         expression.accept(visitor)
-        visitor.preMidVisit(this)
+        visitor.midVisit(this)
         block.accept(visitor)
-        visitor.postMidVisit(this)
         visitor.postVisit(this)
     }
 }
