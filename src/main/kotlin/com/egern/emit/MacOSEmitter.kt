@@ -12,7 +12,6 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             InstructionType.INC -> "inc"
             InstructionType.DEC -> "dec"
             InstructionType.IMUL -> "imul"
-            InstructionType.IDIV -> null
             InstructionType.CMP -> "cmp"
             InstructionType.JMP -> "jmp"
             InstructionType.JNE -> "jne"
@@ -25,8 +24,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             InstructionType.POP -> "pop"
             InstructionType.CALL -> "call"
             InstructionType.RET -> "ret"
-            InstructionType.LABEL -> null
-            InstructionType.META -> null
+            else -> null
         }
     }
 
@@ -71,21 +69,21 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         }
     }
 
-    private fun emitAllocateStackSpace(arg: MetaOperationArg) {
+    override fun emitAllocateStackSpace(arg: MetaOperationArg) {
         builder.addLine(
             "add", Pair("rsp", "${-VARIABLE_SIZE * arg.value}"),
             "Move stack pointer to allocate space for local variables"
         )
     }
 
-    private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
+    override fun emitDeallocateStackSpace(arg: MetaOperationArg) {
         builder.addLine(
             "add", Pair("rsp", "${VARIABLE_SIZE * arg.value}"),
             "Move stack pointer to deallocate space for local variables"
         )
     }
 
-    private fun emitDivision(inst: Instruction) {
+    override fun emitPerformDivision(inst: Instruction, resultReg: String) {
         /*
         // TODO: fix order
         add("mov ")
@@ -101,14 +99,14 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
          */
     }
 
-    private fun emitCalleePrologue() {
+    override fun emitCalleePrologue() {
         builder
             .addLine("; Callee Prologue")
             .addLine("push", Pair("rbp", null), "save caller's base pointer")
             .addLine("mov", Pair("rbp", "rsp"), "make stack pointer new base pointer")
     }
 
-    private fun emitCalleeEpilogue() {
+    override fun emitCalleeEpilogue() {
         builder
             .addLine("; Callee Epilogue")
             .addLine("mov", Pair("rsp", "rbp"), "Restore stack pointer")
@@ -116,7 +114,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             .addLine("ret", comment = "Return from call")
     }
 
-    private fun emitProgramPrologue() {
+    override fun emitProgramPrologue() {
         builder
             .addLine("global", Pair("_main", null))
             .addLine("extern", Pair("_printf", null))
@@ -125,89 +123,32 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
 
     }
 
-    private fun emitProgramEpilogue() {
+    override fun emitProgramEpilogue() {
         builder.addLine("format: db \"%d\", 10, 0")
     }
 
-    private fun emitPrint() {
+    override fun emitPrint(arg: MetaOperationArg) {
         // TODO: double check alignment (MacOS requires 16 byte)
+        // TODO: handle print empty
+        val empty = arg.value == 0
         builder
             .addLine("; PRINTING USING PRINTF")
-            .addLine("lea", Pair("rdi", "[format]"))
-            .addLine("mov", Pair("rsi", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size}]"))
+            .addLine("lea", Pair("rdi", "[format]"), "Pass 1st argument in rdi")
+            .addLine("mov", Pair("rsi", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size}]"), "Pass 2nd argument in rdi")
             .addLine("xor", Pair("rax", "rax"))
             .addLine("call", Pair("_printf", null), "call function printf")
 
     }
 
-    private fun emitCallerCallee(restore: Boolean, registers: List<String>) {
-        val op = if (restore) InstructionType.POP else InstructionType.PUSH
-        builder.addLine("; Caller/Callee ${if (restore) "Restore" else "Save"}")
-        for (register in if (restore) registers.reversed() else registers) {
-            builder
-                .newline()
-                .addLine(mapInstructionType(op)!!, Pair(register, null))
-        }
+    override fun emitIndirect(target: String): String {
+        return "[$target]"
     }
 
-    private fun emitLabel(instruction: Instruction) {
-        builder
-            .newline()
-            .add(emitArg(instruction.args[0]) + ":", AsmStringBuilder.OP_OFFSET)
+    override fun emitIndirectRelative(target: String, offset: Int): String {
+        return "[$target + ${ADDRESSING_OFFSET * offset}]"
     }
 
-    private fun emitSimpleInstruction(instruction: Instruction) {
-        val instr = mapInstructionType(instruction.instructionType)
-            ?: throw Exception("Assembly operation for ${instruction.instructionType} not defined")
-        builder.add(instr, AsmStringBuilder.OP_OFFSET)
-        emitArgs(instruction.args)
+    override fun emitMainLabel(): String {
+        return "_main"
     }
-
-    private fun emitArgs(arguments: Array<out Arg>) {
-        when (arguments.size) {
-            1 -> builder.add(emitArg(arguments[0]), AsmStringBuilder.REGS_OFFSET)
-            2 -> builder.add(emitArg(arguments[0]) + ", " + emitArg(arguments[1]), AsmStringBuilder.REGS_OFFSET)
-            else -> throw Exception("Unexpected number of arguments")
-        }
-        /*
-        if (arguments.isNotEmpty()) {
-            //builder.add("")
-            emitArg(arguments[0])
-        }
-        if (arguments.size > 1) {
-            for (arg in arguments.slice(1 until arguments.size)) {
-                builder.add(", ")
-                emitArg(arg)
-            }
-        } */
-    }
-
-    private fun emitArg(argument: Arg): String { // TODO: look
-        if (argument is InstructionArg) return emitInstructionArg(argument)
-        else throw Exception("Trying to emit an argument that cant be emitted!")
-    }
-
-    private fun emitInstructionArg(argument: InstructionArg): String {
-        val target = when (argument.instructionTarget) {
-            is ImmediateValue -> argument.instructionTarget.value
-            is Memory -> argument.instructionTarget.address
-            is Register -> when (argument.instructionTarget.register) {
-                OpReg1 -> "r12"
-                OpReg2 -> "r13"
-                DataReg -> "r14"
-                is ParamReg -> CALLER_SAVE_REGISTERS[argument.instructionTarget.register.paramNum]
-            }
-            RBP -> "rbp"
-            RSP -> "rsp"
-            ReturnValue -> "rax"
-            StaticLink -> "r15"
-            MainLabel -> "_main"
-        }
-        return when (argument.addressingMode) {
-            Direct -> target
-            Indirect -> "[$target]"
-            is IndirectRelative -> "[$target + ${ADDRESSING_OFFSET * argument.addressingMode.offset}]"
-        }
-    }
-
 }
