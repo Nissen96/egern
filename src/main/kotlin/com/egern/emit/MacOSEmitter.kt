@@ -12,6 +12,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             InstructionType.INC -> "inc"
             InstructionType.DEC -> "dec"
             InstructionType.IMUL -> "imul"
+            InstructionType.IDIV -> "idiv"
             InstructionType.CMP -> "cmp"
             InstructionType.JMP -> "jmp"
             InstructionType.JNE -> "jne"
@@ -28,49 +29,16 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         }
     }
 
-    override fun emitAllocateStackSpace(arg: MetaOperationArg) {
-        builder.addLine(
-            "add", Pair("rsp", "${-VARIABLE_SIZE * arg.value}"),
-            "Move stack pointer to allocate space for local variables"
-        )
+    override fun argPair(arg1: String, arg2: String): Pair<String, String> {
+        return Pair(arg2, arg1)
     }
 
-    override fun emitDeallocateStackSpace(arg: MetaOperationArg) {
-        builder.addLine(
-            "add", Pair("rsp", "${VARIABLE_SIZE * arg.value}"),
-            "Move stack pointer to deallocate space for local variables"
-        )
+    override fun emitRegister(register: String): String {
+        return register
     }
 
-    override fun emitPerformDivision(inst: Instruction, resultReg: String) {
-        /*
-        // TODO: fix order
-        add("mov ")
-        emitArg(inst.args[1])
-        addLine(", %rax", "Setup dividend")
-        addLine("cqo", "Sign extend into %rdx")
-        add("idiv ")
-        emitArg(inst.args[0])
-        addLine("", "Divide")
-        add("mov %rax, ")
-        emitArg(inst.args[1])
-        addLine("", "Move resulting quotient")
-         */
-    }
-
-    override fun emitCalleePrologue() {
-        builder
-            .addLine("; Callee Prologue")
-            .addLine("push", Pair("rbp", null), "save caller's base pointer")
-            .addLine("mov", Pair("rbp", "rsp"), "make stack pointer new base pointer")
-    }
-
-    override fun emitCalleeEpilogue() {
-        builder
-            .addLine("; Callee Epilogue")
-            .addLine("mov", Pair("rsp", "rbp"), "Restore stack pointer")
-            .addLine("pop", Pair("rbp", null), "Restore base pointer")
-            .addLine("ret", comment = "Return from call")
+    override fun emitImmediate(value: String): String {
+        return value
     }
 
     override fun emitProgramPrologue() {
@@ -95,7 +63,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             .addLine("lea", Pair("rdi", "[format]"), "Pass 1st argument in rdi")
             .addLine("mov", Pair("rsi", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size}]"), "Pass 2nd argument in rdi")
             .addLine("xor", Pair("rax", "rax"))
-            .addLine("call", Pair("_printf", null), "call function printf")
+            .addLine("call", Pair("_printf", null), "Call function printf")
 
     }
 

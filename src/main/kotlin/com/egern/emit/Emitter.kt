@@ -6,16 +6,14 @@ import java.lang.Exception
 abstract class Emitter(private val instructions: List<Instruction>, protected val builder: AsmStringBuilder) {
     abstract fun emitProgramPrologue()
     abstract fun emitProgramEpilogue()
-    abstract fun emitCalleePrologue()
-    abstract fun emitCalleeEpilogue()
+    abstract fun emitRegister(register: String): String
+    abstract fun emitImmediate(value: String): String
     abstract fun emitIndirect(target: String): String
     abstract fun emitIndirectRelative(target: String, offset: Int): String
-    abstract fun emitAllocateStackSpace(arg: MetaOperationArg)
-    abstract fun emitDeallocateStackSpace(arg: MetaOperationArg)
     abstract fun emitPrint(arg: MetaOperationArg)
     abstract fun emitMainLabel(): String
-    abstract fun emitPerformDivision(inst: Instruction, resultReg: String)
     abstract fun mapInstructionType(type: InstructionType): String?
+    abstract fun argPair(arg1: String, arg2: String): Pair<String, String>
 
     protected companion object {
         const val VARIABLE_SIZE = 8
@@ -74,18 +72,18 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
 
     private fun emitInstructionArg(argument: InstructionArg): String {
         val target = when (argument.instructionTarget) {
-            is ImmediateValue -> "${builder.immediateSym}${argument.instructionTarget.value}"
+            is ImmediateValue -> emitImmediate(argument.instructionTarget.value)
             is Memory -> argument.instructionTarget.address
             is Register -> when (argument.instructionTarget.register) {
-                OpReg1 -> "${builder.regSym}r12"
-                OpReg2 -> "${builder.regSym}r13"
-                DataReg -> "${builder.regSym}r14"
-                is ParamReg -> "${builder.regSym}${CALLER_SAVE_REGISTERS[argument.instructionTarget.register.paramNum]}"
+                OpReg1 -> emitRegister("r12")
+                OpReg2 -> emitRegister("r13")
+                DataReg -> emitRegister("r14")
+                is ParamReg -> emitRegister(CALLER_SAVE_REGISTERS[argument.instructionTarget.register.paramNum])
             }
-            RBP -> "${builder.regSym}rbp"
-            RSP -> "${builder.regSym}rsp"
-            ReturnValue -> "${builder.regSym}rax"
-            StaticLink -> "${builder.regSym}r15"
+            RBP -> emitRegister("rbp")
+            RSP -> emitRegister("rsp")
+            ReturnValue -> emitRegister("rax")
+            StaticLink -> emitRegister("r15")
             MainLabel -> emitMainLabel()
         }
 
@@ -116,8 +114,39 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
             .newline()
             .addLine("${builder.commentSym} Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in if (restore) registers.reversed() else registers) {
-            builder.addLine(mapInstructionType(op)!!, Pair("${builder.regSym}$register", null))
+            builder.addLine(mapInstructionType(op)!!, Pair(emitRegister(register), null))
         }
+    }
+
+    private fun emitCalleePrologue() {
+        builder
+            .addLine("${builder.commentSym} Callee Prologue")
+            .addLine(
+                mapInstructionType(InstructionType.PUSH)!!,
+                Pair(emitRegister("rbp"), null),
+                "Save caller's base pointer"
+            )
+            .addLine(
+                mapInstructionType(InstructionType.MOV)!!,
+                argPair(emitRegister("rsp"), emitRegister("rbp")),
+                "Make stack pointer new base pointer"
+            )
+    }
+
+    private fun emitCalleeEpilogue() {
+        builder
+            .addLine("${builder.commentSym} Callee Epilogue")
+            .addLine(
+                mapInstructionType(InstructionType.MOV)!!,
+                argPair(emitRegister("rbp"), emitRegister("rsp")),
+                "Restore stack pointer"
+            )
+            .addLine(
+                mapInstructionType(InstructionType.POP)!!,
+                Pair(emitRegister("rbp"), null),
+                "Restore base pointer"
+            )
+            .addLine(mapInstructionType(InstructionType.RET)!!, comment = "Return from call")
     }
 
     private fun emitLabel(instruction: Instruction) {
@@ -126,13 +155,52 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
             .add(emitArg(instruction.args[0]) + ":", AsmStringBuilder.OP_OFFSET)
     }
 
+    private fun emitPerformDivision(inst: Instruction) {
+        builder
+            .addLine(
+                mapInstructionType(InstructionType.MOV)!!,
+                argPair(emitArg(inst.args[1]), emitRegister("rax")),
+                "Setup dividend"
+            )
+            .addLine("cqo", comment = "Sign extend into rdx")
+            .addLine(
+                mapInstructionType(InstructionType.IDIV)!!,
+                Pair(emitArg(inst.args[0]), null),
+                "Divide"
+            )
+    }
+
     private fun emitDivision(inst: Instruction) {
-        emitPerformDivision(inst, "${builder.regSym}rax")
-        builder.addLine("", comment = "Move resulting quotient")
+        emitPerformDivision(inst)
+        builder.addLine(
+            mapInstructionType(InstructionType.MOV)!!,
+            argPair(emitRegister("rax"), emitArg(inst.args[1])),
+            "Move resulting quotient"
+        )
     }
 
     private fun emitModulo(inst: Instruction) {
-        emitPerformDivision(inst, "${builder.regSym}rdx")
-        builder.addLine("", comment = "Move resulting remainder")
+        emitPerformDivision(inst)
+        builder.addLine(
+            mapInstructionType(InstructionType.MOV)!!,
+            argPair(emitRegister("rdx"), emitArg(inst.args[1])),
+            "Move resulting remainder"
+        )
+    }
+
+    private fun emitAllocateStackSpace(arg: MetaOperationArg) {
+        builder.addLine(
+            mapInstructionType(InstructionType.ADD)!!,
+            argPair(emitImmediate("${-VARIABLE_SIZE * arg.value}"), emitRegister("rsp")),
+            "Move stack pointer to allocate space for local variables"
+        )
+    }
+
+    private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
+        builder.addLine(
+            mapInstructionType(InstructionType.ADD)!!,
+            argPair(emitImmediate("${VARIABLE_SIZE * arg.value}"), emitRegister("rsp")),
+            "Move stack pointer to deallocate space for local variables"
+        )
     }
 }
