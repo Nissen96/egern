@@ -3,31 +3,27 @@ package com.egern.emit
 import com.egern.codegen.*
 
 class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmStringBuilder(";")) {
-
-    override fun mapInstructionType(type: InstructionType): String? {
-        return when (type) {
-            InstructionType.MOV -> "mov"
-            InstructionType.ADD -> "add"
-            InstructionType.SUB -> "sub"
-            InstructionType.INC -> "inc"
-            InstructionType.DEC -> "dec"
-            InstructionType.IMUL -> "imul"
-            InstructionType.IDIV -> "idiv"
-            InstructionType.CMP -> "cmp"
-            InstructionType.JMP -> "jmp"
-            InstructionType.JNE -> "jne"
-            InstructionType.JE -> "je"
-            InstructionType.JG -> "jg"
-            InstructionType.JGE -> "jge"
-            InstructionType.JL -> "jl"
-            InstructionType.JLE -> "jle"
-            InstructionType.PUSH -> "push"
-            InstructionType.POP -> "pop"
-            InstructionType.CALL -> "call"
-            InstructionType.RET -> "ret"
-            else -> null
-        }
-    }
+    override val instructionMap = mapOf(
+        InstructionType.MOV to "mov",
+        InstructionType.ADD to "add",
+        InstructionType.SUB to "sub",
+        InstructionType.INC to "inc",
+        InstructionType.DEC to "dec",
+        InstructionType.IMUL to "imul",
+        InstructionType.IDIV to "idiv",
+        InstructionType.CMP to "cmp",
+        InstructionType.JMP to "jmp",
+        InstructionType.JNE to "jne",
+        InstructionType.JE to "je",
+        InstructionType.JG to "jg",
+        InstructionType.JGE to "jge",
+        InstructionType.JL to "jl",
+        InstructionType.JLE to "jle",
+        InstructionType.PUSH to "push",
+        InstructionType.POP to "pop",
+        InstructionType.CALL to "call",
+        InstructionType.RET to "ret"
+    )
 
     override fun argPair(arg1: String, arg2: String): Pair<String, String> {
         return Pair(arg2, arg1)
@@ -57,7 +53,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
     override fun emitPrint(arg: MetaOperationArg) {
         // TODO: double check alignment (MacOS requires 16 byte)
         // TODO: handle print empty
-        val empty = arg.value == 0
+        //val empty = arg.value == 0
         builder
             .addLine("; PRINTING USING PRINTF")
             .addLine("lea", Pair("rdi", "[format]"), "Pass 1st argument in rdi")

@@ -48,3 +48,8 @@ fun <T : AsmStringBuilder> T.newline(): T {
     strings.add("")
     return this
 }
+
+fun <T : AsmStringBuilder> T.addComment(comment: String): T {
+    addLine("$commentSym $comment")
+    return this
+}

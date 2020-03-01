@@ -12,8 +12,9 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     abstract fun emitIndirectRelative(target: String, offset: Int): String
     abstract fun emitPrint(arg: MetaOperationArg)
     abstract fun emitMainLabel(): String
-    abstract fun mapInstructionType(type: InstructionType): String?
     abstract fun argPair(arg1: String, arg2: String): Pair<String, String>
+
+    abstract val instructionMap: Map<InstructionType, String>
 
     protected companion object {
         const val VARIABLE_SIZE = 8
@@ -35,23 +36,22 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     }
 
     private fun emitInstruction(instruction: Instruction) {
-        val type = instruction.instructionType
-        when {
-            type == InstructionType.IDIV -> emitDivision(instruction)
-            type == InstructionType.MOD -> emitModulo(instruction)
-            mapInstructionType(type) != null -> emitSimpleInstruction(instruction) // TODO: fix double work
-            type == InstructionType.LABEL -> emitLabel(instruction)
-            type == InstructionType.META -> emitMetaOp(instruction)
+        when (instruction.instructionType) {
+            InstructionType.IDIV -> emitDivision(instruction)
+            InstructionType.MOD -> emitModulo(instruction)
+            InstructionType.LABEL -> emitLabel(instruction)
+            InstructionType.META -> emitMetaOp(instruction)
+            in instructionMap -> emitSimpleInstruction(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
         }
         // Add comment
         if (instruction.comment != null) {
-            builder.add("${builder.commentSym} ${instruction.comment}")
+            builder.addComment(instruction.comment)
         }
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
-        val instr = mapInstructionType(instruction.instructionType)
+        val instr = instructionMap[instruction.instructionType]
             ?: throw Exception("Assembly operation for ${instruction.instructionType} not defined")
         builder.add(instr, AsmStringBuilder.OP_OFFSET)
         emitArgs(instruction.args)
@@ -65,7 +65,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
         }
     }
 
-    fun emitArg(argument: Arg): String {
+    private fun emitArg(argument: Arg): String {
         if (argument is InstructionArg) return emitInstructionArg(argument)
         else throw Exception("Trying to emit an argument that cant be emitted!")
     }
@@ -112,22 +112,22 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
         val op = if (restore) InstructionType.POP else InstructionType.PUSH
         builder
             .newline()
-            .addLine("${builder.commentSym} Caller/Callee ${if (restore) "Restore" else "Save"}")
-        for (register in if (restore) registers.reversed() else registers) {
-            builder.addLine(mapInstructionType(op)!!, Pair(emitRegister(register), null))
+            .addComment("Caller/Callee ${if (restore) "Restore" else "Save"}")
+        for (register in (if (restore) registers.reversed() else registers)) {
+            builder.addLine(instructionMap.getValue(op), Pair(emitRegister(register), null))
         }
     }
 
     private fun emitCalleePrologue() {
         builder
-            .addLine("${builder.commentSym} Callee Prologue")
+            .addComment("Callee Prologue")
             .addLine(
-                mapInstructionType(InstructionType.PUSH)!!,
+                instructionMap.getValue(InstructionType.PUSH),
                 Pair(emitRegister("rbp"), null),
                 "Save caller's base pointer"
             )
             .addLine(
-                mapInstructionType(InstructionType.MOV)!!,
+                instructionMap.getValue(InstructionType.MOV),
                 argPair(emitRegister("rsp"), emitRegister("rbp")),
                 "Make stack pointer new base pointer"
             )
@@ -135,18 +135,18 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
 
     private fun emitCalleeEpilogue() {
         builder
-            .addLine("${builder.commentSym} Callee Epilogue")
+            .addComment("Callee Epilogue")
             .addLine(
-                mapInstructionType(InstructionType.MOV)!!,
+                instructionMap.getValue(InstructionType.MOV),
                 argPair(emitRegister("rbp"), emitRegister("rsp")),
                 "Restore stack pointer"
             )
             .addLine(
-                mapInstructionType(InstructionType.POP)!!,
+                instructionMap.getValue(InstructionType.POP),
                 Pair(emitRegister("rbp"), null),
                 "Restore base pointer"
             )
-            .addLine(mapInstructionType(InstructionType.RET)!!, comment = "Return from call")
+            .addLine(instructionMap.getValue(InstructionType.RET), comment = "Return from call")
     }
 
     private fun emitLabel(instruction: Instruction) {
@@ -158,13 +158,13 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     private fun emitPerformDivision(inst: Instruction) {
         builder
             .addLine(
-                mapInstructionType(InstructionType.MOV)!!,
+                instructionMap.getValue(InstructionType.MOV),
                 argPair(emitArg(inst.args[1]), emitRegister("rax")),
                 "Setup dividend"
             )
             .addLine("cqo", comment = "Sign extend into rdx")
             .addLine(
-                mapInstructionType(InstructionType.IDIV)!!,
+                instructionMap.getValue(InstructionType.IDIV),
                 Pair(emitArg(inst.args[0]), null),
                 "Divide"
             )
@@ -173,7 +173,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     private fun emitDivision(inst: Instruction) {
         emitPerformDivision(inst)
         builder.addLine(
-            mapInstructionType(InstructionType.MOV)!!,
+            instructionMap.getValue(InstructionType.MOV),
             argPair(emitRegister("rax"), emitArg(inst.args[1])),
             "Move resulting quotient"
         )
@@ -182,7 +182,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     private fun emitModulo(inst: Instruction) {
         emitPerformDivision(inst)
         builder.addLine(
-            mapInstructionType(InstructionType.MOV)!!,
+            instructionMap.getValue(InstructionType.MOV),
             argPair(emitRegister("rdx"), emitArg(inst.args[1])),
             "Move resulting remainder"
         )
@@ -190,7 +190,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
         builder.addLine(
-            mapInstructionType(InstructionType.ADD)!!,
+            instructionMap.getValue(InstructionType.ADD),
             argPair(emitImmediate("${-VARIABLE_SIZE * arg.value}"), emitRegister("rsp")),
             "Move stack pointer to allocate space for local variables"
         )
@@ -198,7 +198,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
 
     private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
         builder.addLine(
-            mapInstructionType(InstructionType.ADD)!!,
+            instructionMap.getValue(InstructionType.ADD),
             argPair(emitImmediate("${VARIABLE_SIZE * arg.value}"), emitRegister("rsp")),
             "Move stack pointer to deallocate space for local variables"
         )
