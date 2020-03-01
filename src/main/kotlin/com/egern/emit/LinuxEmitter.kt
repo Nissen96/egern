@@ -1,34 +1,29 @@
 package com.egern.emit
 
 import com.egern.codegen.*
-import java.lang.Exception
 
 class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmStringBuilder("#")) {
-
-    override fun mapInstructionType(type: InstructionType): String? {
-        return when (type) {
-            InstructionType.MOV -> "movq"
-            InstructionType.ADD -> "addq"
-            InstructionType.SUB -> "subq"
-            InstructionType.INC -> "incq"
-            InstructionType.DEC -> "decq"
-            InstructionType.IMUL -> "imulq"
-            InstructionType.IDIV -> "idiv"
-            InstructionType.CMP -> "cmpq"
-            InstructionType.JMP -> "jmp"
-            InstructionType.JNE -> "jne"
-            InstructionType.JE -> "je"
-            InstructionType.JG -> "jg"
-            InstructionType.JGE -> "jge"
-            InstructionType.JL -> "jl"
-            InstructionType.JLE -> "jle"
-            InstructionType.PUSH -> "pushq"
-            InstructionType.POP -> "popq"
-            InstructionType.CALL -> "call"
-            InstructionType.RET -> "ret"
-            else -> null
-        }
-    }
+    override val instructionMap = mapOf(
+        InstructionType.MOV to "movq",
+        InstructionType.ADD to "addq",
+        InstructionType.SUB to "subq",
+        InstructionType.INC to "incq",
+        InstructionType.DEC to "decq",
+        InstructionType.IMUL to "imulq",
+        InstructionType.IDIV to "idiv",
+        InstructionType.CMP to "cmpq",
+        InstructionType.JMP to "jmp",
+        InstructionType.JNE to "jne",
+        InstructionType.JE to "je",
+        InstructionType.JG to "jg",
+        InstructionType.JGE to "jge",
+        InstructionType.JL to "jl",
+        InstructionType.JLE to "jle",
+        InstructionType.PUSH to "pushq",
+        InstructionType.POP to "popq",
+        InstructionType.CALL to "call",
+        InstructionType.RET to "ret"
+    )
 
     override fun argPair(arg1: String, arg2: String): Pair<String, String> {
         return Pair(arg1, arg2)
