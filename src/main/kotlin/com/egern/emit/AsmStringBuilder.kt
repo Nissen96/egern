@@ -3,7 +3,7 @@ package com.egern.emit
 import com.egern.emit.AsmStringBuilder.Companion.OP_OFFSET
 import com.egern.emit.AsmStringBuilder.Companion.REGS_OFFSET
 
-class AsmStringBuilder(val commentSym: String, val regSym: String = "", val immediateSym: String = "") {
+class AsmStringBuilder(val commentSym: String) {
     val strings = mutableListOf<String>()
 
     init {
