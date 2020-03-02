@@ -10,5 +10,6 @@ enum class ArithOp(val value: String) {
     companion object {
         private val map = values().associateBy(ArithOp::value)
         fun fromString(type: String) = map[type]
+        fun operators() = map.map { it.key }
     }
 }

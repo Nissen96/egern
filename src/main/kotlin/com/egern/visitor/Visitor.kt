@@ -14,6 +14,9 @@ interface Visitor {
     fun midVisit(compExpr: CompExpr) {}
     fun postVisit(compExpr: CompExpr) {}
 
+    fun midVisit(booleanExpr: BooleanExpr) {}
+    fun postVisit(booleanExpr: BooleanExpr) {}
+
     fun preVisit(funcBody: FuncBody) {}
     fun preFuncCallVisit(funcBody: FuncBody) {}
     fun postFuncCallVisit(funcBody: FuncBody) {}

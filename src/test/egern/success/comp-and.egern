@@ -1,0 +1,10 @@
+func test(a,b) {
+    if(a > b && a > 5){
+        return a;
+    } else {
+        return b;
+    }
+}
+
+print(test(6,5));
+print(test(5,5));
