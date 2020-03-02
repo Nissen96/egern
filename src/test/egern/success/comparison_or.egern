@@ -1,0 +1,12 @@
+func test(a, b) {
+    if (a > 5 || b > 1) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+print(test(6, 2));
+print(test(6, 1));
+print(test(5, 2));
+print(test(5, 1));

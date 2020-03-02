@@ -9,6 +9,8 @@ enum class InstructionType {
     IMUL,
     IDIV,
     MOD,
+    AND,
+    OR,
     CMP,
     JMP,
     JNE,

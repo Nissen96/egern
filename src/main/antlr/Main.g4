@@ -33,6 +33,7 @@ expr: funcCall
     | expr op=('*' | '/' | '%') expr
     | expr op=('+' | '-') expr
     | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=') expr
+    | expr op=('&&' | '||') expr
     | idExpr
     | intExpr
     | parenExpr
