@@ -34,7 +34,8 @@ expr: funcCall
     | expr op=('*' | '/' | '%') expr
     | expr op=('+' | '-') expr
     | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=') expr
-    | expr op=('&&' | '||') expr
+    | expr op='&&' expr
+    | expr op='||' expr
     | booleanExpr
     | idExpr
     | intExpr
