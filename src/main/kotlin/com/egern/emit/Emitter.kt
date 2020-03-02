@@ -123,6 +123,7 @@ abstract class Emitter(
         for (register in (if (restore) registers.reversed() else registers)) {
             builder.addLine(instructionMap.getValue(op), Pair(syntax.register(register), null))
         }
+        builder.newline()
     }
 
     private fun emitCalleePrologue() {
@@ -162,6 +163,7 @@ abstract class Emitter(
         builder
             .newline()
             .addOp(emitArg(instruction.args[0]) + ":")
+            .newline()
     }
 
     private fun emitPerformDivision(inst: Instruction) {
