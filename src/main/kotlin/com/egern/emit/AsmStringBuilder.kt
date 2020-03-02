@@ -25,6 +25,8 @@ class AsmStringBuilder(private val commentSym: String) {
 
         if (reg1 != null) {
             addRegs(reg1, reg2)
+        } else {
+            add("", REGS_OFFSET)
         }
 
         if (comment != null) {
