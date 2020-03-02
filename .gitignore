@@ -4,6 +4,7 @@ Report.pdf
 titlepage.pdf
 cache/
 *.nasm
+*.o
 
 # Compiled class file
 *.class
