@@ -31,6 +31,8 @@ class ATTSyntax : SyntaxManager() {
         InstructionType.DEC to "decq",
         InstructionType.IMUL to "imulq",
         InstructionType.IDIV to "idiv",
+        InstructionType.AND to "andq",
+        InstructionType.OR to "orq",
         InstructionType.CMP to "cmpq",
         InstructionType.JMP to "jmp",
         InstructionType.JNE to "jne",

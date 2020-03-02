@@ -31,6 +31,8 @@ class IntelSyntax : SyntaxManager() {
         InstructionType.DEC to "dec",
         InstructionType.IMUL to "imul",
         InstructionType.IDIV to "idiv",
+        InstructionType.AND to "and",
+        InstructionType.OR to "or",
         InstructionType.CMP to "cmp",
         InstructionType.JMP to "jmp",
         InstructionType.JNE to "jne",
