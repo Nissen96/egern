@@ -175,7 +175,7 @@ abstract class Emitter(
         val arg = emitArg(inst.args[0])
         builder
             .addLine("test", arg, arg, "Test argument with itself")
-            .addLine("setz", arg, comment = "Set to 1 if zero etc.")
+            .addLine("setz", "${arg}b", comment = "Set first byte to 1 if zero etc.")
     }
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
