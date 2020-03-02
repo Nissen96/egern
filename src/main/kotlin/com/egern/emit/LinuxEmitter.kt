@@ -102,6 +102,7 @@ class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) : Emi
     override fun emitPrint(arg: MetaOperationArg) {
         val empty = arg.value == 0
         builder
+            .newline()
             .addLine("# PRINTING USING PRINTF")
             .addLine(
                 "movq", Pair("\$format_${if (empty) "newline" else "int"}", "%rdi"),
