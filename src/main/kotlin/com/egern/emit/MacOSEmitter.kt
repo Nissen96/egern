@@ -3,27 +3,27 @@ package com.egern.emit
 import com.egern.codegen.*
 
 class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) : Emitter(instructions, AsmStringBuilder(";"), syntax) {
-    override val instructionMap = mapOf(
-        InstructionType.MOV to "mov",
-        InstructionType.ADD to "add",
-        InstructionType.SUB to "sub",
-        InstructionType.INC to "inc",
-        InstructionType.DEC to "dec",
-        InstructionType.IMUL to "imul",
-        InstructionType.IDIV to "idiv",
-        InstructionType.CMP to "cmp",
-        InstructionType.JMP to "jmp",
-        InstructionType.JNE to "jne",
-        InstructionType.JE to "je",
-        InstructionType.JG to "jg",
-        InstructionType.JGE to "jge",
-        InstructionType.JL to "jl",
-        InstructionType.JLE to "jle",
-        InstructionType.PUSH to "push",
-        InstructionType.POP to "pop",
-        InstructionType.CALL to "call",
-        InstructionType.RET to "ret"
-    )
+//    override val instructionMap = mapOf(
+//        InstructionType.MOV to "mov",
+//        InstructionType.ADD to "add",
+//        InstructionType.SUB to "sub",
+//        InstructionType.INC to "inc",
+//        InstructionType.DEC to "dec",
+//        InstructionType.IMUL to "imul",
+//        InstructionType.IDIV to "idiv",
+//        InstructionType.CMP to "cmp",
+//        InstructionType.JMP to "jmp",
+//        InstructionType.JNE to "jne",
+//        InstructionType.JE to "je",
+//        InstructionType.JG to "jg",
+//        InstructionType.JGE to "jge",
+//        InstructionType.JL to "jl",
+//        InstructionType.JLE to "jle",
+//        InstructionType.PUSH to "push",
+//        InstructionType.POP to "pop",
+//        InstructionType.CALL to "call",
+//        InstructionType.RET to "ret"
+//    )
 
     override fun emit(): String {
         emitProgramPrologue()
