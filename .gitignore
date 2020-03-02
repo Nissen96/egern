@@ -3,6 +3,7 @@
 Report.pdf
 titlepage.pdf
 cache/
+*.nasm
 
 # Compiled class file
 *.class
