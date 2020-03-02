@@ -29,16 +29,18 @@ class AsmStringBuilder(private val commentSym: String) {
         return this
     }
 
-    fun addOp(op: String) {
+    fun addOp(op: String): AsmStringBuilder {
         add(op, OP_OFFSET)
+        return this
     }
 
-    fun addRegs(regs: Pair<String, String?>) {
+    fun addRegs(regs: Pair<String, String?>): AsmStringBuilder {
         if (regs.second != null) {
             add("${regs.first}, ${regs.second}", REGS_OFFSET)
         } else {
             add(regs.first, REGS_OFFSET)
         }
+        return this
     }
 
     fun newline(): AsmStringBuilder {
