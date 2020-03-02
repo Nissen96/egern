@@ -13,13 +13,18 @@ class AsmStringBuilder(private val commentSym: String) {
         return this
     }
 
-    fun addLine(op: String? = null, regs: Pair<String, String?>? = null, comment: String? = null): AsmStringBuilder {
+    fun addLine(
+        op: String? = null,
+        reg1: String? = null,
+        reg2: String? = null,
+        comment: String? = null
+    ): AsmStringBuilder {
         if (op != null) {
             addOp(op)
         }
 
-        if (regs != null) {
-            addRegs(regs)
+        if (reg1 != null) {
+            addRegs(reg1, reg2)
         }
 
         if (comment != null) {
@@ -34,12 +39,8 @@ class AsmStringBuilder(private val commentSym: String) {
         return this
     }
 
-    fun addRegs(regs: Pair<String, String?>): AsmStringBuilder {
-        if (regs.second != null) {
-            add("${regs.first}, ${regs.second}", REGS_OFFSET)
-        } else {
-            add(regs.first, REGS_OFFSET)
-        }
+    fun addRegs(reg1: String, reg2: String? = null): AsmStringBuilder {
+        add("$reg1${if (reg2 != null) ", $reg2" else ""}", REGS_OFFSET)
         return this
     }
 

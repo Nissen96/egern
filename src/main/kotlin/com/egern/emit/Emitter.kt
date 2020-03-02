@@ -56,10 +56,10 @@ abstract class Emitter(
 
     private fun emitArgs(arguments: Array<out Arg>) {
         when (arguments.size) {
-            1 -> builder.addRegs(Pair(emitArg(arguments[0]), null))
+            1 -> builder.addRegs(emitArg(arguments[0]))
             2 -> {
-                val args = syntax.argOrder(emitArg(arguments[0]), emitArg(arguments[1]))
-                builder.addRegs(args)
+                val (arg1, arg2) = syntax.argOrder(emitArg(arguments[0]), emitArg(arguments[1]))
+                builder.addRegs(arg1, arg2)
             }
             else -> throw Exception("Unexpected number of arguments")
         }
@@ -115,41 +115,31 @@ abstract class Emitter(
             .addComment("Caller/Callee ${if (restore) "Restore" else "Save"}")
             .newline()
         for (register in (if (restore) registers.reversed() else registers)) {
-            builder.addLine(syntax.ops.getValue(op), Pair(syntax.register(register), null))
+            builder.addLine(syntax.ops.getValue(op), syntax.register(register))
         }
         builder.newline()
     }
 
     private fun emitCalleePrologue() {
+        val (reg1, reg2) = syntax.argOrder(syntax.register("rsp"), syntax.register("rbp"))
         builder
             .addComment("Callee Prologue")
             .newline()
             .addLine(
                 syntax.ops.getValue(InstructionType.PUSH),
-                Pair(syntax.register("rbp"), null),
-                "Save caller's base pointer"
+                syntax.register("rbp"),
+                comment = "Save caller's base pointer"
             )
-            .addLine(
-                syntax.ops.getValue(InstructionType.MOV),
-                syntax.argOrder(syntax.register("rsp"), syntax.register("rbp")),
-                "Make stack pointer new base pointer"
-            )
+            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, "Make stack pointer new base pointer")
     }
 
     private fun emitCalleeEpilogue() {
+        val (reg1, reg2) = syntax.argOrder(syntax.register("rbp"), syntax.register("rsp"))
         builder
             .addComment("Callee Epilogue")
             .newline()
-            .addLine(
-                syntax.ops.getValue(InstructionType.MOV),
-                syntax.argOrder(syntax.register("rbp"), syntax.register("rsp")),
-                "Restore stack pointer"
-            )
-            .addLine(
-                syntax.ops.getValue(InstructionType.POP),
-                Pair(syntax.register("rbp"), null),
-                "Restore base pointer"
-            )
+            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, "Restore stack pointer")
+            .addLine(syntax.ops.getValue(InstructionType.POP), syntax.register("rbp"), comment = "Restore base pointer")
             .addLine(syntax.ops.getValue(InstructionType.RET), comment = "Return from call")
     }
 
@@ -161,50 +151,37 @@ abstract class Emitter(
     }
 
     private fun emitPerformDivision(inst: Instruction) {
+        val (arg1, arg2) = syntax.argOrder(emitArg(inst.args[1]), syntax.register("rax"))
         builder
-            .addLine(
-                syntax.ops.getValue(InstructionType.MOV),
-                syntax.argOrder(emitArg(inst.args[1]), syntax.register("rax")),
-                "Setup dividend"
-            )
+            .addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Setup dividend")
             .addLine("cqo", comment = "Sign extend into rdx")
-            .addLine(
-                syntax.ops.getValue(InstructionType.IDIV),
-                Pair(emitArg(inst.args[0]), null),
-                "Divide"
-            )
+            .addLine(syntax.ops.getValue(InstructionType.IDIV), emitArg(inst.args[0]), comment = "Divide")
     }
 
     private fun emitDivision(inst: Instruction) {
         emitPerformDivision(inst)
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV),
-            syntax.argOrder(syntax.register("rax"), emitArg(inst.args[1])),
-            "Move resulting quotient"
-        )
+        val (arg1, arg2) = syntax.argOrder(syntax.register("rax"), emitArg(inst.args[1]))
+        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Move resulting quotient")
     }
 
     private fun emitModulo(inst: Instruction) {
         emitPerformDivision(inst)
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV),
-            syntax.argOrder(syntax.register("rdx"), emitArg(inst.args[1])),
-            "Move resulting remainder"
-        )
+        val (arg1, arg2) = syntax.argOrder(syntax.register("rdx"), emitArg(inst.args[1]))
+        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Move resulting remainder")
     }
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${-VARIABLE_SIZE * arg.value}"), syntax.register("rsp"))
         builder.addLine(
-            syntax.ops.getValue(InstructionType.ADD),
-            syntax.argOrder(syntax.immediate("${-VARIABLE_SIZE * arg.value}"), syntax.register("rsp")),
+            syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
             "Move stack pointer to allocate space for local variables"
         )
     }
 
     private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rsp"))
         builder.addLine(
-            syntax.ops.getValue(InstructionType.ADD),
-            syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rsp")),
+            syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
             "Move stack pointer to deallocate space for local variables"
         )
     }

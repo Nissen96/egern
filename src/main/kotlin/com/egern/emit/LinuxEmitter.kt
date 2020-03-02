@@ -14,7 +14,7 @@ class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine(".string \"\\n\"", comment = "Empty format string for C printf")
             .newline()
             .addLine(".text")
-            .addLine(".globl", Pair("main", null))
+            .addLine(".globl", "main")
             .newline()
     }
 
@@ -28,18 +28,18 @@ class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .newline()
             .addLine("# PRINTING USING PRINTF")
             .addLine(
-                "movq", Pair("\$format_${if (empty) "newline" else "int"}", "%rdi"),
+                "movq", "\$format_${if (empty) "newline" else "int"}", "%rdi",
                 "Pass 1st argument in %rdi"
             )
         if (!empty) {
             builder.addLine(
-                "movq", Pair("${8 * CALLER_SAVE_REGISTERS.size}(%rsp)", "%rsi"),
+                "movq", "${8 * CALLER_SAVE_REGISTERS.size}(%rsp)", "%rsi",
                 "Pass 2nd argument in %rsi"
             )
         }
         builder
-            .addLine("xor", Pair("%rax", "%rax"), "No floating point registers used")
-            .addLine("call", Pair("printf", null), "Call function printf")
+            .addLine("xor", "%rax", "%rax", "No floating point registers used")
+            .addLine("call", "printf", comment = "Call function printf")
     }
 
     override fun emitMainLabel(): String {

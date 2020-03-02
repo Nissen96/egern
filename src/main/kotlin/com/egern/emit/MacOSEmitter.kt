@@ -7,8 +7,8 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
 
     override fun emitProgramPrologue() {
         builder
-            .addLine("global", Pair("_main", null))
-            .addLine("extern", Pair("_printf", null))
+            .addLine("global", "_main")
+            .addLine("extern", "_printf")
             .addLine("default rel")
             .addLine("section .text")
     }
@@ -24,10 +24,10 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         builder
             .newline()
             .addLine("; PRINTING USING PRINTF")
-            .addLine("lea", Pair("rdi", "[format]"), "Pass 1st argument in rdi")
-            .addLine("mov", Pair("rsi", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size}]"), "Pass 2nd argument in rdi")
-            .addLine("xor", Pair("rax", "rax"))
-            .addLine("call", Pair("_printf", null), "Call function printf")
+            .addLine("lea", "rdi", "[format]", "Pass 1st argument in rdi")
+            .addLine("mov", "rsi", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size}]", "Pass 2nd argument in rdi")
+            .addLine("xor", "rax", "rax")
+            .addLine("call", "_printf", comment = "Call function printf")
 
     }
 
