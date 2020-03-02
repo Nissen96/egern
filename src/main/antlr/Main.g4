@@ -34,6 +34,7 @@ expr: funcCall
     | expr op=('+' | '-') expr
     | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=') expr
     | expr op=('&&' | '||') expr
+    | booleanExpr
     | idExpr
     | intExpr
     | parenExpr
@@ -41,6 +42,7 @@ expr: funcCall
 
 idExpr: ID ;
 intExpr: INT ;
+booleanExpr: BOOLEAN ;
 parenExpr: '(' expr ')';
 
 printStmt: 'print' '(' expr? ')' ';';
@@ -48,4 +50,5 @@ printStmt: 'print' '(' expr? ')' ';';
 NEWLINE :'\r'? '\n' -> skip;
 WS      : (' '|'\t') -> skip;
 INT     : [0-9]+ ;
+BOOLEAN  : 'true' | 'false' ;
 ID      : [A-Za-z_]+[A-Za-z_0-9]* ;

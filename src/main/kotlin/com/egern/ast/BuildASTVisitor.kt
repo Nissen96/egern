@@ -77,6 +77,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitExpr(ctx: MainParser.ExprContext): ASTNode {
         return when {
+            ctx.booleanExpr() != null -> BooleanExpr(ctx.booleanExpr().BOOLEAN().text.toBoolean())
             ctx.intExpr() != null -> IntExpr(ctx.intExpr().INT().text.toInt())
             ctx.idExpr() != null -> IdExpr(ctx.idExpr().ID().text)
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
@@ -94,7 +95,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     private fun visitBooleanExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
-        return BooleanExpr(
+        return BooleanOpExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
             BooleanOp.fromString(op)!!
