@@ -1,6 +1,5 @@
 package com.egern.emit
 
-import com.egern.codegen.InstructionArg
 import com.egern.codegen.InstructionType
 
 abstract class SyntaxManager {

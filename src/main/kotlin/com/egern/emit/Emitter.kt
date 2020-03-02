@@ -6,19 +6,12 @@ import java.lang.Exception
 abstract class Emitter(
     private val instructions: List<Instruction>,
     protected val builder: AsmStringBuilder,
-    protected val syntax: SyntaxManager) {
-
+    private val syntax: SyntaxManager
+) {
     abstract fun emitProgramPrologue()
     abstract fun emitProgramEpilogue()
-//    abstract fun emitRegister(register: String): String
-    //abstract fun emitImmediate(value: String): String
-    //abstract fun emitIndirect(target: String): String
-//    abstract fun emitIndirectRelative(target: String, offset: Int): String
     abstract fun emitPrint(arg: MetaOperationArg)
     abstract fun emitMainLabel(): String
-    //abstract fun argPair(arg1: String, arg2: String): Pair<String, String>
-
-
 
     protected companion object {
         const val VARIABLE_SIZE = 8
@@ -49,8 +42,9 @@ abstract class Emitter(
         }
         // Add comment
         if (instruction.comment != null) {
-            builder.addComment(instruction.comment).newline()
+            builder.addComment(instruction.comment)
         }
+        builder.newline()
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
@@ -62,10 +56,10 @@ abstract class Emitter(
 
     private fun emitArgs(arguments: Array<out Arg>) {
         when (arguments.size) {
-            1 -> builder.add(emitArg(arguments[0]), AsmStringBuilder.REGS_OFFSET)
+            1 -> builder.addRegs(Pair(emitArg(arguments[0]), null))
             2 -> {
-                val (arg1, arg2) = syntax.argOrder(emitArg(arguments[0]), emitArg(arguments[1]))
-                builder.add(arg1 + ", " + arg2, AsmStringBuilder.REGS_OFFSET)
+                val args = syntax.argOrder(emitArg(arguments[0]), emitArg(arguments[1]))
+                builder.addRegs(args)
             }
             else -> throw Exception("Unexpected number of arguments")
         }
