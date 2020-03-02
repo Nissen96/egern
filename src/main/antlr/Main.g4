@@ -21,7 +21,7 @@ varDecl:    'var' varAssign ;
 varAssign:  (ID '=')+ expr ';';
 
 ifElse:  'if' '(' expr ')' block
-      |  'if' '(' expr ')' block 'else' block
+      |  'if' '(' expr ')' block 'else' (block | ifElse)
       ;
 
 whileLoop: 'while' '(' expr ')' block ;
