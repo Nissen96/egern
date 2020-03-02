@@ -82,14 +82,23 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             ctx.expr().size < 2 -> ArithExpr(IntExpr(-1), ctx.expr()[0].accept(this) as Expr, ArithOp.TIMES)
-            ctx.op.text in "+-*/%" -> visitArithExpr(ctx.expr(), ctx.op.text)
-            ctx.op.text in listOf("==", "<", ">", "!=", "<=", ">=") -> visitCompExpr(ctx.expr(), ctx.op.text)
+            ctx.op.text in ArithOp.operators() -> visitArithExpr(ctx.expr(), ctx.op.text)
+            ctx.op.text in CompOp.operators() -> visitCompExpr(ctx.expr(), ctx.op.text)
+            ctx.op.text in BooleanOp.operators() -> visitBooleanExpr(ctx.expr(), ctx.op.text)
             else -> throw Exception("Invalid Expression Type!")
         }
     }
 
     override fun visitParenExpr(ctx: MainParser.ParenExprContext): ASTNode {
         return ParenExpr(visitExpr(ctx.expr()) as Expr)
+    }
+
+    private fun visitBooleanExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
+        return BooleanExpr(
+            exprs[0].accept(this) as Expr,
+            exprs[1].accept(this) as Expr,
+            BooleanOp.fromString(op)!!
+        )
     }
 
     private fun visitCompExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {

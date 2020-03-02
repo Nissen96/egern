@@ -11,5 +11,6 @@ enum class CompOp(val value: String) {
     companion object {
         private val map = values().associateBy(CompOp::value)
         fun fromString(type: String) = map[type]
+        fun operators() = map.map { it.key }
     }
 }

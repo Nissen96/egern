@@ -17,6 +17,8 @@ enum class InstructionType(val instruction: String?) {
     JGE("jge"),
     JL("jl"),
     JLE("jle"),
+    AND("andq"),
+    OR("orq"),
     PUSH("pushq"),
     POP("popq"),
     CALL("call"),
