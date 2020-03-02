@@ -424,22 +424,22 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(booleanOpExpr: BooleanOpExpr) {
         // Pop expressions to register 1 and 2 in reverse order
-        add(
-            Instruction(
-                InstructionType.POP,
-                InstructionArg(Register(OpReg2), Direct),
-                comment = "Pop expression to register 2"
-            )
-        )
         if (booleanOpExpr.rhs != null) {
             add(
                 Instruction(
                     InstructionType.POP,
-                    InstructionArg(Register(OpReg1), Direct),
-                    comment = "Pop expression to register 1"
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Pop expression to register 2"
                 )
             )
         }
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop expression to register 1"
+            )
+        )
         val operator = when (booleanOpExpr.op) {
             BooleanOp.AND -> InstructionType.AND
             BooleanOp.OR -> InstructionType.OR
@@ -458,7 +458,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             add(
                 Instruction(
                     operator,
-                    InstructionArg(Register(OpReg2), Direct),
+                    InstructionArg(Register(OpReg1), Direct),
                     comment = "Do boolean operation"
                 )
             )
