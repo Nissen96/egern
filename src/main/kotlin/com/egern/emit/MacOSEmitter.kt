@@ -2,7 +2,7 @@ package com.egern.emit
 
 import com.egern.codegen.*
 
-class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmStringBuilder(";")) {
+class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) : Emitter(instructions, AsmStringBuilder(";"), syntax) {
     override val instructionMap = mapOf(
         InstructionType.MOV to "mov",
         InstructionType.ADD to "add",
@@ -111,13 +111,13 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
 
     }
 
-    override fun emitIndirect(target: String): String {
-        return "qword [$target]"
-    }
-
-    override fun emitIndirectRelative(target: String, offset: Int): String {
-        return "qword [$target + ${ADDRESSING_OFFSET * offset}]"
-    }
+//    override fun emitIndirect(target: String): String {
+//        return "qword [$target]"
+//    }
+//
+//    override fun emitIndirectRelative(target: String, offset: Int): String {
+//        return "qword [$target + ${ADDRESSING_OFFSET * offset}]"
+//    }
 
     override fun emitMainLabel(): String {
         return "_main"

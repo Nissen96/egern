@@ -2,7 +2,7 @@ package com.egern.emit
 
 import com.egern.codegen.*
 
-class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmStringBuilder("#")) {
+class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) : Emitter(instructions, AsmStringBuilder("#"), syntax) {
     override val instructionMap = mapOf(
         InstructionType.MOV to "movq",
         InstructionType.ADD to "addq",
@@ -118,13 +118,13 @@ class LinuxEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
             .addLine("call", Pair("printf", null), "Call function printf")
     }
 
-    override fun emitIndirect(target: String): String {
-        return "($target)"
-    }
-
-    override fun emitIndirectRelative(target: String, offset: Int): String {
-        return "${ADDRESSING_OFFSET * offset}($target)"
-    }
+//    override fun emitIndirect(target: String): String {
+//        return "($target)"
+//    }
+//
+//    override fun emitIndirectRelative(target: String, offset: Int): String {
+//        return "${ADDRESSING_OFFSET * offset}($target)"
+//    }
 
     override fun emitMainLabel(): String {
         return "main"
