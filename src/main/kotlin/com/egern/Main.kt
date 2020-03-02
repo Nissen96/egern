@@ -7,10 +7,12 @@ import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
 import com.egern.codegen.CodeGenerationVisitor
 import com.egern.codegen.PreCodeGenerationVisitor
-import com.egern.emit.Emitter
+import com.egern.emit.*
 import com.egern.error.ErrorLogger
 import com.egern.symbols.SymbolVisitor
 import com.egern.types.TypeCheckingVisitor
+import com.egern.util.Platform
+import com.egern.util.PlatformManager
 import com.egern.visitor.PrintProgramVisitor
 import com.egern.visitor.PrintSymbolTableVisitor
 import org.antlr.v4.runtime.CharStreams
@@ -55,17 +57,22 @@ fun main(args: Array<String>) {
     val preCodeGenerationVisitor = PreCodeGenerationVisitor()
     ast.accept(preCodeGenerationVisitor)
 
+    val platform = PlatformManager()
+
     val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.currentTable)
     ast.accept(codeGenVisitor)
 
-    val emitter = Emitter(codeGenVisitor.instructions)
+    val emitter: Emitter = when (platform.platform) {
+        Platform.Windows -> LinuxEmitter(codeGenVisitor.instructions, IntelSyntax()) //WindowsEmitter(codeGenVisitor.instructions)
+        Platform.MacOS -> MacOSEmitter(codeGenVisitor.instructions, IntelSyntax())
+        Platform.Linux -> LinuxEmitter(codeGenVisitor.instructions, ATTSyntax())
+    }
     val code = emitter.emit()
-
     if (ErrorLogger.hasErrors()) {
         ErrorLogger.print()
         throw Exception("One or more errors occurred while compiling")
     } else if (!doPrint) {
-        print(code.toString())
+        print(code)
     }
 }
 
