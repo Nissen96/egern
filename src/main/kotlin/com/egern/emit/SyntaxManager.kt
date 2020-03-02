@@ -1,56 +1,17 @@
 package com.egern.emit
 
 import com.egern.codegen.InstructionArg
+import com.egern.codegen.InstructionType
 
-interface SyntaxManager {
-    fun argOrder(source: String, destination: String): Pair<String, String>
-    fun immediate(value: String): String
-    fun register(reg: String): String
-    fun indirect(target: String): String
-    fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String
+abstract class SyntaxManager {
+    abstract fun argOrder(source: String, destination: String): Pair<String, String>
+    abstract fun immediate(value: String): String
+    abstract fun register(reg: String): String
+    abstract fun indirect(target: String): String
+    abstract fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String
+
+    abstract val ops: Map<InstructionType, String>
 }
 
-class IntelSyntax : SyntaxManager {
-    override fun argOrder(source: String, destination: String): Pair<String, String> {
-        return Pair(destination, source)
-    }
 
-    override fun immediate(value: String): String {
-        return value
-    }
 
-    override fun register(reg: String): String {
-        return reg
-    }
-
-    override fun indirect(target: String): String {
-        return "qword [$target]"
-    }
-
-    override fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String {
-        return "qword [$target + ${addressingOffset * offset}]"
-    }
-
-}
-
-class ATandTSyntax : SyntaxManager {
-    override fun argOrder(source: String, destination: String): Pair<String, String> {
-        return Pair(source, destination)
-    }
-
-    override fun immediate(value: String): String {
-        return "$$value"
-    }
-
-    override fun register(reg: String): String {
-        return "%$reg"
-    }
-
-    override fun indirect(target: String): String {
-        return "($target)"
-    }
-
-    override fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String {
-        return "${addressingOffset * offset}($target)"
-    }
-}

@@ -18,7 +18,7 @@ abstract class Emitter(
     abstract fun emitMainLabel(): String
     //abstract fun argPair(arg1: String, arg2: String): Pair<String, String>
 
-    abstract val instructionMap: Map<InstructionType, String>
+
 
     protected companion object {
         const val VARIABLE_SIZE = 8
@@ -44,7 +44,7 @@ abstract class Emitter(
             InstructionType.MOD -> emitModulo(instruction)
             InstructionType.LABEL -> emitLabel(instruction)
             InstructionType.META -> emitMetaOp(instruction)
-            in instructionMap -> emitSimpleInstruction(instruction)
+            in syntax.ops -> emitSimpleInstruction(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
         }
         // Add comment
@@ -54,7 +54,7 @@ abstract class Emitter(
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
-        val instr = instructionMap[instruction.instructionType]
+        val instr = syntax.ops[instruction.instructionType]
             ?: throw Exception("Assembly operation for ${instruction.instructionType} not defined")
         builder.addOp(instr)
         emitArgs(instruction.args)
@@ -121,7 +121,7 @@ abstract class Emitter(
             .addComment("Caller/Callee ${if (restore) "Restore" else "Save"}")
             .newline()
         for (register in (if (restore) registers.reversed() else registers)) {
-            builder.addLine(instructionMap.getValue(op), Pair(syntax.register(register), null))
+            builder.addLine(syntax.ops.getValue(op), Pair(syntax.register(register), null))
         }
         builder.newline()
     }
@@ -131,12 +131,12 @@ abstract class Emitter(
             .addComment("Callee Prologue")
             .newline()
             .addLine(
-                instructionMap.getValue(InstructionType.PUSH),
+                syntax.ops.getValue(InstructionType.PUSH),
                 Pair(syntax.register("rbp"), null),
                 "Save caller's base pointer"
             )
             .addLine(
-                instructionMap.getValue(InstructionType.MOV),
+                syntax.ops.getValue(InstructionType.MOV),
                 syntax.argOrder(syntax.register("rsp"), syntax.register("rbp")),
                 "Make stack pointer new base pointer"
             )
@@ -147,16 +147,16 @@ abstract class Emitter(
             .addComment("Callee Epilogue")
             .newline()
             .addLine(
-                instructionMap.getValue(InstructionType.MOV),
+                syntax.ops.getValue(InstructionType.MOV),
                 syntax.argOrder(syntax.register("rbp"), syntax.register("rsp")),
                 "Restore stack pointer"
             )
             .addLine(
-                instructionMap.getValue(InstructionType.POP),
+                syntax.ops.getValue(InstructionType.POP),
                 Pair(syntax.register("rbp"), null),
                 "Restore base pointer"
             )
-            .addLine(instructionMap.getValue(InstructionType.RET), comment = "Return from call")
+            .addLine(syntax.ops.getValue(InstructionType.RET), comment = "Return from call")
     }
 
     private fun emitLabel(instruction: Instruction) {
@@ -169,13 +169,13 @@ abstract class Emitter(
     private fun emitPerformDivision(inst: Instruction) {
         builder
             .addLine(
-                instructionMap.getValue(InstructionType.MOV),
+                syntax.ops.getValue(InstructionType.MOV),
                 syntax.argOrder(emitArg(inst.args[1]), syntax.register("rax")),
                 "Setup dividend"
             )
             .addLine("cqo", comment = "Sign extend into rdx")
             .addLine(
-                instructionMap.getValue(InstructionType.IDIV),
+                syntax.ops.getValue(InstructionType.IDIV),
                 Pair(emitArg(inst.args[0]), null),
                 "Divide"
             )
@@ -184,7 +184,7 @@ abstract class Emitter(
     private fun emitDivision(inst: Instruction) {
         emitPerformDivision(inst)
         builder.addLine(
-            instructionMap.getValue(InstructionType.MOV),
+            syntax.ops.getValue(InstructionType.MOV),
             syntax.argOrder(syntax.register("rax"), emitArg(inst.args[1])),
             "Move resulting quotient"
         )
@@ -193,7 +193,7 @@ abstract class Emitter(
     private fun emitModulo(inst: Instruction) {
         emitPerformDivision(inst)
         builder.addLine(
-            instructionMap.getValue(InstructionType.MOV),
+            syntax.ops.getValue(InstructionType.MOV),
             syntax.argOrder(syntax.register("rdx"), emitArg(inst.args[1])),
             "Move resulting remainder"
         )
@@ -201,7 +201,7 @@ abstract class Emitter(
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
         builder.addLine(
-            instructionMap.getValue(InstructionType.ADD),
+            syntax.ops.getValue(InstructionType.ADD),
             syntax.argOrder(syntax.immediate("${-VARIABLE_SIZE * arg.value}"), syntax.register("rsp")),
             "Move stack pointer to allocate space for local variables"
         )
@@ -209,7 +209,7 @@ abstract class Emitter(
 
     private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
         builder.addLine(
-            instructionMap.getValue(InstructionType.ADD),
+            syntax.ops.getValue(InstructionType.ADD),
             syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rsp")),
             "Move stack pointer to deallocate space for local variables"
         )
