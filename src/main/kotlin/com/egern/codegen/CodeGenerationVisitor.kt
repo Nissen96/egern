@@ -321,8 +321,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register(OpReg2), Direct),
                 InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Compare with ${compExpr.op.value}"
             )
         )
@@ -398,8 +398,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 arithOperator,
-                InstructionArg(Register(OpReg2), Direct),
                 InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Do arithmetic operation"
             )
         )
@@ -517,15 +517,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 InstructionType.MOV,
                 InstructionArg(Register(OpReg2), Direct),
                 InstructionArg(ImmediateValue("1"), Direct),
-
                 comment = "Move true to other register"
             )
         )
         add(
             Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register(OpReg2), Direct),
                 InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Compare the expression to true"
             )
         )

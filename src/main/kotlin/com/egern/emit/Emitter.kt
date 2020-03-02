@@ -32,7 +32,7 @@ abstract class Emitter(
         emitProgramPrologue()
         for (instruction in instructions) {
             emitInstruction(instruction)
-            builder.newline()
+            //builder.newline()
         }
         emitProgramEpilogue()
 
@@ -64,7 +64,10 @@ abstract class Emitter(
     private fun emitArgs(arguments: Array<out Arg>) {
         when (arguments.size) {
             1 -> builder.add(emitArg(arguments[0]), AsmStringBuilder.REGS_OFFSET)
-            2 -> builder.add(emitArg(arguments[0]) + ", " + emitArg(arguments[1]), AsmStringBuilder.REGS_OFFSET)
+            2 -> {
+                val (arg1, arg2) = syntax.argOrder(emitArg(arguments[0]), emitArg(arguments[1]))
+                builder.add(arg1 + ", " + arg2, AsmStringBuilder.REGS_OFFSET)
+            }
             else -> throw Exception("Unexpected number of arguments")
         }
     }
