@@ -552,8 +552,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(Register(OpReg2), Direct),
                 InstructionArg(ImmediateValue("1"), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Move true to other register"
             )
         )
