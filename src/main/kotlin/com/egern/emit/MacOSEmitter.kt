@@ -64,11 +64,11 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
     }
 
     override fun emitIndirect(target: String): String {
-        return "[$target]"
+        return "qword [$target]"
     }
 
     override fun emitIndirectRelative(target: String, offset: Int): String {
-        return "[$target + ${ADDRESSING_OFFSET * offset}]"
+        return "qword [$target + ${ADDRESSING_OFFSET * offset}]"
     }
 
     override fun emitMainLabel(): String {
