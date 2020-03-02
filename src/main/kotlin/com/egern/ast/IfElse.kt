@@ -2,7 +2,7 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class IfElse(val expression: Expr, val ifBlock: Block, val elseBlock: Block?) : Statement() {
+class IfElse(val expression: Expr, val ifBlock: Block, val elseBlock: ASTNode?) : Statement() {
     lateinit var elseLabel: String
     lateinit var endLabel: String
     override fun accept(visitor: Visitor) {
