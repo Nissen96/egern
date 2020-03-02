@@ -431,25 +431,38 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 comment = "Pop expression to register 2"
             )
         )
-        add(
-            Instruction(
-                InstructionType.POP,
-                InstructionArg(Register(OpReg1), Direct),
-                comment = "Pop expression to register 1"
+        if (booleanOpExpr.rhs != null) {
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Pop expression to register 1"
+                )
             )
-        )
+        }
         val operator = when (booleanOpExpr.op) {
             BooleanOp.AND -> InstructionType.AND
             BooleanOp.OR -> InstructionType.OR
+            BooleanOp.NOT -> InstructionType.NOT
         }
-        add(
-            Instruction(
-                operator,
-                InstructionArg(Register(OpReg2), Direct),
-                InstructionArg(Register(OpReg1), Direct),
-                comment = "Do boolean operation"
+        if (booleanOpExpr.rhs != null) {
+            add(
+                Instruction(
+                    operator,
+                    InstructionArg(Register(OpReg2), Direct),
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Do boolean operation"
+                )
             )
-        )
+        } else {
+            add(
+                Instruction(
+                    operator,
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Do boolean operation"
+                )
+            )
+        }
         add(
             Instruction(
                 InstructionType.PUSH,

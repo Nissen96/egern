@@ -11,6 +11,7 @@ enum class InstructionType {
     MOD,
     AND,
     OR,
+    NOT,
     CMP,
     JMP,
     JNE,

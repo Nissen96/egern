@@ -33,6 +33,7 @@ class IntelSyntax : SyntaxManager() {
         InstructionType.IDIV to "idiv",
         InstructionType.AND to "and",
         InstructionType.OR to "or",
+        InstructionType.NOT to "not",
         InstructionType.CMP to "cmp",
         InstructionType.JMP to "jmp",
         InstructionType.JNE to "jne",
