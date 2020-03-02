@@ -83,8 +83,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             ctx.expr().size < 2 -> when (ctx.op.text) {
-                ArithOp.MINUS.toString() -> ArithExpr(IntExpr(-1), ctx.expr()[0].accept(this) as Expr, ArithOp.TIMES)
-                BooleanOp.NOT.toString() -> BooleanOpExpr(ctx.expr()[0].accept(this) as Expr, op = BooleanOp.NOT)
+                ArithOp.MINUS.value -> ArithExpr(IntExpr(-1), ctx.expr()[0].accept(this) as Expr, ArithOp.TIMES)
+                BooleanOp.NOT.value -> BooleanOpExpr(ctx.expr()[0].accept(this) as Expr, op = BooleanOp.NOT)
                 else -> throw Exception("Invalid Unary Expression Type!")
             }
             ctx.op.text in ArithOp.operators() -> visitArithExpr(ctx.expr(), ctx.op.text)

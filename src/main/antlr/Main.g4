@@ -29,8 +29,8 @@ whileLoop: 'while' '(' expr ')' block ;
 block:  '{' ( stmt | funcCall ';' )* '}' ;
 
 expr: funcCall
-    | '-' expr
-    | '!' expr
+    | op='-' expr
+    | op='!' expr
     | expr op=('*' | '/' | '%') expr
     | expr op=('+' | '-') expr
     | expr op=('==' | '!=' | '<' | '>' | '<=' | '>=') expr
