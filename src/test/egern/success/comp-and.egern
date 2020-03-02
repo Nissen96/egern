@@ -7,4 +7,4 @@ func test(a,b) {
 }
 
 print(test(6,5));
-print(test(5,5));
+print(test(4,5));
