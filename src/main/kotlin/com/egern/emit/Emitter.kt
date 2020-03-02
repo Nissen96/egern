@@ -3,16 +3,20 @@ package com.egern.emit
 import com.egern.codegen.*
 import java.lang.Exception
 
-abstract class Emitter(private val instructions: List<Instruction>, protected val builder: AsmStringBuilder) {
+abstract class Emitter(
+    private val instructions: List<Instruction>,
+    protected val builder: AsmStringBuilder,
+    protected val syntax: SyntaxManager) {
+
     abstract fun emitProgramPrologue()
     abstract fun emitProgramEpilogue()
-    abstract fun emitRegister(register: String): String
-    abstract fun emitImmediate(value: String): String
-    abstract fun emitIndirect(target: String): String
-    abstract fun emitIndirectRelative(target: String, offset: Int): String
+//    abstract fun emitRegister(register: String): String
+    //abstract fun emitImmediate(value: String): String
+    //abstract fun emitIndirect(target: String): String
+//    abstract fun emitIndirectRelative(target: String, offset: Int): String
     abstract fun emitPrint(arg: MetaOperationArg)
     abstract fun emitMainLabel(): String
-    abstract fun argPair(arg1: String, arg2: String): Pair<String, String>
+    //abstract fun argPair(arg1: String, arg2: String): Pair<String, String>
 
     abstract val instructionMap: Map<InstructionType, String>
 
@@ -72,25 +76,25 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
 
     private fun emitInstructionArg(argument: InstructionArg): String {
         val target = when (argument.instructionTarget) {
-            is ImmediateValue -> emitImmediate(argument.instructionTarget.value)
+            is ImmediateValue -> syntax.immediate(argument.instructionTarget.value)
             is Memory -> argument.instructionTarget.address
             is Register -> when (argument.instructionTarget.register) {
-                OpReg1 -> emitRegister("r12")
-                OpReg2 -> emitRegister("r13")
-                DataReg -> emitRegister("r14")
-                is ParamReg -> emitRegister(CALLER_SAVE_REGISTERS[argument.instructionTarget.register.paramNum])
+                OpReg1 -> syntax.register("r12")
+                OpReg2 -> syntax.register("r13")
+                DataReg -> syntax.register("r14")
+                is ParamReg -> syntax.register(CALLER_SAVE_REGISTERS[argument.instructionTarget.register.paramNum])
             }
-            RBP -> emitRegister("rbp")
-            RSP -> emitRegister("rsp")
-            ReturnValue -> emitRegister("rax")
-            StaticLink -> emitRegister("r15")
+            RBP -> syntax.register("rbp")
+            RSP -> syntax.register("rsp")
+            ReturnValue -> syntax.register("rax")
+            StaticLink -> syntax.register("r15")
             MainLabel -> emitMainLabel()
         }
 
         return when (argument.addressingMode) {
             Direct -> target
-            Indirect -> emitIndirect(target)
-            is IndirectRelative -> emitIndirectRelative(target, argument.addressingMode.offset)
+            Indirect -> syntax.indirect(target)
+            is IndirectRelative -> syntax.indirectRelative(target, ADDRESSING_OFFSET, argument.addressingMode.offset)
         }
     }
 
@@ -114,7 +118,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
             .newline()
             .addComment("Caller/Callee ${if (restore) "Restore" else "Save"}")
         for (register in (if (restore) registers.reversed() else registers)) {
-            builder.addLine(instructionMap.getValue(op), Pair(emitRegister(register), null))
+            builder.addLine(instructionMap.getValue(op), Pair(syntax.register(register), null))
         }
     }
 
@@ -123,12 +127,12 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
             .addComment("Callee Prologue")
             .addLine(
                 instructionMap.getValue(InstructionType.PUSH),
-                Pair(emitRegister("rbp"), null),
+                Pair(syntax.register("rbp"), null),
                 "Save caller's base pointer"
             )
             .addLine(
                 instructionMap.getValue(InstructionType.MOV),
-                argPair(emitRegister("rsp"), emitRegister("rbp")),
+                syntax.argOrder(syntax.register("rsp"), syntax.register("rbp")),
                 "Make stack pointer new base pointer"
             )
     }
@@ -138,12 +142,12 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
             .addComment("Callee Epilogue")
             .addLine(
                 instructionMap.getValue(InstructionType.MOV),
-                argPair(emitRegister("rbp"), emitRegister("rsp")),
+                syntax.argOrder(syntax.register("rbp"), syntax.register("rsp")),
                 "Restore stack pointer"
             )
             .addLine(
                 instructionMap.getValue(InstructionType.POP),
-                Pair(emitRegister("rbp"), null),
+                Pair(syntax.register("rbp"), null),
                 "Restore base pointer"
             )
             .addLine(instructionMap.getValue(InstructionType.RET), comment = "Return from call")
@@ -159,7 +163,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
         builder
             .addLine(
                 instructionMap.getValue(InstructionType.MOV),
-                argPair(emitArg(inst.args[1]), emitRegister("rax")),
+                syntax.argOrder(emitArg(inst.args[1]), syntax.register("rax")),
                 "Setup dividend"
             )
             .addLine("cqo", comment = "Sign extend into rdx")
@@ -174,7 +178,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
         emitPerformDivision(inst)
         builder.addLine(
             instructionMap.getValue(InstructionType.MOV),
-            argPair(emitRegister("rax"), emitArg(inst.args[1])),
+            syntax.argOrder(syntax.register("rax"), emitArg(inst.args[1])),
             "Move resulting quotient"
         )
     }
@@ -183,7 +187,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
         emitPerformDivision(inst)
         builder.addLine(
             instructionMap.getValue(InstructionType.MOV),
-            argPair(emitRegister("rdx"), emitArg(inst.args[1])),
+            syntax.argOrder(syntax.register("rdx"), emitArg(inst.args[1])),
             "Move resulting remainder"
         )
     }
@@ -191,7 +195,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
         builder.addLine(
             instructionMap.getValue(InstructionType.ADD),
-            argPair(emitImmediate("${-VARIABLE_SIZE * arg.value}"), emitRegister("rsp")),
+            syntax.argOrder(syntax.immediate("${-VARIABLE_SIZE * arg.value}"), syntax.register("rsp")),
             "Move stack pointer to allocate space for local variables"
         )
     }
@@ -199,7 +203,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
         builder.addLine(
             instructionMap.getValue(InstructionType.ADD),
-            argPair(emitImmediate("${VARIABLE_SIZE * arg.value}"), emitRegister("rsp")),
+            syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rsp")),
             "Move stack pointer to deallocate space for local variables"
         )
     }

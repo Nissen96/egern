@@ -7,10 +7,7 @@ import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
 import com.egern.codegen.CodeGenerationVisitor
 import com.egern.codegen.PreCodeGenerationVisitor
-import com.egern.emit.Emitter
-import com.egern.emit.LinuxEmitter
-import com.egern.emit.MacOSEmitter
-import com.egern.emit.WindowsEmitter
+import com.egern.emit.*
 import com.egern.error.ErrorLogger
 import com.egern.symbols.SymbolVisitor
 import com.egern.types.TypeCheckingVisitor
@@ -66,9 +63,9 @@ fun main(args: Array<String>) {
     ast.accept(codeGenVisitor)
 
     val emitter: Emitter = when (platform.platform) {
-        Platform.Windows -> LinuxEmitter(codeGenVisitor.instructions) //WindowsEmitter(codeGenVisitor.instructions)
-        Platform.MacOS -> MacOSEmitter(codeGenVisitor.instructions)
-        Platform.Linux -> LinuxEmitter(codeGenVisitor.instructions)
+        Platform.Windows -> LinuxEmitter(codeGenVisitor.instructions, IntelSyntax()) //WindowsEmitter(codeGenVisitor.instructions)
+        Platform.MacOS -> MacOSEmitter(codeGenVisitor.instructions, IntelSyntax())
+        Platform.Linux -> LinuxEmitter(codeGenVisitor.instructions, ATandTSyntax())
     }
     val code = emitter.emit()
     if (ErrorLogger.hasErrors()) {
