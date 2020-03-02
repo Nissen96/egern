@@ -1,55 +1,57 @@
 package com.egern.emit
 
-import com.egern.emit.AsmStringBuilder.Companion.OP_OFFSET
-import com.egern.emit.AsmStringBuilder.Companion.REGS_OFFSET
-
-class AsmStringBuilder(val commentSym: String) {
-    val strings = mutableListOf<String>()
-
-    init {
-        strings.add("")
-    }
-
-    fun toFinalStr(): String {
-        return strings.joinToString(separator = "\n")
-    }
+class AsmStringBuilder(private val commentSym: String) {
+    private val builder = StringBuilder()
 
     companion object {
         const val OP_OFFSET = 10
         const val REGS_OFFSET = 28
     }
-}
 
-fun <T : AsmStringBuilder> T.add(s: String, pad: Int = 0): T {
-    strings[strings.lastIndex] = strings.last() + s.padEnd(pad)
-    return this
-}
+    fun add(s: String, pad: Int = 0): AsmStringBuilder {
+        builder.append(s.padEnd(pad))
+        return this
+    }
 
-fun <T : AsmStringBuilder> T.addLine(op: String, regs: Pair<String, String?>? = null, comment: String? = null): T {
-    add(op, OP_OFFSET)
+    fun addLine(op: String? = null, regs: Pair<String, String?>? = null, comment: String? = null): AsmStringBuilder {
+        if (op != null) {
+            addOp(op)
+        }
 
-    if (regs != null) {
+        if (regs != null) {
+            addRegs(regs)
+        }
+
+        if (comment != null) {
+            addComment(comment)
+        }
+        newline()
+        return this
+    }
+
+    fun addOp(op: String) {
+        add(op, OP_OFFSET)
+    }
+
+    fun addRegs(regs: Pair<String, String?>) {
         if (regs.second != null) {
             add("${regs.first}, ${regs.second}", REGS_OFFSET)
         } else {
             add(regs.first, REGS_OFFSET)
         }
-    } else {
-        add("")
     }
-    if (comment != null) {
+
+    fun newline(): AsmStringBuilder {
+        builder.appendln()
+        return this
+    }
+
+    fun addComment(comment: String): AsmStringBuilder {
         add("$commentSym $comment")
+        return this
     }
-    newline()
-    return this
-}
 
-fun <T : AsmStringBuilder> T.newline(): T {
-    strings.add("")
-    return this
-}
-
-fun <T : AsmStringBuilder> T.addComment(comment: String): T {
-    addLine("$commentSym $comment")
-    return this
+    fun toFinalStr(): String {
+        return builder.toString()
+    }
 }

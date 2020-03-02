@@ -28,7 +28,6 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
         emitProgramPrologue()
         for (instruction in instructions) {
             emitInstruction(instruction)
-            builder.newline()
         }
         emitProgramEpilogue()
 
@@ -46,21 +45,21 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
         }
         // Add comment
         if (instruction.comment != null) {
-            builder.addComment(instruction.comment)
+            builder.addComment(instruction.comment).newline()
         }
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
         val instr = instructionMap[instruction.instructionType]
             ?: throw Exception("Assembly operation for ${instruction.instructionType} not defined")
-        builder.add(instr, AsmStringBuilder.OP_OFFSET)
+        builder.addOp(instr)
         emitArgs(instruction.args)
     }
 
     private fun emitArgs(arguments: Array<out Arg>) {
         when (arguments.size) {
-            1 -> builder.add(emitArg(arguments[0]), AsmStringBuilder.REGS_OFFSET)
-            2 -> builder.add(emitArg(arguments[0]) + ", " + emitArg(arguments[1]), AsmStringBuilder.REGS_OFFSET)
+            1 -> builder.addRegs(Pair(emitArg(arguments[0]), null))
+            2 -> builder.addRegs(argPair(emitArg(arguments[0]), emitArg(arguments[1])))
             else -> throw Exception("Unexpected number of arguments")
         }
     }
@@ -113,6 +112,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
         builder
             .newline()
             .addComment("Caller/Callee ${if (restore) "Restore" else "Save"}")
+            .newline()
         for (register in (if (restore) registers.reversed() else registers)) {
             builder.addLine(instructionMap.getValue(op), Pair(emitRegister(register), null))
         }
@@ -121,6 +121,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     private fun emitCalleePrologue() {
         builder
             .addComment("Callee Prologue")
+            .newline()
             .addLine(
                 instructionMap.getValue(InstructionType.PUSH),
                 Pair(emitRegister("rbp"), null),
@@ -136,6 +137,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     private fun emitCalleeEpilogue() {
         builder
             .addComment("Callee Epilogue")
+            .newline()
             .addLine(
                 instructionMap.getValue(InstructionType.MOV),
                 argPair(emitRegister("rbp"), emitRegister("rsp")),
@@ -152,7 +154,7 @@ abstract class Emitter(private val instructions: List<Instruction>, protected va
     private fun emitLabel(instruction: Instruction) {
         builder
             .newline()
-            .add(emitArg(instruction.args[0]) + ":", AsmStringBuilder.OP_OFFSET)
+            .addOp(emitArg(instruction.args[0]) + ":")
     }
 
     private fun emitPerformDivision(inst: Instruction) {

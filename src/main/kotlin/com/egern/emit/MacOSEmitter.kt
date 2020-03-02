@@ -55,6 +55,7 @@ class MacOSEmitter(instructions: List<Instruction>) : Emitter(instructions, AsmS
         // TODO: handle print empty
         //val empty = arg.value == 0
         builder
+            .newline()
             .addLine("; PRINTING USING PRINTF")
             .addLine("lea", Pair("rdi", "[format]"), "Pass 1st argument in rdi")
             .addLine("mov", Pair("rsi", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size}]"), "Pass 2nd argument in rdi")
