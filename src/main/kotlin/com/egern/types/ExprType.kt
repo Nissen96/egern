@@ -1,5 +1,5 @@
 package com.egern.types
 
 enum class ExprType {
-    INT, BOOLEAN
+    INT, BOOLEAN, VOID
 }

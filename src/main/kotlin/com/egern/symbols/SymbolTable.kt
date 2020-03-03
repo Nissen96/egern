@@ -4,9 +4,9 @@ import com.egern.error.ErrorLogger
 import java.lang.Exception
 
 class SymbolTable(val scope: Int, val parent: SymbolTable?) {
-    private val symbols: MutableMap<Pair<String, SymbolType>, Symbol<*>> = mutableMapOf()
+    private val symbols: MutableMap<Pair<String, SymbolType>, Symbol> = mutableMapOf()
 
-    fun insert(sym: Symbol<*>) {
+    fun insert(sym: Symbol) {
         // Symbol is inserted in table with (id, type) key - allowing shadowing of same id in same scope
         val key = Pair(sym.id, sym.type)
 
@@ -22,7 +22,7 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
         }
     }
 
-    fun lookup(id: String, checkDeclared: Boolean = false): Symbol<*>? {
+    fun lookup(id: String, checkDeclared: Boolean = false): Symbol? {
         // For each symbol type, lookup a corresponding id in this scope
         val checkKeys = SymbolType.values().map { Pair(id, it) }
         val foundSymbol = checkKeys.asSequence().map { lookupType(it, checkDeclared) }.firstOrNull { it != null }
@@ -31,7 +31,7 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
         return foundSymbol ?: parent?.lookup(id, checkDeclared)
     }
 
-    private fun lookupType(key: Pair<String, SymbolType>, checkDeclared: Boolean = false): Symbol<*>? {
+    private fun lookupType(key: Pair<String, SymbolType>, checkDeclared: Boolean = false): Symbol? {
         // Lookup symbol - and check if symbol has been declared yet if specified
         return if (key in symbols && (!checkDeclared || isDeclared(key))) symbols[key]
         else null

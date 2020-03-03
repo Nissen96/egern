@@ -165,7 +165,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(funcCall: FuncCall) {
         val func = symbolTable.lookup(funcCall.id)!!
-        val decl = func.info as FuncDecl
+        val decl = func.info["funcDecl"] as FuncDecl
         val scopeDiff = symbolTable.scope - decl.symbolTable.scope
         val numArgs = funcCall.args.size
 
@@ -288,7 +288,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         // Find static link address for scope containing given id
         val symbol = symbolTable.lookup(id, checkDeclared) ?: throw Exception("Symbol $id is undefined")
         val scopeDiff = symbolTable.scope - symbol.scope
-        val symbolOffset = symbol.info as Int
+        val symbolOffset = symbol.info["variableOffset"] as Int
 
         // Symbol is a parameter (1-6) in current scope - value is in register
         if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {

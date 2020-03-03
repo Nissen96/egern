@@ -1,6 +1,7 @@
 package com.egern.ast
 
 import MainBaseVisitor
+import com.egern.types.ExprType
 import java.lang.Exception
 
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
@@ -33,7 +34,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
-        return FuncDecl(ctx.ID().text, ctx.paramList().ID().map { it.text }, ctx.funcBody().accept(this) as FuncBody)
+        return FuncDecl(
+            ctx.ID().text,
+            ctx.paramList().ID().map { it.text },
+            ExprType.valueOf(ctx.type().TYPE().text.toUpperCase()),
+            ctx.funcBody().accept(this) as FuncBody
+        )
     }
 
     override fun visitFuncBody(ctx: MainParser.FuncBodyContext): ASTNode {

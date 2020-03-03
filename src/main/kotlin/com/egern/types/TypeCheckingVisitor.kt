@@ -22,7 +22,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         functionStack.pop();
     }
 
-    private fun lookupSymbol(id: String, validTypes: List<SymbolType>): Symbol<*> {
+    private fun lookupSymbol(id: String, validTypes: List<SymbolType>): Symbol {
         val sym = currentTable.lookup(id) ?: throw Exception("Symbol '$id' not defined")
         if (sym.type !in validTypes) {
             ErrorLogger.log(Exception("Symbol '$id' should be one of types $validTypes but is not"))
@@ -37,8 +37,8 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             is BooleanOpExpr -> ExprType.BOOLEAN
             is CompExpr -> ExprType.BOOLEAN
             is ArithExpr -> ExprType.INT
-            is IdExpr -> TODO()
-            is FuncCall -> TODO()
+            is IdExpr -> deriveType((lookupSymbol(expr.id, emptyList()).info)["expr"] as Expr)
+            is FuncCall -> (lookupSymbol(expr.id, emptyList()).info["funcDecl"] as FuncDecl).returnType
             else -> throw Exception("Can't derive type for expr!")
         }
     }
@@ -50,7 +50,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     override fun preVisit(funcCall: FuncCall) {
         val sym = lookupSymbol(funcCall.id, listOf(SymbolType.Function))
         val nArgs = funcCall.args.size
-        val nParams = (sym.info as FuncDecl).params.size
+        val nParams = (sym.info["funcDecl"] as FuncDecl).params.size
         if (nArgs != nParams) {
             ErrorLogger.log(Exception("Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected"))
         }
@@ -66,13 +66,13 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun preVisit(returnStmt: ReturnStmt) {
         /**if (returnStmt.expr != null && functionStack.peek() != null) {
-            val type = deriveType(returnStmt.expr)
-            val funcDecl = (lookupSymbol(functionStack.peek()!!.id, emptyList()).info as FuncDecl)
-            if (funcDecl.returnType == null) {
-                funcDecl.returnType = type
-            } else if (funcDecl.returnType != type) {
-                // TODO: ERROR
-            }
+        val type = deriveType(returnStmt.expr)
+        val funcDecl = (lookupSymbol(functionStack.peek()!!.id, emptyList()).info as FuncDecl)
+        if (funcDecl.returnType == null) {
+        funcDecl.returnType = type
+        } else if (funcDecl.returnType != type) {
+        // TODO: ERROR
+        }
         }**/
     }
 
