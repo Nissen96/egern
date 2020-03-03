@@ -65,6 +65,9 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun preVisit(varAssign: VarAssign<*>) {
         varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter)) }
+        if (varAssign.expr is FuncCall && deriveType(varAssign.expr) == ExprType.VOID) {
+            ErrorLogger.log(Exception("Assigning to void is not valid."))
+        }
     }
 
     override fun visit(idExpr: IdExpr) {
