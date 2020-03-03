@@ -1,6 +1,6 @@
 grammar Main;
 
-prog:	( stmt | funcDecl | funcCall ';' )* ;
+prog:	( stmt | funcDecl | funcCall ';'? )* ;
 stmt:   varDecl
     |   varAssign
     |   ifElse
@@ -9,16 +9,16 @@ stmt:   varDecl
     |   whileLoop
     ;
 
-returnStmt: 'return' expr? ';' ;
+returnStmt: 'return' expr? ';'? ;
 funcDecl:   'func' ID '(' paramList ')' ':' TYPE '{' funcBody '}'  ;
-funcBody:   ( stmt | funcDecl | funcCall ';' )* ;
+funcBody:   ( stmt | funcDecl | funcCall ';'? )* ;
 funcCall:   ID '(' argList ')' ;
 
 paramList:  (ID ':' TYPE ',')* (ID ':' TYPE)? ;
 argList:    (expr ',')* expr? ;
 
 varDecl:    'var' varAssign ;
-varAssign:  (ID '=')+ expr ';';
+varAssign:  (ID '=')+ expr ';'?;
 
 ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' (block | ifElse)
@@ -26,7 +26,7 @@ ifElse:  'if' '(' expr ')' block
 
 whileLoop: 'while' '(' expr ')' block ;
 
-block:  '{' ( stmt | funcCall ';' )* '}' ;
+block:  '{' ( stmt | funcCall ';'? )* '}' ;
 
 expr: funcCall
     | op='-' expr
@@ -47,7 +47,7 @@ intExpr: INT ;
 booleanExpr: BOOLEAN ;
 parenExpr: '(' expr ')';
 
-printStmt: 'print' '(' expr? ')' ';';
+printStmt: 'print' '(' expr? ')' ';'?;
 
 NEWLINE :'\r'? '\n' -> skip;
 WS      : (' '|'\t') -> skip;
