@@ -30,6 +30,15 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         return sym
     }
 
+    private fun getVariableType(id: String): ExprType {
+        val symbol = currentTable.lookup(id)!!
+        return when (symbol.type) {
+            SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
+            SymbolType.Parameter -> symbol.info["type"] as ExprType
+            else -> throw Exception("Can't derive type for IdExpr")
+        }
+    }
+
     private fun deriveType(expr: Expr): ExprType {
         return when (expr) {
             // Handle implicit returns of nothing (int=0)
@@ -38,14 +47,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             is BooleanOpExpr -> ExprType.BOOLEAN
             is CompExpr -> ExprType.BOOLEAN
             is ArithExpr -> ExprType.INT
-            is IdExpr -> {
-                val symbol = currentTable.lookup(expr.id)!!
-                return when {
-                    symbol.type == SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
-                    symbol.type == SymbolType.Parameter -> symbol.info["type"] as ExprType
-                    else -> throw Exception("Can't derive type for IdExpr")
-                }
-            }
+            is IdExpr -> getVariableType(expr.id)
             is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
             is ParenExpr -> deriveType(expr.expr)
             else -> throw Exception("Can't derive type for expr!")
@@ -70,8 +72,14 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun preVisit(varAssign: VarAssign<*>) {
         varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter)) }
-        if (varAssign.expr is FuncCall && deriveType(varAssign.expr) == ExprType.VOID) {
+        val type = deriveType(varAssign.expr)
+        if (varAssign.expr is FuncCall && type == ExprType.VOID) {
             ErrorLogger.log(varAssign, "Assigning to void is not valid.")
+        }
+        for (id in varAssign.ids) {
+            if (type != getVariableType(id)) {
+                ErrorLogger.log(varAssign, "Assignment to $type is invalid.")
+            }
         }
     }
 
