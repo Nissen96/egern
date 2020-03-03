@@ -52,7 +52,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     private fun isMatchingType(expr1: Expr, expr2: Expr?): Boolean {
-        return deriveType(expr1) == (if (expr2 != null) deriveType(expr2) else true)
+        return if (expr2 != null) (deriveType(expr1) == deriveType(expr2)) else true
     }
 
     override fun preVisit(funcCall: FuncCall) {
@@ -90,6 +90,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(booleanOpExpr: BooleanOpExpr) {
+        println("HEJ")
         if (!isMatchingType(booleanOpExpr, booleanOpExpr.lhs) || !isMatchingType(
                 booleanOpExpr.lhs,
                 booleanOpExpr.rhs
