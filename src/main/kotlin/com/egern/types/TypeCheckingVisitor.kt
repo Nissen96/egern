@@ -74,7 +74,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     override fun postVisit(returnStmt: ReturnStmt) {
         if (functionStack.peek() != null && returnStmt.expr != null) {
             val returnType =
-                (lookupSymbol(functionStack.peek()!!.id, emptyList()).info["funcDecl"] as FuncDecl).returnType
+                (currentTable.lookup(functionStack.peek()!!.id)!!.info["funcDecl"] as FuncDecl).returnType
             val exprType = deriveType(returnStmt.expr)
             if (exprType != returnType) {
                 ErrorLogger.log(Exception("Invalid return type"))

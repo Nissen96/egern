@@ -14,7 +14,7 @@ class PrintSymbolTableVisitor : Visitor {
         printSymbolLine(symbol, scope - 1, "local variables", funcDecl.variableCount)
 
         for (param in funcDecl.params) {
-            val paramSymbol = funcDecl.symbolTable.lookup(param)
+            val paramSymbol = funcDecl.symbolTable.lookup(param.first)
             printSymbolLine(paramSymbol, scope, "offset", paramSymbol?.info?.get("paramOffset") as Int)
         }
     }
