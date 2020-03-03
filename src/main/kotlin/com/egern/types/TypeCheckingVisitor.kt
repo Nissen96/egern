@@ -90,7 +90,6 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(booleanOpExpr: BooleanOpExpr) {
-        println("HEJ")
         if (!isMatchingType(booleanOpExpr, booleanOpExpr.lhs) || !isMatchingType(
                 booleanOpExpr.lhs,
                 booleanOpExpr.rhs
