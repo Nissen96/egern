@@ -1,24 +1,25 @@
 package com.egern.types
 
-import com.egern.ast.FuncCall
-import com.egern.ast.FuncDecl
-import com.egern.ast.IdExpr
-import com.egern.ast.VarAssign
+import com.egern.ast.*
 import com.egern.error.ErrorLogger
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
+import com.egern.util.*
 import com.egern.visitor.Visitor
 import java.lang.Exception
-import java.util.*
 
 class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
+    private val functionStack = stackOf<FuncDecl>()
+
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable = funcDecl.symbolTable
+        functionStack.push(funcDecl)
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
         currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
+        functionStack.pop();
     }
 
     private fun lookupSymbol(id: String, validTypes: List<SymbolType>): Symbol<*> {
@@ -27,6 +28,23 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             ErrorLogger.log(Exception("Symbol '$id' should be one of types $validTypes but is not"))
         }
         return sym
+    }
+
+    private fun deriveType(expr: Expr): ExprType {
+        return when (expr) {
+            is IntExpr -> ExprType.INT
+            is BooleanExpr -> ExprType.BOOLEAN
+            is BooleanOpExpr -> ExprType.BOOLEAN
+            is CompExpr -> ExprType.BOOLEAN
+            is ArithExpr -> ExprType.INT
+            is IdExpr -> TODO()
+            is FuncCall -> TODO()
+            else -> throw Exception("Can't derive type for expr!")
+        }
+    }
+
+    private fun isMatchingType(expr1: Expr, expr2: Expr?): Boolean {
+        return deriveType(expr1) == (if (expr2 != null) deriveType(expr2) else true)
     }
 
     override fun preVisit(funcCall: FuncCall) {
@@ -44,5 +62,39 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun visit(idExpr: IdExpr) {
         lookupSymbol(idExpr.id, listOf(SymbolType.Variable, SymbolType.Parameter))
+    }
+
+    override fun preVisit(returnStmt: ReturnStmt) {
+        /**if (returnStmt.expr != null && functionStack.peek() != null) {
+            val type = deriveType(returnStmt.expr)
+            val funcDecl = (lookupSymbol(functionStack.peek()!!.id, emptyList()).info as FuncDecl)
+            if (funcDecl.returnType == null) {
+                funcDecl.returnType = type
+            } else if (funcDecl.returnType != type) {
+                // TODO: ERROR
+            }
+        }**/
+    }
+
+    override fun postVisit(booleanOpExpr: BooleanOpExpr) {
+        if (deriveType(booleanOpExpr) != deriveType(booleanOpExpr.lhs) || !isMatchingType(
+                booleanOpExpr.lhs,
+                booleanOpExpr.rhs
+            )
+        ) {
+            // TODO: ERROR
+        }
+    }
+
+    override fun postVisit(arithExpr: ArithExpr) {
+        if (deriveType(arithExpr) != deriveType(arithExpr.lhs) || !isMatchingType(arithExpr.lhs, arithExpr.rhs)) {
+            // TODO: ERROR
+        }
+    }
+
+    override fun postVisit(compExpr: CompExpr) {
+        if (!isMatchingType(compExpr.lhs, compExpr.rhs)) {
+            // TODO: ERROR
+        }
     }
 }
