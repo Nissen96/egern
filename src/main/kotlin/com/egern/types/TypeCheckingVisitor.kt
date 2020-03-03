@@ -46,6 +46,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
                 }
             }
             is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
+            is ParenExpr -> deriveType(expr.expr)
             else -> throw Exception("Can't derive type for expr!")
         }
     }
@@ -59,7 +60,10 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         val nArgs = funcCall.args.size
         val nParams = (sym.info["funcDecl"] as FuncDecl).params.size
         if (nArgs != nParams) {
-            ErrorLogger.log(funcCall, "Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected")
+            ErrorLogger.log(
+                funcCall,
+                "Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected"
+            )
         }
     }
 
