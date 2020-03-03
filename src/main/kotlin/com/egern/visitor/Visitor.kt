@@ -19,17 +19,13 @@ interface Visitor {
     fun midVisit(compExpr: CompExpr) {}
     fun postVisit(compExpr: CompExpr) {}
 
-    fun preVisit(funcBody: FuncBody) {}
-    fun preFuncCallVisit(funcBody: FuncBody) {}
-    fun postFuncCallVisit(funcBody: FuncBody) {}
-    fun midVisit(funcBody: FuncBody) {}
-    fun postVisit(funcBody: FuncBody) {}
-
     fun preVisit(funcCall: FuncCall) {}
     fun midVisit(funcCall: FuncCall) {}
     fun postVisit(funcCall: FuncCall) {}
 
     fun preVisit(funcDecl: FuncDecl) {}
+    fun preFuncCallVisit(funcDecl: FuncDecl) {}
+    fun postFuncCallVisit(funcDecl: FuncDecl) {}
     fun postVisit(funcDecl: FuncDecl) {}
 
     fun visit(idExpr: IdExpr) {}

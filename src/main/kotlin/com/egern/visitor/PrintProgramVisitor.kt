@@ -38,7 +38,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         print(" ${compExpr.op.value} ")
     }
 
-    override fun preVisit(funcBody: FuncBody) {
+    /**override fun preVisit(funcBody: FuncBody) {
         println("{")
         level++
     }
@@ -54,7 +54,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     override fun postVisit(funcBody: FuncBody) {
         level--
         printIndented("}")
-    }
+    }**/
 
     override fun preVisit(funcCall: FuncCall) {
         print("${funcCall.id}(")

@@ -37,20 +37,27 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return PrintStmt(ctx.expr()?.accept(this) as? Expr, ctx.start.line, ctx.start.charPositionInLine)
     }
 
+    private fun getDefaultReturn(type: ExprType): ReturnStmt {
+        val expr = when (type) {
+            ExprType.INT -> IntExpr(0, -1, -1, isVoid = false)
+            ExprType.BOOLEAN -> BooleanExpr(false, -1, -1)
+            ExprType.VOID -> IntExpr(0, -1, -1, isVoid = true)
+        }
+        return ReturnStmt(expr, -1, -1)
+    }
+
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
+        val returnType = ExprType.valueOf(ctx.TYPE().text.toUpperCase())
+        val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
+        children.add(getDefaultReturn(returnType))  // Implicit "return 0"
         return FuncDecl(
             ctx.ID().text,
             ctx.paramList().ID().mapIndexed { index, it -> it.text to ExprType.valueOf(ctx.paramList().TYPE()[index].text.toUpperCase()) },
-            ExprType.valueOf(ctx.TYPE().text.toUpperCase()),
-            ctx.funcBody().accept(this) as FuncBody,
-            ctx.start.line, ctx.start.charPositionInLine
+            returnType,
+            children,
+            ctx.start.line,
+            ctx.start.charPositionInLine
         )
-    }
-
-    override fun visitFuncBody(ctx: MainParser.FuncBodyContext): ASTNode {
-        val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(ReturnStmt(IntExpr(0, -1, -1, isVoid = true), -1, -1))  // Implicit "return 0"
-        return FuncBody(children, ctx.start.line, ctx.start.charPositionInLine)
     }
 
     override fun visitFuncCall(ctx: MainParser.FuncCallContext): ASTNode {

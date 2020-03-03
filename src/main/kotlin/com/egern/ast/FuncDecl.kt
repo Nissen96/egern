@@ -8,7 +8,7 @@ class FuncDecl(
     val id: String,
     val params: List<Pair<String, ExprType>>,
     val returnType: ExprType,
-    private val funcBody: FuncBody,
+    val children: List<ASTNode>,
     lineNumber: Int, charPosition: Int
 ) :
     ASTNode(lineNumber, charPosition), Scopable {
@@ -19,7 +19,21 @@ class FuncDecl(
 
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        funcBody.accept(visitor)
+        children.forEach {
+            when (it) {
+                is Statement -> it.accept(visitor)
+                is FuncCall -> {
+                    visitor.preFuncCallVisit(this)
+                    it.accept(visitor)
+                    visitor.postFuncCallVisit(this)
+                }
+            }
+        }
+        children.forEach {
+            when (it) {
+                is FuncDecl -> it.accept(visitor)
+            }
+        }
         visitor.postVisit(this)
     }
 }
