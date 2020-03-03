@@ -48,7 +48,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
         val returnType = ExprType.valueOf(ctx.TYPE().text.toUpperCase())
-        val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
+        val children = (ctx.funcBody().children?.map { it.accept(this) } ?: emptyList()).toMutableList()
         children.add(getDefaultReturn(returnType))  // Implicit "return 0"
         return FuncDecl(
             ctx.ID().text,
