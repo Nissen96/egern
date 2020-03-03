@@ -36,7 +36,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
         return FuncDecl(
             ctx.ID().text,
-            ctx.paramList().ID().map { it.text },
+            ctx.paramList().ID().mapIndexed { index, it -> it.text to ExprType.valueOf(ctx.paramList().TYPE()[index].text.toUpperCase()) },
             ExprType.valueOf(ctx.TYPE().text.toUpperCase()),
             ctx.funcBody().accept(this) as FuncBody
         )

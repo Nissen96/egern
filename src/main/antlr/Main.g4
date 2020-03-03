@@ -14,7 +14,7 @@ funcDecl:   'func' ID '(' paramList ')' ':' TYPE '{' funcBody '}'  ;
 funcBody:   ( stmt | funcDecl | funcCall ';' )* ;
 funcCall:   ID '(' argList ')' ;
 
-paramList:  (ID ',')* ID? ;
+paramList:  (ID ':' TYPE ',')* (ID ':' TYPE)? ;
 argList:    (expr ',')* expr? ;
 
 varDecl:    'var' varAssign ;

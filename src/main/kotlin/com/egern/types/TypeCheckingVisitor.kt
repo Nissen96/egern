@@ -37,8 +37,15 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             is BooleanOpExpr -> ExprType.BOOLEAN
             is CompExpr -> ExprType.BOOLEAN
             is ArithExpr -> ExprType.INT
-            is IdExpr -> deriveType((lookupSymbol(expr.id, emptyList()).info)["expr"] as Expr)
-            is FuncCall -> (lookupSymbol(expr.id, emptyList()).info["funcDecl"] as FuncDecl).returnType
+            is IdExpr -> {
+                val symbol = currentTable.lookup(expr.id)!!
+                return when {
+                    symbol.type == SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
+                    symbol.type == SymbolType.Parameter -> symbol.info["type"] as ExprType
+                    else -> throw Exception("Can't derive type for IdExpr")
+                }
+            }
+            is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
             else -> throw Exception("Can't derive type for expr!")
         }
     }
@@ -62,6 +69,17 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun visit(idExpr: IdExpr) {
         lookupSymbol(idExpr.id, listOf(SymbolType.Variable, SymbolType.Parameter))
+    }
+
+    override fun postVisit(returnStmt: ReturnStmt) {
+        if (functionStack.peek() != null && returnStmt.expr != null) {
+            val returnType =
+                (lookupSymbol(functionStack.peek()!!.id, emptyList()).info["funcDecl"] as FuncDecl).returnType
+            val exprType = deriveType(returnStmt.expr)
+            if (exprType != returnType) {
+                ErrorLogger.log(Exception("Invalid return type"))
+            }
+        }
     }
 
     override fun postVisit(booleanOpExpr: BooleanOpExpr) {

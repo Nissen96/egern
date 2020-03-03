@@ -37,10 +37,10 @@ class SymbolVisitor : Visitor {
         for ((paramOffset, param) in funcDecl.params.withIndex()) {
             currentTable.insert(
                 Symbol(
-                    param,
+                    param.first,
                     SymbolType.Parameter,
                     currentScopeLevel,
-                    mapOf("paramOffset" to paramOffset)
+                    mapOf("paramOffset" to paramOffset, "type" to param.second)
                 )
             )
         }
