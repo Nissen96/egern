@@ -2,7 +2,7 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class Program(val children: List<ASTNode>) : ASTNode() {
+class Program(val children: List<ASTNode>, lineNumber: Int, charPosition: Int) : ASTNode(lineNumber, charPosition) {
     var variableCount: Int = 0
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)

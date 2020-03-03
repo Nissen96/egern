@@ -8,8 +8,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
         val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(ReturnStmt(IntExpr(0)))  // Implicit "return 0"
-        return Program(children)
+        children.add(ReturnStmt(IntExpr(0, -1, -1), -1, -1))  // Implicit "return 0"
+        return Program(children, ctx.start.line, ctx.start.charPositionInLine)
     }
 
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {
@@ -26,11 +26,15 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
         // Return 0 implicitly if return value is undefined
-        return ReturnStmt((if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0)) as Expr)
+        return ReturnStmt(
+            (if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0, -1, -1)) as Expr,
+            ctx.start.line,
+            ctx.start.charPositionInLine
+        )
     }
 
     override fun visitPrintStmt(ctx: MainParser.PrintStmtContext): ASTNode {
-        return PrintStmt(ctx.expr()?.accept(this) as? Expr)
+        return PrintStmt(ctx.expr()?.accept(this) as? Expr, ctx.start.line, ctx.start.charPositionInLine)
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
@@ -38,59 +42,97 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.ID().text,
             ctx.paramList().ID().mapIndexed { index, it -> it.text to ExprType.valueOf(ctx.paramList().TYPE()[index].text.toUpperCase()) },
             ExprType.valueOf(ctx.TYPE().text.toUpperCase()),
-            ctx.funcBody().accept(this) as FuncBody
+            ctx.funcBody().accept(this) as FuncBody,
+            ctx.start.line, ctx.start.charPositionInLine
         )
     }
 
     override fun visitFuncBody(ctx: MainParser.FuncBodyContext): ASTNode {
         val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(ReturnStmt(IntExpr(0)))  // Implicit "return 0"
-        return FuncBody(children)
+        children.add(ReturnStmt(IntExpr(0, -1, -1), -1, -1))  // Implicit "return 0"
+        return FuncBody(children, ctx.start.line, ctx.start.charPositionInLine)
     }
 
     override fun visitFuncCall(ctx: MainParser.FuncCallContext): ASTNode {
-        return FuncCall(ctx.ID().text, ctx.argList().expr().map { it.accept(this) as Expr })
+        return FuncCall(
+            ctx.ID().text,
+            ctx.argList().expr().map { it.accept(this) as Expr },
+            ctx.start.line,
+            ctx.start.charPositionInLine
+        )
     }
 
     override fun visitVarDecl(ctx: MainParser.VarDeclContext): ASTNode {
         val assign = ctx.varAssign()
-        return VarDecl(assign.ID().map { it.text }, assign.expr().accept(this) as Expr)
+        return VarDecl(
+            assign.ID().map { it.text },
+            assign.expr().accept(this) as Expr,
+            ctx.start.line,
+            ctx.start.charPositionInLine
+        )
     }
 
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
-        return VarAssign(ctx.ID().map { it.text }, ctx.expr().accept(this) as Expr)
+        return VarAssign(
+            ctx.ID().map { it.text },
+            ctx.expr().accept(this) as Expr,
+            ctx.start.line,
+            ctx.start.charPositionInLine
+        )
     }
 
     override fun visitIfElse(ctx: MainParser.IfElseContext): ASTNode {
         return IfElse(
             ctx.expr().accept(this) as Expr, ctx.block(0).accept(this) as Block,
-            if (ctx.ifElse() != null) (ctx.ifElse().accept(this) as IfElse) else (ctx.block(1)?.accept(this) as? Block)
+            if (ctx.ifElse() != null) (ctx.ifElse().accept(this) as IfElse) else (ctx.block(1)?.accept(this) as? Block),
+            ctx.start.line, ctx.start.charPositionInLine
         )
     }
 
     override fun visitWhileLoop(ctx: MainParser.WhileLoopContext): ASTNode {
         return WhileLoop(
             ctx.expr().accept(this) as Expr,
-            ctx.block().accept(this) as Block
+            ctx.block().accept(this) as Block,
+            ctx.start.line, ctx.start.charPositionInLine
         )
     }
 
     override fun visitBlock(ctx: MainParser.BlockContext): ASTNode {
         return Block(
-            ctx.children?.map { it.accept(this) } ?: emptyList()
+            ctx.children?.map { it.accept(this) } ?: emptyList(),
+            ctx.start.line, ctx.start.charPositionInLine
         )
     }
 
     override fun visitExpr(ctx: MainParser.ExprContext): ASTNode {
         return when {
-            ctx.booleanExpr() != null -> BooleanExpr(ctx.booleanExpr().BOOLEAN().text.toBoolean())
-            ctx.intExpr() != null -> IntExpr(ctx.intExpr().INT().text.toInt())
-            ctx.idExpr() != null -> IdExpr(ctx.idExpr().ID().text)
+            ctx.booleanExpr() != null -> BooleanExpr(
+                ctx.booleanExpr().BOOLEAN().text!!.toBoolean(),
+                ctx.start.line,
+                ctx.start.charPositionInLine
+            )
+            ctx.intExpr() != null -> IntExpr(
+                ctx.intExpr().INT().text.toInt(),
+                ctx.start.line,
+                ctx.start.charPositionInLine
+            )
+            ctx.idExpr() != null -> IdExpr(ctx.idExpr().ID().text, ctx.start.line, ctx.start.charPositionInLine)
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             ctx.expr().size < 2 -> when (ctx.op.text) {
-                ArithOp.MINUS.value -> ArithExpr(IntExpr(-1), ctx.expr()[0].accept(this) as Expr, ArithOp.TIMES)
-                BooleanOp.NOT.value -> BooleanOpExpr(ctx.expr()[0].accept(this) as Expr, op = BooleanOp.NOT)
+                ArithOp.MINUS.value -> ArithExpr(
+                    IntExpr(-1, -1, -1),
+                    ctx.expr()[0].accept(this) as Expr,
+                    ArithOp.TIMES,
+                    ctx.start.line,
+                    ctx.start.charPositionInLine
+                )
+                BooleanOp.NOT.value -> BooleanOpExpr(
+                    ctx.expr()[0].accept(this) as Expr,
+                    op = BooleanOp.NOT,
+                    lineNumber = ctx.start.line,
+                    charPosition = ctx.start.charPositionInLine
+                )
                 else -> throw Exception("Invalid Unary Expression Type!")
             }
             ctx.op.text in ArithOp.operators() -> visitArithExpr(ctx.expr(), ctx.op.text)
@@ -101,14 +143,15 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitParenExpr(ctx: MainParser.ParenExprContext): ASTNode {
-        return ParenExpr(visitExpr(ctx.expr()) as Expr)
+        return ParenExpr(visitExpr(ctx.expr()) as Expr, ctx.start.line, ctx.start.charPositionInLine)
     }
 
     private fun visitBooleanExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
         return BooleanOpExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
-            BooleanOp.fromString(op)!!
+            BooleanOp.fromString(op)!!,
+            exprs[0].start.line, exprs[0].start.charPositionInLine
         )
     }
 
@@ -116,7 +159,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return CompExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
-            CompOp.fromString(op)!!
+            CompOp.fromString(op)!!,
+            exprs[0].start.line, exprs[0].start.charPositionInLine
         )
     }
 
@@ -124,7 +168,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ArithExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
-            ArithOp.fromString(op)!!
+            ArithOp.fromString(op)!!,
+            exprs[0].start.line, exprs[0].start.charPositionInLine
         )
     }
 }

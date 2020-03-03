@@ -59,14 +59,14 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         val nArgs = funcCall.args.size
         val nParams = (sym.info["funcDecl"] as FuncDecl).params.size
         if (nArgs != nParams) {
-            ErrorLogger.log(Exception("Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected"))
+            ErrorLogger.log(funcCall, "Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected")
         }
     }
 
     override fun preVisit(varAssign: VarAssign<*>) {
         varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter)) }
         if (varAssign.expr is FuncCall && deriveType(varAssign.expr) == ExprType.VOID) {
-            ErrorLogger.log(Exception("Assigning to void is not valid."))
+            ErrorLogger.log(varAssign, "Assigning to void is not valid.")
         }
     }
 
@@ -80,7 +80,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
                 (currentTable.lookup(functionStack.peek()!!.id)!!.info["funcDecl"] as FuncDecl).returnType
             val exprType = deriveType(returnStmt.expr)
             if (exprType != returnType) {
-                ErrorLogger.log(Exception("Invalid return type"))
+                ErrorLogger.log(returnStmt, "Invalid return type")
             }
         }
     }
@@ -91,19 +91,19 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
                 booleanOpExpr.rhs
             )
         ) {
-            ErrorLogger.log(Exception("Type mismatch on boolean operator"))
+            ErrorLogger.log(booleanOpExpr, "Type mismatch on boolean operator")
         }
     }
 
     override fun postVisit(arithExpr: ArithExpr) {
         if (!isMatchingType(arithExpr, arithExpr.lhs) || !isMatchingType(arithExpr.lhs, arithExpr.rhs)) {
-            ErrorLogger.log(Exception("Type mismatch on arithmetic operator"))
+            ErrorLogger.log(arithExpr, "Type mismatch on arithmetic operator")
         }
     }
 
     override fun postVisit(compExpr: CompExpr) {
         if (!isMatchingType(compExpr.lhs, compExpr.rhs)) {
-            ErrorLogger.log(Exception("Type mismatch on comparative expr operator"))
+            ErrorLogger.log(compExpr, "Type mismatch on comparative expr operator")
         }
     }
 }

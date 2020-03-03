@@ -2,7 +2,8 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class FuncCall(val id: String, val args: List<Expr>) : Expr() {
+class FuncCall(val id: String, val args: List<Expr>, lineNumber: Int, charPosition: Int) :
+    Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         if (args.isNotEmpty()) {

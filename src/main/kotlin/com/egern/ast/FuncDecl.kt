@@ -8,9 +8,10 @@ class FuncDecl(
     val id: String,
     val params: List<Pair<String, ExprType>>,
     val returnType: ExprType,
-    private val funcBody: FuncBody
+    private val funcBody: FuncBody,
+    lineNumber: Int, charPosition: Int
 ) :
-    ASTNode(), Scopable {
+    ASTNode(lineNumber, charPosition), Scopable {
     override lateinit var symbolTable: SymbolTable
     var variableCount: Int = 0
     lateinit var startLabel: String

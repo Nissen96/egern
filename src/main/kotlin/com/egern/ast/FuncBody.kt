@@ -2,8 +2,8 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class FuncBody(val children: List<ASTNode>) :
-    ASTNode() {
+class FuncBody(val children: List<ASTNode>, lineNumber: Int, charPosition: Int) :
+    ASTNode(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         children.forEach {
