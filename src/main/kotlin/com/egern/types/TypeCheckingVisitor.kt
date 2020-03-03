@@ -60,13 +60,25 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun preVisit(funcCall: FuncCall) {
         val sym = lookupSymbol(funcCall.id, listOf(SymbolType.Function))
+        val params = (sym.info["funcDecl"] as FuncDecl).params
         val nArgs = funcCall.args.size
-        val nParams = (sym.info["funcDecl"] as FuncDecl).params.size
+        val nParams = params.size
         if (nArgs != nParams) {
             ErrorLogger.log(
                 funcCall,
                 "Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected"
             )
+        }
+        for (arg in funcCall.args) {
+            val index = funcCall.args.indexOf(arg)
+            val argType = deriveType(arg)
+            val paramType = params[index].second
+            if (argType != paramType) {
+                ErrorLogger.log(
+                    arg,
+                    "Argument $index is of type $argType but $paramType was expected"
+                )
+            }
         }
     }
 
@@ -127,6 +139,10 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(compExpr: CompExpr) {
+        val type = deriveType(compExpr.lhs)
+        if (compExpr.op !in CompOp.validOperators(type)) {
+            ErrorLogger.log(compExpr, "${compExpr.op.value} operation not defined on type $type")
+        }
         if (!isMatchingType(compExpr.lhs, compExpr.rhs)) {
             ErrorLogger.log(compExpr, "Type mismatch on comparative expr operator")
         }
