@@ -64,37 +64,25 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         lookupSymbol(idExpr.id, listOf(SymbolType.Variable, SymbolType.Parameter))
     }
 
-    override fun preVisit(returnStmt: ReturnStmt) {
-        /**if (returnStmt.expr != null && functionStack.peek() != null) {
-        val type = deriveType(returnStmt.expr)
-        val funcDecl = (lookupSymbol(functionStack.peek()!!.id, emptyList()).info as FuncDecl)
-        if (funcDecl.returnType == null) {
-        funcDecl.returnType = type
-        } else if (funcDecl.returnType != type) {
-        // TODO: ERROR
-        }
-        }**/
-    }
-
     override fun postVisit(booleanOpExpr: BooleanOpExpr) {
-        if (deriveType(booleanOpExpr) != deriveType(booleanOpExpr.lhs) || !isMatchingType(
+        if (!isMatchingType(booleanOpExpr, booleanOpExpr.lhs) || !isMatchingType(
                 booleanOpExpr.lhs,
                 booleanOpExpr.rhs
             )
         ) {
-            // TODO: ERROR
+            ErrorLogger.log(Exception("Type mismatch on boolean operator"))
         }
     }
 
     override fun postVisit(arithExpr: ArithExpr) {
-        if (deriveType(arithExpr) != deriveType(arithExpr.lhs) || !isMatchingType(arithExpr.lhs, arithExpr.rhs)) {
-            // TODO: ERROR
+        if (!isMatchingType(arithExpr, arithExpr.lhs) || !isMatchingType(arithExpr.lhs, arithExpr.rhs)) {
+            ErrorLogger.log(Exception("Type mismatch on arithmetic operator"))
         }
     }
 
     override fun postVisit(compExpr: CompExpr) {
         if (!isMatchingType(compExpr.lhs, compExpr.rhs)) {
-            // TODO: ERROR
+            ErrorLogger.log(Exception("Type mismatch on comperative expr operator"))
         }
     }
 }

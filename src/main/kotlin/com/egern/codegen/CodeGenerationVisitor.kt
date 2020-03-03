@@ -288,7 +288,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         // Find static link address for scope containing given id
         val symbol = symbolTable.lookup(id, checkDeclared) ?: throw Exception("Symbol $id is undefined")
         val scopeDiff = symbolTable.scope - symbol.scope
-        val symbolOffset = symbol.info["variableOffset"] as Int
+        val symbolOffset =
+            symbol.info[if (symbol.type == SymbolType.Variable) "variableOffset" else "paramOffset"] as Int
 
         // Symbol is a parameter (1-6) in current scope - value is in register
         if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {

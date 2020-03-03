@@ -10,7 +10,7 @@ stmt:   varDecl
     ;
 
 returnStmt: 'return' expr? ';' ;
-funcDecl:   'func' ID '(' paramList ')' type '{' funcBody '}' ;
+funcDecl:   'func' ID '(' paramList ')' ':' TYPE '{' funcBody '}'  ;
 funcBody:   ( stmt | funcDecl | funcCall ';' )* ;
 funcCall:   ID '(' argList ')' ;
 
@@ -49,11 +49,9 @@ parenExpr: '(' expr ')';
 
 printStmt: 'print' '(' expr? ')' ';';
 
-type: ':' TYPE ;
-
 NEWLINE :'\r'? '\n' -> skip;
 WS      : (' '|'\t') -> skip;
 INT     : [0-9]+ ;
 BOOLEAN : 'true' | 'false' ;
-ID      : [A-Za-z_]+[A-Za-z_0-9]* ;
 TYPE    : 'int' | 'boolean' | 'void' ;
+ID      : [A-Za-z_]+[A-Za-z_0-9]* ;

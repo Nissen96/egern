@@ -37,7 +37,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return FuncDecl(
             ctx.ID().text,
             ctx.paramList().ID().map { it.text },
-            ExprType.valueOf(ctx.type().TYPE().text.toUpperCase()),
+            ExprType.valueOf(ctx.TYPE().text.toUpperCase()),
             ctx.funcBody().accept(this) as FuncBody
         )
     }
