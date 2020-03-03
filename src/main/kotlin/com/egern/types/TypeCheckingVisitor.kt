@@ -73,13 +73,26 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     override fun preVisit(varAssign: VarAssign<*>) {
         varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter)) }
         val type = deriveType(varAssign.expr)
-        if (varAssign.expr is FuncCall && type == ExprType.VOID) {
+        if (type == ExprType.VOID) {
             ErrorLogger.log(varAssign, "Assigning to void is not valid.")
         }
         for (id in varAssign.ids) {
             if (type != getVariableType(id)) {
                 ErrorLogger.log(varAssign, "Assignment to $type is invalid.")
             }
+        }
+    }
+
+    override fun preVisit(varDecl: VarDecl<*>) {
+        val type = deriveType(varDecl.expr)
+        if (type == ExprType.VOID) {
+            ErrorLogger.log(varDecl, "Declaring a variable of type void is not valid.")
+        }
+    }
+
+    override fun preVisit(printStmt: PrintStmt) {
+        if (printStmt.expr != null && deriveType(printStmt.expr) == ExprType.VOID) {
+            ErrorLogger.log(printStmt.expr, "Printing void is not valid.")
         }
     }
 

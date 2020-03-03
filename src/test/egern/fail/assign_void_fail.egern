@@ -2,4 +2,3 @@ func empty(): void {
     return;
 }
 var a = empty();
-print(a);
