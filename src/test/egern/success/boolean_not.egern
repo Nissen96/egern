@@ -1,6 +1,0 @@
-func test(arg) {
-    return !arg;
-}
-
-print(test(true));
-print(test(false));

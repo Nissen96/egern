@@ -1,4 +1,4 @@
-func test(arg){
+func test(arg: boolean): int {
     if (arg) {
         return 1;
     } else {

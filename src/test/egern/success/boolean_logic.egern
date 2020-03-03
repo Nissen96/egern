@@ -1,3 +1,6 @@
+print(true);
+print(false);
+
 print(true && true);
 print(true && false);
 print(false && true);

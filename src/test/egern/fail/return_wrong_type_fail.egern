@@ -1,4 +1,4 @@
-func square(arg: int): int {
+func square(arg: int): boolean {
     return arg * arg;
 }
 

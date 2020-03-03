@@ -1,4 +1,4 @@
-func hello(a, b) {
+func hello(a: int, b: int): int {
     a = b;
     return a;
 }

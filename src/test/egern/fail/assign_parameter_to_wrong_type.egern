@@ -1,0 +1,6 @@
+func square(n: boolean): int {
+    n = 4;
+    return n * n;
+}
+
+square(true);

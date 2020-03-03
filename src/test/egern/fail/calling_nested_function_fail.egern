@@ -1,6 +1,6 @@
-func outer(a) {
+func outer(a: int): int {
     var b = 3;
-    func inner(a, b) {
+    func inner(a: int, b: int): int {
         var c = 4;
         return a - b + c;
     }

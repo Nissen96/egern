@@ -1,0 +1,5 @@
+func square(n: int): void {
+    return n * n;
+}
+
+square(4);

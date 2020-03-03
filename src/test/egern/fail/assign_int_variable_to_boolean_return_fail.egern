@@ -1,0 +1,8 @@
+func flip(bool: boolean): boolean {
+    return !bool;
+}
+
+var a = 4;
+print(a);
+a = flip(true);
+print(a);

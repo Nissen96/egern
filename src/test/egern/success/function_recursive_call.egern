@@ -1,4 +1,4 @@
-func recursiveFunc(n) {
+func recursiveFunc(n: int): int {
     print(n);
     if (n < 1) {
         return n;

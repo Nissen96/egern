@@ -1,4 +1,4 @@
-func sameParams(x, y, x) {
+func sameParams(x: int, y: int, x: int): int {
     return x * y;
 }
 

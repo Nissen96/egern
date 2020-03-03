@@ -1,9 +1,9 @@
-func test1(a) {
+func test1(a: int): int {
     test2(a);
     return a;
 }
 
-func test2(a) {
+func test2(a: int): int {
     return a;
 }
 

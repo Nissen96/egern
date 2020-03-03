@@ -1,4 +1,4 @@
-func noReturn(a) {
+func noReturn(a: int): void {
     print(a);
 }
-print(noReturn(2));
+noReturn(2);

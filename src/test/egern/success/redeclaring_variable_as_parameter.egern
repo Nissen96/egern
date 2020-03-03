@@ -1,4 +1,4 @@
-func test(x) {
+func test(x: int): int {
     return x - 1;
 }
 

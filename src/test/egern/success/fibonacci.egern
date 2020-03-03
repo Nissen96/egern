@@ -1,4 +1,4 @@
-func fib(n) {
+func fib(n: int): int {
     if (n <= 1) {
       return 1;
     }

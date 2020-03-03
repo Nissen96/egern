@@ -1,4 +1,4 @@
-func sum(a, b) {
+func sum(a: int, b: int): int {
     var c = a + b;
     print(c);
     return c;

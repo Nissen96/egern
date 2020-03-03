@@ -1,4 +1,4 @@
-func test(a, b) {
+func test(a: int, b: int): int {
     if (a > 5 && b > 1) {
         return 1;
     } else {
