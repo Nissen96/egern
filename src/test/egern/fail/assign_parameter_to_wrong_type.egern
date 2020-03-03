@@ -1,6 +1,5 @@
-func square(n: boolean): int {
+func square(n: boolean): void {
     n = 4;
-    return n * n;
 }
 
 square(true);
