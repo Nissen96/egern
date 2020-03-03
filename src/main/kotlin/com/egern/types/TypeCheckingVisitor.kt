@@ -32,7 +32,8 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     private fun deriveType(expr: Expr): ExprType {
         return when (expr) {
-            is IntExpr -> ExprType.INT
+            // Handle implicit returns of nothing (int=0)
+            is IntExpr -> if (expr.isVoid) ExprType.VOID else ExprType.INT
             is BooleanExpr -> ExprType.BOOLEAN
             is BooleanOpExpr -> ExprType.BOOLEAN
             is CompExpr -> ExprType.BOOLEAN

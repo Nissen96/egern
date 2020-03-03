@@ -8,7 +8,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
         val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(ReturnStmt(IntExpr(0, -1, -1), -1, -1))  // Implicit "return 0"
+        children.add(ReturnStmt(IntExpr(0, -1, -1, isVoid = true), -1, -1))  // Implicit "return 0"
         return Program(children, ctx.start.line, ctx.start.charPositionInLine)
     }
 
@@ -27,7 +27,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
         // Return 0 implicitly if return value is undefined
         return ReturnStmt(
-            (if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0, -1, -1)) as Expr,
+            (if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0, -1, -1, isVoid = true)) as Expr,
             ctx.start.line,
             ctx.start.charPositionInLine
         )
@@ -49,7 +49,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitFuncBody(ctx: MainParser.FuncBodyContext): ASTNode {
         val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(ReturnStmt(IntExpr(0, -1, -1), -1, -1))  // Implicit "return 0"
+        children.add(ReturnStmt(IntExpr(0, -1, -1, isVoid = true), -1, -1))  // Implicit "return 0"
         return FuncBody(children, ctx.start.line, ctx.start.charPositionInLine)
     }
 
