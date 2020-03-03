@@ -19,7 +19,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun postVisit(funcDecl: FuncDecl) {
         currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
-        functionStack.pop();
+        functionStack.pop()
     }
 
     private fun lookupSymbol(id: String, validTypes: List<SymbolType>): Symbol {
@@ -103,7 +103,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun postVisit(compExpr: CompExpr) {
         if (!isMatchingType(compExpr.lhs, compExpr.rhs)) {
-            ErrorLogger.log(Exception("Type mismatch on comperative expr operator"))
+            ErrorLogger.log(Exception("Type mismatch on comparative expr operator"))
         }
     }
 }
