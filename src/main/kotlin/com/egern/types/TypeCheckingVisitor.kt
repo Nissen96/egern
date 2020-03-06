@@ -119,15 +119,13 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(booleanOpExpr: BooleanOpExpr) {
-        if (!isMatchingType(booleanOpExpr, booleanOpExpr.lhs) ||
-            !isMatchingType(booleanOpExpr.lhs, booleanOpExpr.rhs)
-        ) {
+        if (!isMatchingType(booleanOpExpr, booleanOpExpr.lhs) || !isMatchingType(booleanOpExpr, booleanOpExpr.rhs)) {
             ErrorLogger.log(booleanOpExpr, "Type mismatch on boolean operator")
         }
     }
 
     override fun postVisit(arithExpr: ArithExpr) {
-        if (!isMatchingType(arithExpr, arithExpr.lhs) || !isMatchingType(arithExpr.lhs, arithExpr.rhs)) {
+        if (!isMatchingType(arithExpr, arithExpr.lhs) || !isMatchingType(arithExpr, arithExpr.rhs)) {
             ErrorLogger.log(arithExpr, "Type mismatch on arithmetic operator")
         }
     }
