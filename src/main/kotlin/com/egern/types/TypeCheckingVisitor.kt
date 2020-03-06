@@ -69,15 +69,11 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
                 "Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected"
             )
         }
-        for (arg in funcCall.args) {
-            val index = funcCall.args.indexOf(arg)
+        funcCall.args.forEachIndexed { index, arg ->
             val argType = deriveType(arg)
             val paramType = params[index].second
             if (argType != paramType) {
-                ErrorLogger.log(
-                    arg,
-                    "Argument $index is of type $argType but $paramType was expected"
-                )
+                ErrorLogger.log(arg, "Argument $index is of type $argType but $paramType was expected")
             }
         }
     }
