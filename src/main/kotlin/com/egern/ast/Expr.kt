@@ -1,3 +1,3 @@
 package com.egern.ast
 
-abstract class Expr : ASTNode()
+abstract class Expr(lineNumber: Int, charPosition: Int) : ASTNode(lineNumber, charPosition)

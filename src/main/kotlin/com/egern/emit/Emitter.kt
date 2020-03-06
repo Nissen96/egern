@@ -35,6 +35,7 @@ abstract class Emitter(
         when (instruction.instructionType) {
             InstructionType.IDIV -> emitDivision(instruction)
             InstructionType.MOD -> emitModulo(instruction)
+            InstructionType.NOT -> emitBooleanNot(instruction)
             InstructionType.LABEL -> emitLabel(instruction)
             InstructionType.META -> emitMetaOp(instruction)
             in syntax.ops -> emitSimpleInstruction(instruction)
@@ -168,6 +169,13 @@ abstract class Emitter(
         emitPerformDivision(inst)
         val (arg1, arg2) = syntax.argOrder(syntax.register("rdx"), emitArg(inst.args[1]))
         builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Move resulting remainder")
+    }
+
+    private fun emitBooleanNot(inst: Instruction) {
+        val arg = emitArg(inst.args[0])
+        builder
+            .addLine("test", arg, arg, "Test argument with itself")
+            .addLine("setz", "${arg}b", comment = "Set first byte to 1 if zero etc.")
     }
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {

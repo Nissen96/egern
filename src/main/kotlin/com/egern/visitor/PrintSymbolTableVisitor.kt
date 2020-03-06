@@ -14,8 +14,8 @@ class PrintSymbolTableVisitor : Visitor {
         printSymbolLine(symbol, scope - 1, "local variables", funcDecl.variableCount)
 
         for (param in funcDecl.params) {
-            val paramSymbol = funcDecl.symbolTable.lookup(param)
-            printSymbolLine(paramSymbol, scope, "offset", paramSymbol?.info as Int)
+            val paramSymbol = funcDecl.symbolTable.lookup(param.first)
+            printSymbolLine(paramSymbol, scope, "offset", paramSymbol?.info?.get("paramOffset") as Int)
         }
     }
 
@@ -23,11 +23,11 @@ class PrintSymbolTableVisitor : Visitor {
         val scope = varDecl.symbolTable.scope
         for (id in varDecl.ids) {
             val symbol = varDecl.symbolTable.lookup(id)
-            printSymbolLine(symbol, scope, "offset", symbol?.info as? Int)
+            printSymbolLine(symbol, scope, "offset", symbol?.info?.get("variableOffset") as? Int)
         }
     }
 
-    private fun printSymbolLine(symbol: Symbol<*>?, scope: Int, infoText: String, infoValue: Int?) {
+    private fun printSymbolLine(symbol: Symbol?, scope: Int, infoText: String, infoValue: Int?) {
         println("${symbol?.type} '${symbol?.id}' at scope $scope - $infoText: $infoValue")
     }
 }

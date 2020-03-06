@@ -1,4 +1,4 @@
-func recursiveA(n) {
+func recursiveA(n: int): int {
     print(n);
     if (n < 1) {
         return n;
@@ -6,7 +6,7 @@ func recursiveA(n) {
     return recursiveB(n - 1);
 }
 
-func recursiveB(m) {
+func recursiveB(m: int): int {
     print(m);
     if (m < 1) {
         return m;

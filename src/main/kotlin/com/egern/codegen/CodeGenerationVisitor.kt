@@ -165,7 +165,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
 
     override fun postVisit(funcCall: FuncCall) {
         val func = symbolTable.lookup(funcCall.id)!!
-        val decl = func.info as FuncDecl
+        val decl = func.info["funcDecl"] as FuncDecl
         val scopeDiff = symbolTable.scope - decl.symbolTable.scope
         val numArgs = funcCall.args.size
 
@@ -254,6 +254,16 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
     }
 
+    override fun visit(booleanExpr: BooleanExpr) {
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue((if (booleanExpr.value) 1 else 0).toString()), Direct),
+                comment = "Push static boolean value"
+            )
+        )
+    }
+
     override fun visit(idExpr: IdExpr) {
         val idLocation = getIdLocation(idExpr.id, true)
         add(
@@ -278,7 +288,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         // Find static link address for scope containing given id
         val symbol = symbolTable.lookup(id, checkDeclared) ?: throw Exception("Symbol $id is undefined")
         val scopeDiff = symbolTable.scope - symbol.scope
-        val symbolOffset = symbol.info as Int
+        val symbolOffset =
+            symbol.info[if (symbol.type == SymbolType.Variable) "variableOffset" else "paramOffset"] as Int
 
         // Symbol is a parameter (1-6) in current scope - value is in register
         if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {
@@ -412,15 +423,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
     }
 
-    override fun postVisit(booleanExpr: BooleanExpr) {
+    override fun postVisit(booleanOpExpr: BooleanOpExpr) {
         // Pop expressions to register 1 and 2 in reverse order
-        add(
-            Instruction(
-                InstructionType.POP,
-                InstructionArg(Register(OpReg2), Direct),
-                comment = "Pop expression to register 2"
+        if (booleanOpExpr.rhs != null) {
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Pop expression to register 2"
+                )
             )
-        )
+        }
         add(
             Instruction(
                 InstructionType.POP,
@@ -428,18 +441,29 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                 comment = "Pop expression to register 1"
             )
         )
-        val operator = when (booleanExpr.op) {
+        val operator = when (booleanOpExpr.op) {
             BooleanOp.AND -> InstructionType.AND
             BooleanOp.OR -> InstructionType.OR
+            BooleanOp.NOT -> InstructionType.NOT
         }
-        add(
-            Instruction(
-                operator,
-                InstructionArg(Register(OpReg2), Direct),
-                InstructionArg(Register(OpReg1), Direct),
-                comment = "Do boolean operation"
+        if (booleanOpExpr.rhs != null) {
+            add(
+                Instruction(
+                    operator,
+                    InstructionArg(Register(OpReg2), Direct),
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Do boolean operation"
+                )
             )
-        )
+        } else {
+            add(
+                Instruction(
+                    operator,
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Do boolean operation"
+                )
+            )
+        }
         add(
             Instruction(
                 InstructionType.PUSH,

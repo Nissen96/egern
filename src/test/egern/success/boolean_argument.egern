@@ -1,0 +1,10 @@
+func test(arg: boolean): int {
+    if (arg) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+print(test(true));
+print(test(false));

@@ -38,24 +38,6 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         print(" ${compExpr.op.value} ")
     }
 
-    override fun preVisit(funcBody: FuncBody) {
-        println("{")
-        level++
-    }
-
-    override fun preFuncCallVisit(funcBody: FuncBody) {
-        printIndented()
-    }
-
-    override fun postFuncCallVisit(funcBody: FuncBody) {
-        println(";")
-    }
-
-    override fun postVisit(funcBody: FuncBody) {
-        level--
-        printIndented("}")
-    }
-
     override fun preVisit(funcCall: FuncCall) {
         print("${funcCall.id}(")
     }
@@ -70,11 +52,23 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun preVisit(funcDecl: FuncDecl) {
         println()
-        printIndented("func ${funcDecl.id}(${funcDecl.params.joinToString(", ")}) ")
+        printIndented("func ${funcDecl.id}(")
+        print(funcDecl.params.joinToString(", ") { "${it.first}: ${it.second.name.toLowerCase()}" }) // Params
+        println("): ${funcDecl.returnType.name.toLowerCase()} {")
+        level++
+    }
+
+    override fun preFuncCallVisit(funcDecl: FuncDecl) {
+        printIndented()
+    }
+
+    override fun postFuncCallVisit(funcDecl: FuncDecl) {
+        println(";")
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
-        println("\n")
+        level--
+        printIndented("}\n")
     }
 
     override fun visit(idExpr: IdExpr) {
@@ -95,7 +89,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postMidVisit(ifElse: IfElse) {
-        print(" else ")
+        if (ifElse.elseBlock != null) print(" else ")
         dontIndent = ifElse.elseBlock is IfElse
     }
 

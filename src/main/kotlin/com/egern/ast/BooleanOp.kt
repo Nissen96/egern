@@ -2,7 +2,8 @@ package com.egern.ast
 
 enum class BooleanOp(val value: String) {
     AND("&&"),
-    OR("||");
+    OR("||"),
+    NOT("!");
 
     companion object {
         private val map = BooleanOp.values().associateBy(BooleanOp::value)

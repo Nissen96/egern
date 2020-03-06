@@ -1,5 +1,6 @@
 package com.egern.error
 
+import com.egern.ast.ASTNode
 import java.lang.Exception
 
 class ErrorLogger {
@@ -8,6 +9,10 @@ class ErrorLogger {
 
         fun hasErrors(): Boolean {
             return errors.isNotEmpty()
+        }
+
+        fun log(node: ASTNode, message: String) {
+            log(Exception("$message at line ${node.lineNumber} char ${node.charPosition}"))
         }
 
         fun log(exception: Exception) {

@@ -1,0 +1,5 @@
+func square(n: boolean): void {
+    n = 4;
+}
+
+square(true);

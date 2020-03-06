@@ -1,6 +1,6 @@
-func hello(test) {
+func hello(test: int): void {
     print(test);
-    func test(a) {
+    func test(a: int): int {
         return a * a;
     }
     print(test(4));

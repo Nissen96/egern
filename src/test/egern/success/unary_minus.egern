@@ -1,4 +1,4 @@
-func get(a) {
+func get(a: int): int {
     return -a;
 }
 var a = -4;

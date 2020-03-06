@@ -2,11 +2,8 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class BooleanExpr(val lhs: Expr, val rhs: Expr, val op: BooleanOp) : Expr() {
+class BooleanExpr(val value: Boolean, lineNumber: Int, charPosition: Int) : Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
-        lhs.accept(visitor)
-        visitor.midVisit(this)
-        rhs.accept(visitor)
-        visitor.postVisit(this)
+        visitor.visit(this)
     }
 }

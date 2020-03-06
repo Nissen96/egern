@@ -11,23 +11,21 @@ interface Visitor {
     fun postFuncCallVisit(block: Block) {}
     fun postVisit(block: Block) {}
 
+    fun visit(booleanExpr: BooleanExpr) {}
+
+    fun midVisit(booleanOpExpr: BooleanOpExpr) {}
+    fun postVisit(booleanOpExpr: BooleanOpExpr) {}
+
     fun midVisit(compExpr: CompExpr) {}
     fun postVisit(compExpr: CompExpr) {}
-
-    fun midVisit(booleanExpr: BooleanExpr) {}
-    fun postVisit(booleanExpr: BooleanExpr) {}
-
-    fun preVisit(funcBody: FuncBody) {}
-    fun preFuncCallVisit(funcBody: FuncBody) {}
-    fun postFuncCallVisit(funcBody: FuncBody) {}
-    fun midVisit(funcBody: FuncBody) {}
-    fun postVisit(funcBody: FuncBody) {}
 
     fun preVisit(funcCall: FuncCall) {}
     fun midVisit(funcCall: FuncCall) {}
     fun postVisit(funcCall: FuncCall) {}
 
     fun preVisit(funcDecl: FuncDecl) {}
+    fun preFuncCallVisit(funcDecl: FuncDecl) {}
+    fun postFuncCallVisit(funcDecl: FuncDecl) {}
     fun postVisit(funcDecl: FuncDecl) {}
 
     fun visit(idExpr: IdExpr) {}

@@ -3,7 +3,8 @@ package com.egern.ast
 import com.egern.symbols.SymbolTable
 import com.egern.visitor.Visitor
 
-class Block(val children: List<ASTNode>) : ASTNode(), Scopable {
+class Block(val children: List<ASTNode>, lineNumber: Int, charPosition: Int) : ASTNode(lineNumber, charPosition),
+    Scopable {
     override lateinit var symbolTable: SymbolTable
 
     override fun accept(visitor: Visitor) {

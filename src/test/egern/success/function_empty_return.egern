@@ -1,5 +1,6 @@
-func emptyReturn(b) {
+func emptyReturn(b: int): void {
     var a = 4;
+    print(a + b);
     return;
 }
-print(emptyReturn(5));
+emptyReturn(5);

@@ -1,4 +1,4 @@
-func abc(a, b, c) {
+func abc(a: int, b: int, c: int): int {
     print(a);
     var x = b;
     return c;

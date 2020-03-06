@@ -1,4 +1,4 @@
-if (2 == 2) {
+if (true == 2) {
     print(1);
 } else {
     print(0);

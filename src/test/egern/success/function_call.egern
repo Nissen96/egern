@@ -1,4 +1,4 @@
-func square(arg) {
+func square(arg: int): int {
     return arg * arg;
 }
 

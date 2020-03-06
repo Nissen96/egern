@@ -85,3 +85,19 @@ Y - Redeclare function as variable
 
 Y - Call function with fewer arguments than parameters
 Y - Call function with more arguments than parameters
+
+Y - Assign boolean to declared integer variable
+Y - Assign integer to declared boolean variable
+Y - Assign function call with integer return type to declared boolean variable
+Y - Assign function call with boolean return type to declared integer variable
+Y - Print result of void function
+Y - Assign result of void function
+Y - Pass argument of wrong type
+Y - Return nothing from function with non-void return type
+Y - Return value from function with void return type
+Y - Return value of different type than return type
+
+Y - Use arithmetic operators on booleans
+Y - Use boolean operators on arithmetic expressions
+Y - Compare operands of different types
+Y - Compare booleans with invalid comparison operators (<, >, <=, >=)

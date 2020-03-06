@@ -1,2 +1,2 @@
-func empty() { }
-print(empty());
+func empty(): void { }
+empty();

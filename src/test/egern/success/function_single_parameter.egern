@@ -1,4 +1,4 @@
-func oneParam(arg) {
+func oneParam(arg: int): int {
     return arg * arg;
 }
 print(oneParam(6));
