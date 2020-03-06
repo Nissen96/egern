@@ -119,10 +119,8 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(booleanOpExpr: BooleanOpExpr) {
-        if (!isMatchingType(booleanOpExpr, booleanOpExpr.lhs) || !isMatchingType(
-                booleanOpExpr.lhs,
-                booleanOpExpr.rhs
-            )
+        if (!isMatchingType(booleanOpExpr, booleanOpExpr.lhs) ||
+            !isMatchingType(booleanOpExpr.lhs, booleanOpExpr.rhs)
         ) {
             ErrorLogger.log(booleanOpExpr, "Type mismatch on boolean operator")
         }
