@@ -3,6 +3,7 @@ grammar Main;
 prog:	( stmt | funcDecl | funcCall ';'? )* ;
 stmt:   varDecl
     |   varAssign
+    |   opAssign
     |   ifElse
     |   returnStmt
     |   printStmt
@@ -19,6 +20,7 @@ argList:    (expr ',')* expr? ;
 
 varDecl:    'var' varAssign ;
 varAssign:  (ID '=')+ expr ';'?;
+opAssign: ID op=('+=' | '-=' | '*=' | '/=' | '%=' ) expr ';'?;
 
 ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' (block | ifElse)
