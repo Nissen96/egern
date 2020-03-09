@@ -44,7 +44,9 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("cmp", "rbx", "rcx")
             .addLine("je", "was_alinged_end_${printfCounter}")
             .addLine("add", "rsp", "8")
-            .addLine("was_alinged_end_${printfCounter++}:")
+            .addLine("was_alinged_end_${printfCounter}:")
+
+        printfCounter++
     }
 
     override fun emitMainLabel(): String {

@@ -25,8 +25,6 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         //builder.addLine("format: db \"%d\", 10, 0")
     }
 
-    var printfCounter = 0;
-
     override fun emitPrint(arg: MetaOperationArg) {
         // TODO: handle print empty
         //val empty = arg.value == 0
