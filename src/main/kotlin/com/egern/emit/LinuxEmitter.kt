@@ -23,15 +23,15 @@ class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
     }
 
     override fun emitPrint(arg: MetaOperationArg) {
-        val empty = arg.value == 0
+        val isEmpty = printInstructionIsEmpty(arg)
         builder
             .newline()
             .addLine("# PRINTING USING PRINTF")
             .addLine(
-                "movq", "\$format_${if (empty) "newline" else "int"}", "%rdi",
+                "movq", "\$format_${if (isEmpty) "newline" else "int"}", "%rdi",
                 "Pass 1st argument in %rdi"
             )
-        if (!empty) {
+        if (!isEmpty) {
             builder.addLine(
                 "movq", "${8 * CALLER_SAVE_REGISTERS.size}(%rsp)", "%rsi",
                 "Pass 2nd argument in %rsi"
