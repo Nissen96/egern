@@ -50,6 +50,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             is IdExpr -> getVariableType(expr.id)
             is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
             is ParenExpr -> deriveType(expr.expr)
+            is ArrayExpr -> deriveType(expr.entries[0])
             else -> throw Exception("Can't derive type for expr!")
         }
     }
@@ -137,6 +138,14 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         }
         if (!isMatchingType(compExpr.lhs, compExpr.rhs)) {
             ErrorLogger.log(compExpr, "Type mismatch on comparative expr operator")
+        }
+    }
+
+    override fun postVisit(arrayExpr: ArrayExpr) {
+        for (entry in arrayExpr.entries) {
+            if (!isMatchingType(arrayExpr, entry)) {
+                ErrorLogger.log(entry, "Type mismatch in array")
+            }
         }
     }
 }
