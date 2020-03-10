@@ -11,11 +11,11 @@ stmt:   varDecl
     ;
 
 returnStmt: 'return' expr? ';'? ;
-funcDecl:   'func' ID '(' paramList ')' ':' TYPE '{' funcBody '}'  ;
+funcDecl:   'func' ID '(' paramList ')' ':' typeDecl '{' funcBody '}'  ;
 funcBody:   ( stmt | funcDecl | funcCall ';'? )* ;
 funcCall:   ID '(' argList ')' ;
 
-paramList:  (ID ':' TYPE ',')* (ID ':' TYPE)? ;
+paramList:  (ID ':' typeDecl ',')* (ID ':' typeDecl)? ;
 argList:    (expr ',')* expr? ;
 
 varDecl:    'var' varAssign ;
@@ -51,11 +51,15 @@ booleanExpr: BOOLEAN ;
 parenExpr: '(' expr ')';
 arrayExpr: '[' (expr ',')* expr? ']';
 
+typeDecl: '[' arrayEntryType ']' | VOID_TYPE | PRIMITIVE_TYPE ;
+arrayEntryType: '[' arrayEntryType ']' | PRIMITIVE_TYPE;
+
 printStmt: 'print' '(' expr? ')' ';'?;
 
 NEWLINE :'\r'? '\n' -> skip;
 WS      : (' '|'\t') -> skip;
 INT     : [0-9]+ ;
 BOOLEAN : 'true' | 'false' ;
-TYPE    : 'int' | 'boolean' | 'void' ;
+VOID_TYPE    : 'void' ;
+PRIMITIVE_TYPE: 'int' | 'boolean' ;
 ID      : [A-Za-z_]+[A-Za-z_0-9]* ;

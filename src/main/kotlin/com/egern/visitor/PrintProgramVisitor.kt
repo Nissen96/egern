@@ -53,8 +53,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     override fun preVisit(funcDecl: FuncDecl) {
         println()
         printIndented("func ${funcDecl.id}(")
-        print(funcDecl.params.joinToString(", ") { "${it.first}: ${it.second.name.toLowerCase()}" }) // Params
-        println("): ${funcDecl.returnType.name.toLowerCase()} {")
+        print(funcDecl.params.joinToString(", ") { "${it.first}: ${it.second.toString().toLowerCase()}" }) // Params
+        println("): ${funcDecl.returnType.toString().toLowerCase()} {")
         level++
     }
 
