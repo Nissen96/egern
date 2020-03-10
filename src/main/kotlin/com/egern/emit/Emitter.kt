@@ -32,8 +32,8 @@ abstract class Emitter(
         return builder.toFinalStr()
     }
 
-    private fun emitAllocateProgramHeap(arg: MetaOperationArg) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
+    private fun emitAllocateProgramHeap(heapSize: Int) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * heapSize}"), syntax.register("rdi"))
         val (arg3, arg4) = syntax.argOrder(syntax.register("rax"), syntax.register("rbx"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
@@ -112,19 +112,23 @@ abstract class Emitter(
     }
 
     private fun emitMetaOp(instruction: Instruction) {
+        val value = (instruction.args.getOrElse(1) { MetaOperationArg(-1) } as MetaOperationArg).value
         when (instruction.args[0]) {
+            // Meta operation without arguments
             MetaOperation.CallerSave -> emitCallerCallee(false, CALLER_SAVE_REGISTERS)
             MetaOperation.CallerRestore -> emitCallerCallee(true, CALLER_SAVE_REGISTERS)
             MetaOperation.CalleeSave -> emitCallerCallee(false, CALLEE_SAVE_REGISTERS)
             MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
-            MetaOperation.Print -> emitPrint(instruction.args[1] as MetaOperationArg)
             MetaOperation.CalleePrologue -> emitCalleePrologue()
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
-            MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(instruction.args[1] as MetaOperationArg)
-            MetaOperation.DeallocateStackSpace -> emitDeallocateStackSpace(instruction.args[1] as MetaOperationArg)
-            MetaOperation.AllocateInternalHeap -> emitAllocateProgramHeap(instruction.args[1] as MetaOperationArg)
-            MetaOperation.AllocateHeapSpace -> emitAllocateHeapSpace(instruction.args[1] as MetaOperationArg)
-            MetaOperation.DeallocateHeapSpace -> emitDeallocateHeapSpace(instruction.args[1] as MetaOperationArg)
+
+            // Meta operation with an argument
+            MetaOperation.Print -> emitPrint(instruction.args[1] as MetaOperationArg)
+            MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(value)
+            MetaOperation.DeallocateStackSpace -> emitDeallocateStackSpace(value)
+            MetaOperation.AllocateInternalHeap -> emitAllocateProgramHeap(value)
+            MetaOperation.AllocateHeapSpace -> emitAllocateHeapSpace(value)
+            MetaOperation.DeallocateHeapSpace -> emitDeallocateHeapSpace(value)
         }
     }
 
@@ -197,15 +201,15 @@ abstract class Emitter(
             .addLine("setz", "${arg}b", comment = "Set first byte to 1 if zero etc.")
     }
 
-    private fun emitAllocateHeapSpace(arg: MetaOperationArg) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
+    private fun emitAllocateHeapSpace(size: Int) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * size}"), syntax.register("rdi"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for malloc call"
         ).addLine("call malloc")
     }
 
-    private fun emitDeallocateHeapSpace(arg: MetaOperationArg) {
+    private fun emitDeallocateHeapSpace(size: Int) {
         // TODO()
         /**
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
@@ -218,16 +222,16 @@ abstract class Emitter(
          **/
     }
 
-    private fun emitAllocateStackSpace(arg: MetaOperationArg) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${-VARIABLE_SIZE * arg.value}"), syntax.register("rsp"))
+    private fun emitAllocateStackSpace(numVariables: Int) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${-VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
             "Move stack pointer to allocate space for local variables"
         )
     }
 
-    private fun emitDeallocateStackSpace(arg: MetaOperationArg) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rsp"))
+    private fun emitDeallocateStackSpace(numVariables: Int) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
             "Move stack pointer to deallocate space for local variables"
