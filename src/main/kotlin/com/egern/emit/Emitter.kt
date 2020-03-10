@@ -190,11 +190,12 @@ abstract class Emitter(
     }
 
     private fun emitDeallocateHeapSpace(arg: MetaOperationArg) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
+        // Unused for now
+        /**val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for free call"
-        ).addLine("call free")
+        ).addLine("call free")**/
     }
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
