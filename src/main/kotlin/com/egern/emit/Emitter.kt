@@ -10,6 +10,7 @@ abstract class Emitter(
 ) {
     abstract fun emitProgramPrologue()
     abstract fun emitProgramEpilogue()
+    abstract fun emitRequestProgramHeap()
     abstract fun emitPrint(arg: MetaOperationArg)
     abstract fun emitMainLabel(): String
 
@@ -29,6 +30,20 @@ abstract class Emitter(
         emitProgramEpilogue()
 
         return builder.toFinalStr()
+    }
+
+    private fun emitAllocateProgramHeap(arg: MetaOperationArg) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
+        val (arg3, arg4) = syntax.argOrder(syntax.register("rax"), syntax.register("rbx"))
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+            "Move argument into parameter register for malloc call"
+        )
+        emitRequestProgramHeap()
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
+            "Move returned heap pointer to fixed heap pointer register"
+        )
     }
 
     private fun emitInstruction(instruction: Instruction) {
@@ -107,6 +122,7 @@ abstract class Emitter(
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(instruction.args[1] as MetaOperationArg)
             MetaOperation.DeallocateStackSpace -> emitDeallocateStackSpace(instruction.args[1] as MetaOperationArg)
+            MetaOperation.AllocateInternalHeap -> emitAllocateProgramHeap(instruction.args[1] as MetaOperationArg)
             MetaOperation.AllocateHeapSpace -> emitAllocateHeapSpace(instruction.args[1] as MetaOperationArg)
             MetaOperation.DeallocateHeapSpace -> emitDeallocateHeapSpace(instruction.args[1] as MetaOperationArg)
         }
@@ -190,12 +206,16 @@ abstract class Emitter(
     }
 
     private fun emitDeallocateHeapSpace(arg: MetaOperationArg) {
-        // Unused for now
-        /**val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            "Move argument into parameter register for free call"
-        ).addLine("call free")**/
+        // TODO()
+        /**
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
+        builder
+        .addLine(
+        syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+        "Move argument into parameter register for free call"
+        )
+        .addLine("call free")
+         **/
     }
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {

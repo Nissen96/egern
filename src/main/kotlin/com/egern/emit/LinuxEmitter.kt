@@ -22,6 +22,10 @@ class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         // Empty epilogue
     }
 
+    override fun emitRequestProgramHeap() {
+        builder.addLine("call malloc")
+    }
+
     override fun emitPrint(arg: MetaOperationArg) {
         val empty = arg.value == 0
         builder

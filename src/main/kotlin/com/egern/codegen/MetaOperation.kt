@@ -10,6 +10,7 @@ enum class MetaOperation : Arg {
     CalleeEpilogue,
     AllocateStackSpace,
     DeallocateStackSpace,
+    AllocateInternalHeap,
     AllocateHeapSpace,
     DeallocateHeapSpace
 }

@@ -9,7 +9,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
-class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
+class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val heapSize: Int = 256) : Visitor {
     val instructions = ArrayList<Instruction>()
     private val functionStack = stackOf<FuncDecl>()
 
@@ -59,6 +59,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.META,
                 MetaOperation.CalleePrologue
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateInternalHeap,
+                MetaOperationArg(heapSize)
             )
         )
         add(

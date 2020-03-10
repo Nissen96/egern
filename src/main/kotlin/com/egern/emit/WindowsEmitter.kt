@@ -25,11 +25,13 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         //builder.addLine("format: db \"%d\", 10, 0")
     }
 
+    override fun emitRequestProgramHeap() {
+        builder.addLine("call malloc")
+    }
+
     override fun emitPrint(arg: MetaOperationArg) {
         // TODO: handle print empty
-        //val empty = arg.value == 0
         builder
-
             .newline()
             .addLine("; Get handle")
             .addLine("sub", "rsp", "32")

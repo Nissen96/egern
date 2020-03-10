@@ -17,12 +17,15 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         builder.addLine("format: db \"%d\", 10, 0")
     }
 
+    override fun emitRequestProgramHeap() {
+        builder.addLine("call malloc")
+    }
+
     var printfCounter = 0;
 
     override fun emitPrint(arg: MetaOperationArg) {
         // TODO: double check alignment (MacOS requires 16 byte)
         // TODO: handle print empty
-        //val empty = arg.value == 0
         builder
             .newline()
             .addLine("; PRINTING USING PRINTF")
