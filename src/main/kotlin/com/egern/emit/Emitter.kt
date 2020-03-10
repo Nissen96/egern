@@ -106,6 +106,8 @@ abstract class Emitter(
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(instruction.args[1] as MetaOperationArg)
             MetaOperation.DeallocateStackSpace -> emitDeallocateStackSpace(instruction.args[1] as MetaOperationArg)
+            MetaOperation.AllocateHeapSpace -> emitAllocateHeapSpace(instruction.args[1] as MetaOperationArg)
+            MetaOperation.DeallocateHeapSpace -> emitDeallocateHeapSpace(instruction.args[1] as MetaOperationArg)
         }
     }
 
@@ -176,6 +178,22 @@ abstract class Emitter(
         builder
             .addLine("test", arg, arg, "Test argument with itself")
             .addLine("setz", "${arg}b", comment = "Set first byte to 1 if zero etc.")
+    }
+
+    private fun emitAllocateHeapSpace(arg: MetaOperationArg) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+            "Move argument into parameter register for malloc call"
+        ).addLine("call malloc")
+    }
+
+    private fun emitDeallocateHeapSpace(arg: MetaOperationArg) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+            "Move argument into parameter register for free call"
+        ).addLine("call free")
     }
 
     private fun emitAllocateStackSpace(arg: MetaOperationArg) {
