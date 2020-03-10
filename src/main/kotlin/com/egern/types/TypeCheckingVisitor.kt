@@ -42,15 +42,15 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     private fun deriveType(expr: Expr): ExprType {
         return when (expr) {
             // Handle implicit returns of nothing (int=0)
-            is IntExpr -> if (expr.isVoid) ExprType.VOID else ExprType.INT
-            is BooleanExpr -> ExprType.BOOLEAN
-            is BooleanOpExpr -> ExprType.BOOLEAN
-            is CompExpr -> ExprType.BOOLEAN
-            is ArithExpr -> ExprType.INT
+            is IntExpr -> if (expr.isVoid) VOID else INT
+            is BooleanExpr -> BOOLEAN
+            is BooleanOpExpr -> BOOLEAN
+            is CompExpr -> BOOLEAN
+            is ArithExpr -> INT
             is IdExpr -> getVariableType(expr.id)
             is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
             is ParenExpr -> deriveType(expr.expr)
-            is ArrayExpr -> deriveType(expr.entries[0])
+            is ArrayExpr -> ARRAY(deriveType(expr.entries[0]))
             else -> throw Exception("Can't derive type for expr!")
         }
     }
@@ -82,7 +82,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     override fun preVisit(varAssign: VarAssign<*>) {
         varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter)) }
         val type = deriveType(varAssign.expr)
-        if (type == ExprType.VOID) {
+        if (type == VOID) {
             ErrorLogger.log(varAssign, "Assigning to void is not valid.")
         }
         for (id in varAssign.ids) {
@@ -94,13 +94,13 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun preVisit(varDecl: VarDecl<*>) {
         val type = deriveType(varDecl.expr)
-        if (type == ExprType.VOID) {
+        if (type == VOID) {
             ErrorLogger.log(varDecl, "Declaring a variable of type void is not valid.")
         }
     }
 
     override fun preVisit(printStmt: PrintStmt) {
-        if (printStmt.expr != null && deriveType(printStmt.expr) == ExprType.VOID) {
+        if (printStmt.expr != null && deriveType(printStmt.expr) == VOID) {
             ErrorLogger.log(printStmt.expr, "Printing void is not valid.")
         }
     }

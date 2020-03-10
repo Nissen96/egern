@@ -1,14 +1,16 @@
 package com.egern.ast
 
+import com.egern.types.BOOLEAN
 import com.egern.types.ExprType
+import com.egern.types.INT
 
 enum class CompOp(val value: String, val validTypes: List<ExprType>) {
-    EQ("==", listOf(ExprType.BOOLEAN, ExprType.INT)),
-    NEQ("!=", listOf(ExprType.BOOLEAN, ExprType.INT)),
-    LT("<", listOf(ExprType.INT)),
-    GT(">", listOf(ExprType.INT)),
-    LTE("<=", listOf(ExprType.INT)),
-    GTE(">=", listOf(ExprType.INT));
+    EQ("==", listOf(BOOLEAN, INT)),
+    NEQ("!=", listOf(BOOLEAN, INT)),
+    LT("<", listOf(INT)),
+    GT(">", listOf(INT)),
+    LTE("<=", listOf(INT)),
+    GTE(">=", listOf(INT));
 
     companion object {
         private val map = values().associateBy(CompOp::value)

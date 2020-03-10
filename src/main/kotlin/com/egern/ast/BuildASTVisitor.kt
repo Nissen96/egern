@@ -1,7 +1,8 @@
 package com.egern.ast
 
 import MainBaseVisitor
-import com.egern.types.ExprType
+import com.egern.types.*
+import org.antlr.v4.runtime.tree.TerminalNode
 import java.lang.Exception
 
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
@@ -40,20 +41,42 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     private fun getDefaultReturn(type: ExprType): ReturnStmt {
         val expr = when (type) {
-            ExprType.INT -> IntExpr(0, -1, -1, isVoid = false)
-            ExprType.BOOLEAN -> BooleanExpr(false, -1, -1)
-            ExprType.VOID -> IntExpr(0, -1, -1, isVoid = true)
+            INT -> IntExpr(0, -1, -1, isVoid = false)
+            BOOLEAN -> BooleanExpr(false, -1, -1)
+            VOID -> IntExpr(0, -1, -1, isVoid = true)
+            is ARRAY -> TODO()
         }
         return ReturnStmt(expr, -1, -1)
     }
 
+    private fun getType(ctx: MainParser.TypeDeclContext): ExprType {
+        return when {
+            ctx.PRIMITIVE_TYPE() != null -> getPrimitiveType(ctx.PRIMITIVE_TYPE())
+            ctx.VOID_TYPE() != null -> VOID
+            ctx.arrayEntryType() != null -> ARRAY(getArrayEntryType(ctx.arrayEntryType()))
+            else -> throw Exception("Cannot find type")
+        }
+    }
+
+    private fun getPrimitiveType(ctx: TerminalNode): ExprType {
+        return ExprType.primitives()[ctx.symbol.text] ?: error("Primitive type not found")
+    }
+
+    private fun getArrayEntryType(ctx: MainParser.ArrayEntryTypeContext): ExprType {
+        return when {
+            ctx.PRIMITIVE_TYPE() != null -> getPrimitiveType(ctx.PRIMITIVE_TYPE())
+            ctx.arrayEntryType() != null -> ARRAY(getArrayEntryType(ctx.arrayEntryType()))
+            else -> throw Exception("Cannot find array entry type")
+        }
+    }
+
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
-        val returnType = ExprType.valueOf(ctx.TYPE().text.toUpperCase())
+        val returnType = getType(ctx.typeDecl())
         val children = (ctx.funcBody().children?.map { it.accept(this) } ?: emptyList()).toMutableList()
         children.add(getDefaultReturn(returnType))  // Implicit "return 0"
         return FuncDecl(
             ctx.ID().text,
-            ctx.paramList().ID().mapIndexed { index, it -> it.text to ExprType.valueOf(ctx.paramList().TYPE()[index].text.toUpperCase()) },
+            ctx.paramList().ID().mapIndexed { index, it -> it.text to getType(ctx.paramList().typeDecl()[index]) },
             returnType,
             children,
             ctx.start.line,
