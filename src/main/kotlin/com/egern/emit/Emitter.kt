@@ -83,6 +83,7 @@ abstract class Emitter(
             }
             RBP -> syntax.register("rbp")
             RSP -> syntax.register("rsp")
+            RHP -> syntax.register("rbx")
             ReturnValue -> syntax.register("rax")
             StaticLink -> syntax.register("r15")
             MainLabel -> emitMainLabel()
