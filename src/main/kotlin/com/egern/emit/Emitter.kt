@@ -11,7 +11,7 @@ abstract class Emitter(
     abstract fun emitProgramPrologue()
     abstract fun emitProgramEpilogue()
     abstract fun emitRequestProgramHeap()
-    abstract fun emitPrint(arg: MetaOperationArg)
+    abstract fun emitPrint(isEmpty: Boolean)
     abstract fun emitMainLabel(): String
 
     protected companion object {
@@ -123,7 +123,7 @@ abstract class Emitter(
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
 
             // Meta operation with an argument
-            MetaOperation.Print -> emitPrint(instruction.args[1] as MetaOperationArg)
+            MetaOperation.Print -> emitPrint(value == 0)
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(value)
             MetaOperation.DeallocateStackSpace -> emitDeallocateStackSpace(value)
             MetaOperation.AllocateInternalHeap -> emitAllocateProgramHeap(value)

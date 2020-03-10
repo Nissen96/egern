@@ -23,7 +23,7 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
 
     var printfCounter = 0;
 
-    override fun emitPrint(arg: MetaOperationArg) {
+    override fun emitPrint(isEmpty: Boolean) {
         // TODO: double check alignment (MacOS requires 16 byte)
         // TODO: handle print empty
         builder

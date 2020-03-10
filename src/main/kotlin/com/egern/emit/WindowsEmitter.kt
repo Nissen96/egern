@@ -29,7 +29,7 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         builder.addLine("call malloc")
     }
 
-    override fun emitPrint(arg: MetaOperationArg) {
+    override fun emitPrint(isEmpty: Boolean) {
         // TODO: handle print empty
         builder
             .newline()
