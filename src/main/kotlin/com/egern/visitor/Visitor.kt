@@ -3,6 +3,8 @@ package com.egern.visitor
 import com.egern.ast.*
 
 interface Visitor {
+    fun postVisit(arrayExpr: ArrayExpr) {}
+
     fun midVisit(arithExpr: ArithExpr) {}
     fun postVisit(arithExpr: ArithExpr) {}
 

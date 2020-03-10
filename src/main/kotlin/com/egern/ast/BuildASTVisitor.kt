@@ -142,6 +142,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.idExpr() != null -> IdExpr(ctx.idExpr().ID().text, ctx.start.line, ctx.start.charPositionInLine)
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
+            ctx.arrayExpr() != null -> visitArrayExpr(ctx.arrayExpr())
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
                     IntExpr(-1, ctx.start.line, -1),
@@ -163,6 +164,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.op.text in BooleanOp.operators() -> visitBooleanExpr(ctx.expr(), ctx.op.text)
             else -> throw Exception("Invalid Expression Type!")
         }
+    }
+
+    override fun visitArrayExpr(ctx: MainParser.ArrayExprContext): ASTNode {
+        return ArrayExpr(ctx.expr().map { visitExpr(it) as Expr }, ctx.start.line, ctx.start.charPositionInLine)
     }
 
     override fun visitParenExpr(ctx: MainParser.ParenExprContext): ASTNode {

@@ -41,6 +41,7 @@ expr: funcCall
     | booleanExpr
     | idExpr
     | intExpr
+    | arrayExpr
     | parenExpr
     ;
 
@@ -48,6 +49,7 @@ idExpr: ID ;
 intExpr: INT ;
 booleanExpr: BOOLEAN ;
 parenExpr: '(' expr ')';
+arrayExpr: '[' (expr ',')* expr? ']';
 
 printStmt: 'print' '(' expr? ')' ';'?;
 
