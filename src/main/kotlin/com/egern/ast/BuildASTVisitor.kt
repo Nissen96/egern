@@ -51,21 +51,21 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     private fun getType(ctx: MainParser.TypeDeclContext): ExprType {
         return when {
-            ctx.PRIMITIVE_TYPE() != null -> getPrimitiveType(ctx.PRIMITIVE_TYPE())
-            ctx.VOID_TYPE() != null -> VOID
-            ctx.arrayEntryType() != null -> ARRAY(getArrayEntryType(ctx.arrayEntryType()))
+            ctx.PRIMITIVE() != null -> getPrimitiveType(ctx.PRIMITIVE())
+            ctx.VOID() != null -> VOID
+            ctx.arrayType() != null -> ARRAY(getArrayType(ctx.arrayType()))
             else -> throw Exception("Cannot find type")
         }
     }
 
-    private fun getPrimitiveType(ctx: TerminalNode): ExprType {
-        return ExprType.primitives()[ctx.symbol.text] ?: error("Primitive type not found")
+    private fun getPrimitiveType(primitive: TerminalNode): ExprType {
+        return ExprType.primitives()[primitive.symbol.text] ?: error("Primitive type not found")
     }
 
-    private fun getArrayEntryType(ctx: MainParser.ArrayEntryTypeContext): ExprType {
+    private fun getArrayType(ctx: MainParser.ArrayTypeContext): ExprType {
         return when {
-            ctx.PRIMITIVE_TYPE() != null -> getPrimitiveType(ctx.PRIMITIVE_TYPE())
-            ctx.arrayEntryType() != null -> ARRAY(getArrayEntryType(ctx.arrayEntryType()))
+            ctx.PRIMITIVE() != null -> getPrimitiveType(ctx.PRIMITIVE())
+            ctx.arrayType() != null -> ARRAY(getArrayType(ctx.arrayType()))
             else -> throw Exception("Cannot find array entry type")
         }
     }

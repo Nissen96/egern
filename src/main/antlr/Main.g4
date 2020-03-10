@@ -51,15 +51,15 @@ booleanExpr: BOOLEAN ;
 parenExpr: '(' expr ')';
 arrayExpr: '[' (expr ',')* expr? ']';
 
-typeDecl: '[' arrayEntryType ']' | VOID_TYPE | PRIMITIVE_TYPE ;
-arrayEntryType: '[' arrayEntryType ']' | PRIMITIVE_TYPE;
+typeDecl: VOID | PRIMITIVE | arrayType;
+arrayType: '[' (arrayType | PRIMITIVE) ']';
 
 printStmt: 'print' '(' expr? ')' ';'?;
 
-NEWLINE :'\r'? '\n' -> skip;
-WS      : (' '|'\t') -> skip;
-INT     : [0-9]+ ;
-BOOLEAN : 'true' | 'false' ;
-VOID_TYPE    : 'void' ;
-PRIMITIVE_TYPE: 'int' | 'boolean' ;
-ID      : [A-Za-z_]+[A-Za-z_0-9]* ;
+NEWLINE  :'\r'? '\n' -> skip;
+WS       : (' '|'\t') -> skip;
+INT      : [0-9]+ ;
+BOOLEAN  : 'true' | 'false' ;
+VOID     : 'void' ;
+PRIMITIVE: 'int' | 'boolean' ;
+ID       : [A-Za-z_]+[A-Za-z_0-9]* ;
