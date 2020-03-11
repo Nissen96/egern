@@ -36,6 +36,7 @@ block:  '{' ( stmt | funcCall ';'? )* '}' ;
 arrayIndexExpr: idExpr ('[' expr ']')+ ;
 
 expr: funcCall
+    | arrayIndexExpr
     | op='-' expr
     | op='!' expr
     | expr op=('*' | '/' | '%') expr
