@@ -184,6 +184,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             ctx.arrayExpr() != null -> visitArrayExpr(ctx.arrayExpr())
+            ctx.arrayIndexExpr() != null -> visitArrayIndexExpr(ctx.arrayIndexExpr())
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
                     IntExpr(-1, ctx.start.line, -1),
@@ -209,6 +210,15 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitArrayExpr(ctx: MainParser.ArrayExprContext): ASTNode {
         return ArrayExpr(ctx.expr().map { visitExpr(it) as Expr }, ctx.start.line, ctx.start.charPositionInLine)
+    }
+
+    override fun visitArrayIndexExpr(ctx: MainParser.ArrayIndexExprContext): ASTNode {
+        return ArrayIndexExpr(
+            ctx.idExpr().ID().text,
+            ctx.expr().map { visitExpr(it) as Expr },
+            ctx.start.line,
+            ctx.start.charPositionInLine
+        )
     }
 
     override fun visitParenExpr(ctx: MainParser.ParenExprContext): ASTNode {
