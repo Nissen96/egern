@@ -31,7 +31,7 @@ whileLoop: 'while' '(' expr ')' block ;
 block:  '{' ( stmt | funcCall ';'? )* '}' ;
 
 expr: funcCall
-    | idExpr '[' expr ']'
+    | idExpr ('[' expr ']')+
     | op='-' expr
     | op='!' expr
     | expr op=('*' | '/' | '%') expr
@@ -45,8 +45,6 @@ expr: funcCall
     | arrayExpr
     | parenExpr
     ;
-
-
 
 idExpr: ID ;
 intExpr: INT ;
