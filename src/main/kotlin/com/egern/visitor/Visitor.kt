@@ -10,6 +10,10 @@ interface Visitor {
     fun midVisit(arrayExpr: ArrayExpr) {}
     fun postVisit(arrayExpr: ArrayExpr) {}
 
+    fun preVisit(arrayIndexExpr: ArrayIndexExpr) {}
+    fun preMidVisit(arrayIndexExpr: ArrayIndexExpr) {}
+    fun postMidVisit(arrayIndexExpr: ArrayIndexExpr) {}
+
     fun preVisit(block: Block) {}
     fun preFuncCallVisit(block: Block) {}
     fun postFuncCallVisit(block: Block) {}
@@ -66,7 +70,4 @@ interface Visitor {
     fun preVisit(whileLoop: WhileLoop) {}
     fun midVisit(whileLoop: WhileLoop) {}
     fun postVisit(whileLoop: WhileLoop) {}
-
-    fun midVisit(arrayIndexExpr: ArrayIndexExpr) {}
-    fun postVisit(arrayIndexExpr: ArrayIndexExpr) {}
 }

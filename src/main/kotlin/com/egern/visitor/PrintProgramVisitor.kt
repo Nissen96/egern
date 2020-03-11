@@ -29,20 +29,16 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         print("]")
     }
 
-    override fun visit(booleanExpr: BooleanExpr) {
-        print(booleanExpr.value)
+    override fun preVisit(arrayIndexExpr: ArrayIndexExpr) {
+        print("${arrayIndexExpr.id}")
     }
 
-    override fun preVisit(booleanOpExpr: BooleanOpExpr) {
-        if (booleanOpExpr.rhs == null) {
-            print(booleanOpExpr.op.value)
-        }
+    override fun preMidVisit(arrayIndexExpr: ArrayIndexExpr) {
+        print("[")
     }
 
-    override fun midVisit(booleanOpExpr: BooleanOpExpr) {
-        if (booleanOpExpr.rhs !=  null) {
-            print(" ${booleanOpExpr.op.value} ")
-        }
+    override fun postMidVisit(arrayIndexExpr: ArrayIndexExpr) {
+        print("]")
     }
 
     override fun preVisit(block: Block) {
@@ -61,6 +57,22 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     override fun postVisit(block: Block) {
         level--
         printIndented("}")
+    }
+
+    override fun visit(booleanExpr: BooleanExpr) {
+        print(booleanExpr.value)
+    }
+
+    override fun preVisit(booleanOpExpr: BooleanOpExpr) {
+        if (booleanOpExpr.rhs == null) {
+            print(booleanOpExpr.op.value)
+        }
+    }
+
+    override fun midVisit(booleanOpExpr: BooleanOpExpr) {
+        if (booleanOpExpr.rhs != null) {
+            print(" ${booleanOpExpr.op.value} ")
+        }
     }
 
     override fun midVisit(compExpr: CompExpr) {
