@@ -4,6 +4,7 @@ func test(a: int, b: int): int {
     } else {
         return 0;
     }
+    return -1;
 }
 
 print(test(6, 2));

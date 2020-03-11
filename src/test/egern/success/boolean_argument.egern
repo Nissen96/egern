@@ -4,6 +4,7 @@ func test(arg: boolean): int {
     } else {
         return 0;
     }
+    return -1;
 }
 
 print(test(true));
