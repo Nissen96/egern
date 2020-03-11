@@ -11,5 +11,6 @@ class ArrayIndexExpr(val id: String, val indices: List<Expr>, lineNumber: Int, c
             index.accept(visitor)
             visitor.postMidVisit(this)
         }
+        visitor.postVisit(this)
     }
 }

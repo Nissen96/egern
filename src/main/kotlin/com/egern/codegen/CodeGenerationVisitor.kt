@@ -514,6 +514,52 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         )
     }
 
+    override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
+        val idLocation = getIdLocation(arrayIndexExpr.id)
+        add(
+            Instruction(
+                InstructionType.MOV,
+                idLocation,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Move array pointer to data register"
+            )
+        )
+        for ((index, _) in arrayIndexExpr.indices.withIndex()) {
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Pop expression to register 1"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.ADD,
+                    InstructionArg(Register(OpReg1), Direct),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Move pointer by index"
+                )
+            )
+            if (index < arrayIndexExpr.indices.size - 1) {
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Register(OpReg2), Indirect),
+                        InstructionArg(Register(OpReg2), Direct),
+                        comment = "Follow pointer"
+                    )
+                )
+            }
+        }
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Push value to stack"
+            )
+        )
+    }
+
     override fun postVisit(printStmt: PrintStmt) {
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(

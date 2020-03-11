@@ -13,6 +13,7 @@ interface Visitor {
     fun preVisit(arrayIndexExpr: ArrayIndexExpr) {}
     fun preMidVisit(arrayIndexExpr: ArrayIndexExpr) {}
     fun postMidVisit(arrayIndexExpr: ArrayIndexExpr) {}
+    fun postVisit(arrayIndexExpr: ArrayIndexExpr) {}
 
     fun preVisit(block: Block) {}
     fun preFuncCallVisit(block: Block) {}
