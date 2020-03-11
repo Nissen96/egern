@@ -142,8 +142,9 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(arrayExpr: ArrayExpr) {
+        val type = deriveType(arrayExpr) as ARRAY
         for (entry in arrayExpr.entries) {
-            if (!isMatchingType(arrayExpr, entry)) {
+            if (type.type != deriveType(entry)) {
                 ErrorLogger.log(entry, "Type mismatch in array")
             }
         }
