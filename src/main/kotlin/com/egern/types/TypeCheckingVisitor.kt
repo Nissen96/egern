@@ -53,9 +53,23 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             is IdExpr -> getVariableType(expr.id)
             is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
             is ParenExpr -> deriveType(expr.expr)
-            is ArrayExpr -> ARRAY(deriveType(expr.entries[0]))
+            is ArrayExpr -> deriveArrayType(expr)
+            is ArrayIndexExpr -> {
+                val array = getVariableType(expr.id) as ARRAY
+                if (expr.indices.size > 1) ARRAY(array.depth - expr.indices.size, array.innerExpr) else array.innerExpr
+            }
             else -> throw Exception("Can't derive type for expr!")
         }
+    }
+
+    private fun deriveArrayType(arrayExpr: ArrayExpr): ExprType {
+        var depth = 0
+        var expr: Expr = arrayExpr
+        while (expr is ArrayExpr) {
+            depth++
+            expr = expr.entries[0]
+        }
+        return ARRAY(depth, deriveType(expr))
     }
 
     private fun isMatchingType(expr1: Expr, expr2: Expr?): Boolean {
@@ -146,10 +160,21 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
 
     override fun postVisit(arrayExpr: ArrayExpr) {
         val type = deriveType(arrayExpr) as ARRAY
-        for (entry in arrayExpr.entries) {
-            if (type.type != deriveType(entry)) {
-                ErrorLogger.log(entry, "Type mismatch in array")
+
+        if (type.depth > 1) {
+            arrayExpr.entries.forEach {
+                val entryType = deriveType(it) as ARRAY
+                if (entryType.depth != type.depth - 1 || entryType.innerExpr != type.innerExpr) {
+                    ErrorLogger.log(it, "Type mismatch in array")
+                }
+            }
+        } else {
+            arrayExpr.entries.forEach {
+                if (deriveType(it) != type.innerExpr) {
+                    ErrorLogger.log(it, "Type mismatch in array")
+                }
             }
         }
+
     }
 }

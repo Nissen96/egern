@@ -9,4 +9,4 @@ sealed class ExprType {
 object INT : ExprType()
 object BOOLEAN : ExprType()
 object VOID : ExprType()
-data class ARRAY(val type: ExprType) : ExprType()
+data class ARRAY(val depth: Int, val innerExpr: ExprType) : ExprType()

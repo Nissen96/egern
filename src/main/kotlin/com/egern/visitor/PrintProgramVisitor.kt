@@ -30,7 +30,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(arrayIndexExpr: ArrayIndexExpr) {
-        print("${arrayIndexExpr.id}")
+        print(arrayIndexExpr.id)
     }
 
     override fun preMidVisit(arrayIndexExpr: ArrayIndexExpr) {
@@ -96,7 +96,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
             INT -> "int"
             BOOLEAN -> "boolean"
             VOID -> "void"
-            is ARRAY -> "[" + getType(type.type) + "]"
+            is ARRAY -> "[".repeat(type.depth) + getType(type.innerExpr) + "]".repeat(type.depth)
         }
     }
 

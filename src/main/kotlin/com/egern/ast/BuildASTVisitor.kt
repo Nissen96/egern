@@ -43,7 +43,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return when {
             ctx.PRIMITIVE() != null -> getPrimitiveType(ctx.PRIMITIVE())
             ctx.VOID() != null -> VOID
-            ctx.arrayType() != null -> ARRAY(getArrayType(ctx.arrayType()))
+            ctx.arrayType() != null -> {
+                val (depth, innerType) = getArrayType(ctx.arrayType())
+                return ARRAY(depth, innerType)
+            }
             else -> throw Exception("Cannot find type")
         }
     }
@@ -52,12 +55,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ExprType.primitives()[primitive.symbol.text] ?: error("Primitive type not found")
     }
 
-    private fun getArrayType(ctx: MainParser.ArrayTypeContext): ExprType {
-        return when {
-            ctx.PRIMITIVE() != null -> getPrimitiveType(ctx.PRIMITIVE())
-            ctx.arrayType() != null -> ARRAY(getArrayType(ctx.arrayType()))
-            else -> throw Exception("Cannot find array entry type")
+    private fun getArrayType(ctx: MainParser.ArrayTypeContext): Pair<Int, ExprType> {
+        var depth = 0
+        var element = ctx
+        while (element.PRIMITIVE() == null) {
+            depth++
+            element = element.arrayType()
         }
+        return Pair(depth, getPrimitiveType(element.PRIMITIVE()))
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
