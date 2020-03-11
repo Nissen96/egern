@@ -20,6 +20,9 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     override fun postVisit(funcDecl: FuncDecl) {
         currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
         functionStack.pop()
+        if (!funcDecl.children.any { it is ReturnStmt }) {
+            ErrorLogger.log(funcDecl, "No return statement found in function declaration")
+        }
     }
 
     private fun lookupSymbol(id: String, validTypes: List<SymbolType>): Symbol {
