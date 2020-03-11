@@ -12,6 +12,7 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("extern", "GetStdHandle")
             .addLine("extern", "WriteFile")
             .addLine("extern", "ExitProcess")
+            .addLine("extern", "malloc")
             .addLine("NULL EQU 0")
             .addLine("STD_HANDLE EQU -11")
             .addLine("section .bss")

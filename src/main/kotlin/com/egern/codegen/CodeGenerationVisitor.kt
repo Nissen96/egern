@@ -485,7 +485,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(arrayExpr.entries.size)
+                MetaOperationArg(arrayExpr.entries.size + 1)
             )
         )
         for ((index, _) in arrayExpr.entries.reversed().withIndex()) {
@@ -500,7 +500,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 Instruction(
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
-                    InstructionArg(ReturnValue, IndirectRelative(index)),
+                    InstructionArg(ReturnValue, IndirectRelative(index + 1)),
                     comment = "Move expression to array index $index"
                 )
             )
