@@ -9,7 +9,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
         val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(ReturnStmt(IntExpr(0, -1, -1, isVoid = true), -1, -1))  // Implicit "return 0"
+        children.add(ReturnStmt(IntExpr(0, isVoid = true)))  // Implicit "return 0"
         return Program(children, ctx.start.line, ctx.start.charPositionInLine)
     }
 
@@ -39,16 +39,6 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return PrintStmt(ctx.expr()?.accept(this) as? Expr, ctx.start.line, ctx.start.charPositionInLine)
     }
 
-    private fun getDefaultReturn(type: ExprType): ReturnStmt {
-        val expr = when (type) {
-            INT -> IntExpr(0, -1, -1, isVoid = false)
-            BOOLEAN -> BooleanExpr(false, -1, -1)
-            VOID -> IntExpr(0, -1, -1, isVoid = true)
-            is ARRAY -> TODO()
-        }
-        return ReturnStmt(expr, -1, -1)
-    }
-
     private fun getType(ctx: MainParser.TypeDeclContext): ExprType {
         return when {
             ctx.PRIMITIVE() != null -> getPrimitiveType(ctx.PRIMITIVE())
@@ -73,7 +63,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
         val returnType = getType(ctx.typeDecl())
         val children = (ctx.funcBody().children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(getDefaultReturn(returnType))  // Implicit "return 0"
+
+        // Always add implicit return for void functions
+        if (returnType == VOID) {
+            children.add(ReturnStmt(IntExpr(0, isVoid = true)))
+        }
+
         return FuncDecl(
             ctx.ID().text,
             ctx.paramList().ID().mapIndexed { index, it -> it.text to getType(ctx.paramList().typeDecl()[index]) },
