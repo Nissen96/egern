@@ -16,12 +16,10 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
     companion object {
         // CONSTANT OFFSETS FROM RBP
         const val LOCAL_VAR_OFFSET = 1
-        const val RETURN_OFFSET = -1
         const val STATIC_LINK_OFFSET = -2
         const val PARAM_OFFSET = -3
 
         const val PARAMS_IN_REGISTERS = 6
-        const val CALLER_SAVED_REGISTERS = 8
     }
 
     private fun add(instruction: Instruction) {
@@ -488,7 +486,9 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 MetaOperationArg(arrayExpr.entries.size + 1)
             )
         )
-        for ((index, _) in arrayExpr.entries.reversed().withIndex()) {
+
+        val arrayLen = arrayExpr.entries.size
+        for (index in arrayExpr.entries.indices) {
             add(
                 Instruction(
                     InstructionType.POP,
@@ -500,7 +500,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 Instruction(
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
-                    InstructionArg(ReturnValue, IndirectRelative(index + 1)),
+                    InstructionArg(ReturnValue, IndirectRelative(-(arrayLen - index))),
                     comment = "Move expression to array index $index"
                 )
             )
@@ -524,15 +524,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 comment = "Move array pointer to data register"
             )
         )
-        add(
-            Instruction(
-                InstructionType.ADD,
-                InstructionArg(ImmediateValue("8"), Direct),
-                InstructionArg(Register(OpReg2), Direct),
-                comment = "Move past array info"
+        repeat(arrayIndexExpr.indices.size) {
+            add(
+                Instruction(
+                    InstructionType.ADD,
+                    InstructionArg(ImmediateValue("8"), Direct),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Move past array info"
+                )
             )
-        )
-        for ((index, _) in arrayIndexExpr.indices.withIndex()) {
             add(
                 Instruction(
                     InstructionType.POP,
