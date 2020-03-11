@@ -86,15 +86,15 @@ abstract class Emitter(
         else throw Exception("Trying to emit an argument that cant be emitted!")
     }
 
-    private fun emitInstructionArg(argument: InstructionArg): String {
-        val target = when (argument.instructionTarget) {
-            is ImmediateValue -> syntax.immediate(argument.instructionTarget.value)
-            is Memory -> argument.instructionTarget.address
-            is Register -> when (argument.instructionTarget.register) {
+    private fun emitInstructionTarget(target: InstructionTarget): String {
+        return when (target) {
+            is ImmediateValue -> syntax.immediate(target.value)
+            is Memory -> target.address
+            is Register -> when (target.register) {
                 OpReg1 -> syntax.register("r12")
                 OpReg2 -> syntax.register("r13")
                 DataReg -> syntax.register("r14")
-                is ParamReg -> syntax.register(CALLER_SAVE_REGISTERS[argument.instructionTarget.register.paramNum])
+                is ParamReg -> syntax.register(CALLER_SAVE_REGISTERS[target.register.paramNum])
             }
             RBP -> syntax.register("rbp")
             RSP -> syntax.register("rsp")
@@ -103,6 +103,10 @@ abstract class Emitter(
             StaticLink -> syntax.register("r15")
             MainLabel -> emitMainLabel()
         }
+    }
+
+    private fun emitInstructionArg(argument: InstructionArg): String {
+        val target = emitInstructionTarget(argument.instructionTarget)
 
         return when (argument.addressingMode) {
             Direct -> target
@@ -202,11 +206,15 @@ abstract class Emitter(
     }
 
     private fun emitAllocateHeapSpace(size: Int) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * size}"), syntax.register("rdi"))
+        val (arg1, arg2) = syntax.argOrder(emitInstructionTarget(RHP), emitInstructionTarget(ReturnValue))
+        val (arg3, arg4) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * size}"), emitInstructionTarget(RHP))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            "Move argument into parameter register for malloc call"
-        ).addLine("call malloc")
+            "Move pointer to return value"
+        ).addLine(
+            syntax.ops.getValue(InstructionType.ADD), arg3, arg4,
+            "Offset pointer by allocated bytes"
+        )
     }
 
     private fun emitDeallocateHeapSpace(size: Int) {
