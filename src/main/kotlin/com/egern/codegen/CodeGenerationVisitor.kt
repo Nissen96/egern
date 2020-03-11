@@ -524,6 +524,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 comment = "Move array pointer to data register"
             )
         )
+        add(
+            Instruction(
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("8"), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Move past array info"
+            )
+        )
         for ((index, _) in arrayIndexExpr.indices.withIndex()) {
             add(
                 Instruction(
@@ -540,16 +548,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                     comment = "Move pointer by index"
                 )
             )
-            if (index < arrayIndexExpr.indices.size - 1) {
-                add(
-                    Instruction(
-                        InstructionType.MOV,
-                        InstructionArg(Register(OpReg2), Indirect),
-                        InstructionArg(Register(OpReg2), Direct),
-                        comment = "Follow pointer"
-                    )
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(OpReg2), Indirect),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Follow pointer"
                 )
-            }
+            )
         }
         add(
             Instruction(
