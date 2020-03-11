@@ -131,10 +131,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitOpAssign(ctx: MainParser.OpAssignContext): ASTNode {
         return VarAssign(
-            listOf(ctx.text),
+            listOf(ctx.assignable().idExpr().text),
             listOf(),
             ArithExpr(
-                IdExpr(ctx.text, ctx.start.line, -1),
+                IdExpr(ctx.assignable().idExpr().text, ctx.start.line, -1),
                 ctx.expr().accept(this) as Expr,
                 ArithOp.fromString(ctx.op.text[0].toString())!!,
                 ctx.start.line,
