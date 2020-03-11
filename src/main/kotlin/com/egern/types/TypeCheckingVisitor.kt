@@ -54,7 +54,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
             is ParenExpr -> deriveType(expr.expr)
             is ArrayExpr -> ARRAY(deriveType(expr.entries[0]))
-            is ArrayIndexExpr -> INT // TODO() FIX
+            is ArrayIndexExpr -> TODO()
             else -> throw Exception("Can't derive type for expr!")
         }
     }
