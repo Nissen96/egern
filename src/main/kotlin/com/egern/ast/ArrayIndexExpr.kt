@@ -6,7 +6,7 @@ class ArrayIndexExpr(val id: String, val indices: List<Expr>, lineNumber: Int, c
     Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        for (index in indices) {
+        for (index in indices.reversed()) {
             visitor.preMidVisit(this)
             index.accept(visitor)
             visitor.postMidVisit(this)
