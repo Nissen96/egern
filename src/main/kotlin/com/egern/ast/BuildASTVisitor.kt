@@ -94,18 +94,35 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitVarDecl(ctx: MainParser.VarDeclContext): ASTNode {
-        val assign = ctx.varAssign()
         return VarDecl(
-            assign.ID().map { it.text },
-            assign.expr().accept(this) as Expr,
+            ctx.ID().map { it.text },
+            ctx.expr().accept(this) as Expr,
             ctx.start.line,
             ctx.start.charPositionInLine
         )
     }
 
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
+        val ids = mutableListOf<String>()
+        val indexExprs = mutableListOf<ArrayIndexExpr>()
+        for (assignable in ctx.assignable()) {
+            when {
+                assignable.arrayIndexExpr() != null -> {
+                    val expr = assignable.arrayIndexExpr()
+                    indexExprs.add(
+                        ArrayIndexExpr(
+                            expr.idExpr().text,
+                            expr.expr().map { visitExpr(it) as Expr },
+                            ctx.start.line,
+                            ctx.start.charPositionInLine
+                        )
+                    )
+                }
+                assignable.idExpr() != null -> ids.add(assignable.idExpr().text)
+            }
+        }
         return VarAssign(
-            ctx.ID().map { it.text },
+            ids, indexExprs,
             ctx.expr().accept(this) as Expr,
             ctx.start.line,
             ctx.start.charPositionInLine
@@ -114,9 +131,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitOpAssign(ctx: MainParser.OpAssignContext): ASTNode {
         return VarAssign(
-            listOf(ctx.ID().text),
+            listOf(ctx.text),
+            listOf(),
             ArithExpr(
-                IdExpr(ctx.ID().text, ctx.start.line, -1),
+                IdExpr(ctx.text, ctx.start.line, -1),
                 ctx.expr().accept(this) as Expr,
                 ArithOp.fromString(ctx.op.text[0].toString())!!,
                 ctx.start.line,

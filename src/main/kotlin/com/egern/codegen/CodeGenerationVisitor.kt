@@ -488,7 +488,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 MetaOperationArg(arrayExpr.entries.size)
             )
         )
-        for ((index, entry) in arrayExpr.entries.reversed().withIndex()) {
+        for ((index, _) in arrayExpr.entries.reversed().withIndex()) {
             add(
                 Instruction(
                     InstructionType.POP,

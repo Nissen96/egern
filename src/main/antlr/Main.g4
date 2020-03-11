@@ -18,9 +18,12 @@ funcCall:   ID '(' argList ')' ;
 paramList:  (ID ':' typeDecl ',')* (ID ':' typeDecl)? ;
 argList:    (expr ',')* expr? ;
 
-varDecl:    'var' varAssign ;
-varAssign:  (ID '=')+ expr ';'?;
-opAssign: ID op=('+=' | '-=' | '*=' | '/=' | '%=' ) expr ';'?;
+assignable: idExpr
+          | arrayIndexExpr ;
+
+varDecl: 'var' (ID '=')+ expr ';'? ;
+varAssign: (assignable '=')+ expr ';'?;
+opAssign: assignable op=('+=' | '-=' | '*=' | '/=' | '%=' ) expr ';'?;
 
 ifElse:  'if' '(' expr ')' block
       |  'if' '(' expr ')' block 'else' (block | ifElse)
@@ -30,8 +33,9 @@ whileLoop: 'while' '(' expr ')' block ;
 
 block:  '{' ( stmt | funcCall ';'? )* '}' ;
 
+arrayIndexExpr: idExpr ('[' expr ']')+ ;
+
 expr: funcCall
-    | idExpr ('[' expr ']')+
     | op='-' expr
     | op='!' expr
     | expr op=('*' | '/' | '%') expr
