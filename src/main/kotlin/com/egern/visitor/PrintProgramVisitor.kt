@@ -1,6 +1,7 @@
 package com.egern.visitor
 
 import com.egern.ast.*
+import com.egern.types.*
 
 class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     private var level = 0
@@ -14,6 +15,34 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun midVisit(arithExpr: ArithExpr) {
         print(" ${arithExpr.op.value} ")
+    }
+
+    override fun preVisit(arrayExpr: ArrayExpr) {
+        print("[")
+    }
+
+    override fun midVisit(arrayExpr: ArrayExpr) {
+        print(", ")
+    }
+
+    override fun postVisit(arrayExpr: ArrayExpr) {
+        print("]")
+    }
+
+    override fun visit(booleanExpr: BooleanExpr) {
+        print(booleanExpr.value)
+    }
+
+    override fun preVisit(booleanOpExpr: BooleanOpExpr) {
+        if (booleanOpExpr.rhs == null) {
+            print(booleanOpExpr.op.value)
+        }
+    }
+
+    override fun midVisit(booleanOpExpr: BooleanOpExpr) {
+        if (booleanOpExpr.rhs !=  null) {
+            print(" ${booleanOpExpr.op.value} ")
+        }
     }
 
     override fun preVisit(block: Block) {
@@ -50,11 +79,20 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         print(")")
     }
 
+    private fun getType(type: ExprType): String {
+        return when (type) {
+            INT -> "int"
+            BOOLEAN -> "boolean"
+            VOID -> "void"
+            is ARRAY -> "[" + getType(type.type) + "]"
+        }
+    }
+
     override fun preVisit(funcDecl: FuncDecl) {
         println()
         printIndented("func ${funcDecl.id}(")
-        print(funcDecl.params.joinToString(", ") { "${it.first}: ${it.second.toString().toLowerCase()}" }) // Params
-        println("): ${funcDecl.returnType.toString().toLowerCase()} {")
+        print(funcDecl.params.joinToString(", ") { "${it.first}: ${getType(it.second)}" }) // Params
+        println("): ${getType(funcDecl.returnType)} {")
         level++
     }
 
