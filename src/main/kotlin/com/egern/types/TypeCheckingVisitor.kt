@@ -67,7 +67,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         var expr: Expr = arrayExpr
         while (expr is ArrayExpr) {
             depth++
-            expr = expr.entries[0]
+            expr = if (expr.entries.isNotEmpty()) expr.entries[0] else IntExpr(0, isVoid = true)
         }
         return ARRAY(depth, deriveType(expr))
     }
@@ -164,7 +164,9 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         if (type.depth > 1) {
             arrayExpr.entries.forEach {
                 val entryType = deriveType(it) as ARRAY
-                if (entryType.depth != type.depth - 1 || entryType.innerExpr != type.innerExpr) {
+                if (entryType.depth != type.depth - 1 ||
+                    (entryType.innerExpr != type.innerExpr && entryType.innerExpr != VOID && type.innerExpr != VOID)
+                ) {
                     ErrorLogger.log(it, "Type mismatch in array")
                 }
             }
