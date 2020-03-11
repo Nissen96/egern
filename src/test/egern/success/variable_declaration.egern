@@ -1,2 +1,15 @@
 var a = 4;
 print(a);
+var b = true;
+print(b);
+var c = false;
+print(c);
+
+var d = [];
+print(d);
+var e = [3];
+print(e);
+var f = [1, 2, 4];
+print(f);
+var g = [true, false, true];
+print(g);

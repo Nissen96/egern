@@ -1,0 +1,11 @@
+func getArray(a: [int], b: [[boolean]]): [[int]] {
+    if (b[0][0] == true) {
+        return [a]
+    }
+    return [[1, 2], [4]]
+}
+
+var a = [1, 2, 3]
+var b = [[true, false], [false]]
+var c = getArray(a, b)
+print(c)
