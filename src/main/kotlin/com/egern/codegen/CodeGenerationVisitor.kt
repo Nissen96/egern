@@ -542,6 +542,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
             )
             add(
                 Instruction(
+                    InstructionType.IMUL,
+                    InstructionArg(ImmediateValue("8"), Direct),
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Multiply index with 8"
+                )
+            )
+            add(
+                Instruction(
                     InstructionType.ADD,
                     InstructionArg(Register(OpReg1), Direct),
                     InstructionArg(Register(OpReg2), Direct),
