@@ -514,7 +514,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         )
     }
 
-    override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
+    // Indexes into array, result is in OpReg2
+    private fun indexIntoArray(arrayIndexExpr: ArrayIndexExpr, returnValue: Boolean) {
         val idLocation = getIdLocation(arrayIndexExpr.id)
         add(
             Instruction(
@@ -524,7 +525,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 comment = "Move array pointer to data register"
             )
         )
-        repeat(arrayIndexExpr.indices.size) {
+        for ((index, _) in arrayIndexExpr.indices.withIndex()) {
             add(
                 Instruction(
                     InstructionType.ADD,
@@ -556,15 +557,21 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                     comment = "Move pointer by index"
                 )
             )
-            add(
-                Instruction(
-                    InstructionType.MOV,
-                    InstructionArg(Register(OpReg2), Indirect),
-                    InstructionArg(Register(OpReg2), Direct),
-                    comment = "Follow pointer"
+            if ((!returnValue && index != arrayIndexExpr.indices.size - 1) || returnValue) {
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Register(OpReg2), Indirect),
+                        InstructionArg(Register(OpReg2), Direct),
+                        comment = "Follow pointer"
+                    )
                 )
-            )
+            }
         }
+    }
+
+    override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
+        indexIntoArray(arrayIndexExpr, true)
         add(
             Instruction(
                 InstructionType.PUSH,
@@ -706,10 +713,10 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
     }
 
     override fun postVisit(varAssign: VarAssign<*>) {
-        variableAssignment(varAssign.ids)
+        variableAssignment(varAssign.ids, varAssign.indices)
     }
 
-    private fun variableAssignment(ids: List<String>) {
+    private fun variableAssignment(ids: List<String>, arrayIds: List<ArrayIndexExpr> = listOf()) {
         // Find each variable/parameter location and set their value to the expression result
         add(Instruction(InstructionType.POP, InstructionArg(Register(DataReg), Direct), comment = "Expression result"))
         val symbols = ids.map { symbolTable.lookup(it)!! }
@@ -721,6 +728,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                     InstructionArg(Register(DataReg), Direct),
                     idLocation,
                     comment = "Set value of ${symbol.type.toString().toLowerCase()} ${symbol.id} to expression result"
+                )
+            )
+        }
+        for (id in arrayIds) {
+            indexIntoArray(id, false);
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(DataReg), Direct),
+                    InstructionArg(Register(OpReg2), Indirect),
+                    comment = "Set value of ${id.id} at index to expression result"
                 )
             )
         }
