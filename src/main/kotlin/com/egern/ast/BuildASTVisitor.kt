@@ -56,11 +56,11 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     private fun getArrayType(ctx: MainParser.ArrayTypeContext): Pair<Int, ExprType> {
-        var depth = 0
+        var depth = 1
         var element = ctx
         while (element.PRIMITIVE() == null) {
-            depth++
             element = element.arrayType()
+            depth++
         }
         return Pair(depth, getPrimitiveType(element.PRIMITIVE()))
     }

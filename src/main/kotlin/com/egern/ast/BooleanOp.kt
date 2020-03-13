@@ -6,7 +6,7 @@ enum class BooleanOp(val value: String) {
     NOT("!");
 
     companion object {
-        private val map = BooleanOp.values().associateBy(BooleanOp::value)
+        private val map = values().associateBy(BooleanOp::value)
         fun fromString(type: String) = map[type]
         fun operators() = map.map { it.key }
     }
