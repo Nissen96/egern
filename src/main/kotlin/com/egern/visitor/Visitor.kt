@@ -26,6 +26,11 @@ interface Visitor {
     fun midVisit(booleanOpExpr: BooleanOpExpr) {}
     fun postVisit(booleanOpExpr: BooleanOpExpr) {}
 
+    fun preVisit(classDecl: ClassDecl) {}
+    fun postVisit(classDecl: ClassDecl) {}
+
+    fun visit(classField: ClassField) {}
+
     fun midVisit(compExpr: CompExpr) {}
     fun postVisit(compExpr: CompExpr) {}
 
@@ -49,6 +54,10 @@ interface Visitor {
 
     fun preVisit(lenExpr: LenExpr) {}
     fun postVisit(lenExpr: LenExpr) {}
+
+    fun preVisit(methodCall: MethodCall) {}
+    fun midVisit(methodCall: MethodCall) {}
+    fun postVisit(methodCall: MethodCall) {}
 
     fun preVisit(parenExpr: ParenExpr) {}
     fun postVisit(parenExpr: ParenExpr) {}
