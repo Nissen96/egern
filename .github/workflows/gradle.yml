@@ -10,7 +10,7 @@ jobs:
     - uses: actions/checkout@v1
     - uses: actions/cache@v1
       with:
-        path: ~/.gradle/caches
+        path: .gradle
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
@@ -19,7 +19,7 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Gradle
-      run: ./gradlew build -x test
+      run: ./gradlew build -x test --no-daemon
     - name: Compile and validate test files
       working-directory: src/test
       run: for i in success/*egern; do echo $i; ./test $i; done
