@@ -59,6 +59,10 @@ interface Visitor {
     fun midVisit(methodCall: MethodCall) {}
     fun postVisit(methodCall: MethodCall) {}
 
+    fun preVisit(objectInstantiation: ObjectInstantiation) {}
+    fun midVisit(objectInstantiation: ObjectInstantiation) {}
+    fun postVisit(objectInstantiation: ObjectInstantiation) {}
+
     fun preVisit(parenExpr: ParenExpr) {}
     fun postVisit(parenExpr: ParenExpr) {}
 
