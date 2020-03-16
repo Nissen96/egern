@@ -5,6 +5,8 @@ titlepage.pdf
 cache/
 *.nasm
 *.o
+.floo
+.flooignore
 
 # Compiled class file
 *.class
