@@ -106,6 +106,16 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
+    fun visitArrayIndexExprReference(ctx: MainParser.ArrayIndexExprContext): ArrayIndexExpr {
+        return ArrayIndexExpr(
+            ctx.idExpr().text,
+            ctx.expr().map { visitExpr(it) as Expr },
+            reference = true,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
         val ids = mutableListOf<String>()
         val indexExprs = mutableListOf<ArrayIndexExpr>()
@@ -114,13 +124,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                 assignable.arrayIndexExpr() != null -> {
                     val expr = assignable.arrayIndexExpr()
                     indexExprs.add(
-                        ArrayIndexExpr(
-                            expr.idExpr().text,
-                            expr.expr().map { visitExpr(it) as Expr },
-                            reference = true,
-                            lineNumber = ctx.start.line,
-                            charPosition = ctx.start.charPositionInLine
-                        )
+                        visitArrayIndexExprReference(expr)
                     )
                 }
                 assignable.idExpr() != null -> ids.add(assignable.idExpr().text)
@@ -137,7 +141,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitOpAssign(ctx: MainParser.OpAssignContext): ASTNode {
         val ids = if (ctx.assignable().idExpr() != null) listOf(ctx.assignable().idExpr()) else emptyList()
         val arrayIndexExprs =
-            if (ctx.assignable().arrayIndexExpr() != null) listOf(ctx.assignable().arrayIndexExpr().accept(this) as ArrayIndexExpr) else emptyList()
+            if (ctx.assignable().arrayIndexExpr() != null) listOf(visitArrayIndexExprReference(ctx.assignable().arrayIndexExpr())) else emptyList()
         return VarAssign(
             ids.map { it.text },
             arrayIndexExprs,
