@@ -18,6 +18,10 @@ jobs:
       with:
         name: build-files
         path: build
+    - uses: actions/upload-artifact@v1
+      with:
+        name: gradle-files
+        path: .gradle
   
   test:
     name: Test
@@ -28,6 +32,9 @@ jobs:
     - uses: actions/download-artifact@v1
       with:
         name: build-files
+    - uses: actions/download-artifact@v1
+      with:
+        name: gradle-files
     - name: Test outputs
       working-directory: src/test
       run: for i in success/*.egern; do echo $i; ./test $i; done
