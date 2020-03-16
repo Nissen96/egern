@@ -176,6 +176,14 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         }
     }
 
+    override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
+        arrayIndexExpr.indices.forEach {
+            if (deriveType(it) !is INT) {
+                ErrorLogger.log(it, "Index must be an integer value")
+            }
+        }
+    }
+
     override fun postVisit(arrayExpr: ArrayExpr) {
         val type = deriveType(arrayExpr) as ARRAY
 
