@@ -12,6 +12,7 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("extern", "GetStdHandle")
             .addLine("extern", "WriteFile")
             .addLine("extern", "ExitProcess")
+            .addLine("extern", "malloc")
             .addLine("NULL EQU 0")
             .addLine("STD_HANDLE EQU -11")
             .addLine("section .bss")
@@ -25,11 +26,13 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         //builder.addLine("format: db \"%d\", 10, 0")
     }
 
-    override fun emitPrint(arg: MetaOperationArg) {
-        // TODO: handle print empty
-        //val empty = arg.value == 0
-        builder
+    override fun emitRequestProgramHeap() {
+        builder.addLine("call malloc")
+    }
 
+    override fun emitPrint(isEmpty: Boolean) {
+        // TODO: handle print empty
+        builder
             .newline()
             .addLine("; Get handle")
             .addLine("sub", "rsp", "32")
@@ -47,11 +50,11 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("add", "r15", "48")
             .addLine("push", "r15")
             .addLine("lea", "rdx", "[rsp]")
-            .addLine("mov","r8", "1")
+            .addLine("mov", "r8", "1")
             .addLine("lea", "r9", "[REL Written]")
             .addLine("mov", "qword [rsp + 4 * 8]", "NULL")
             .addLine("call", "WriteFile")
-            .addLine("add","rsp","40")
+            .addLine("add", "rsp", "40")
 
     }
 

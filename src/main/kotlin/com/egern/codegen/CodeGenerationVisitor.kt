@@ -9,19 +9,17 @@ import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
-class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
+class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val heapSize: Int = 256) : Visitor {
     val instructions = ArrayList<Instruction>()
     private val functionStack = stackOf<FuncDecl>()
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
         const val LOCAL_VAR_OFFSET = 1
-        const val RETURN_OFFSET = -1
         const val STATIC_LINK_OFFSET = -2
         const val PARAM_OFFSET = -3
 
         const val PARAMS_IN_REGISTERS = 6
-        const val CALLER_SAVED_REGISTERS = 8
     }
 
     private fun add(instruction: Instruction) {
@@ -59,6 +57,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
             Instruction(
                 InstructionType.META,
                 MetaOperation.CalleePrologue
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateInternalHeap,
+                MetaOperationArg(heapSize)
             )
         )
         add(
@@ -473,6 +478,146 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
         )
     }
 
+    override fun postVisit(arrayExpr: ArrayExpr) {
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateHeapSpace,
+                MetaOperationArg(arrayExpr.entries.size + 1)
+            )
+        )
+
+        val arrayLen = arrayExpr.entries.size
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue(arrayLen.toString()), Direct),
+                InstructionArg(ReturnValue, Indirect),
+                comment = "Write size information before array"
+            )
+        )
+
+        for (index in arrayExpr.entries.indices) {
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Pop expression to register 1"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(OpReg1), Direct),
+                    InstructionArg(ReturnValue, IndirectRelative(-(arrayLen - index))),
+                    comment = "Move expression to array index $index"
+                )
+            )
+        }
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Push result to stack"
+            )
+        )
+    }
+
+    // Indexes into array, result is in OpReg2
+    private fun indexIntoArray(arrayIndexExpr: ArrayIndexExpr) {
+        val idLocation = getIdLocation(arrayIndexExpr.id)
+        add(
+            Instruction(
+                InstructionType.MOV,
+                idLocation,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Move array pointer to data register"
+            )
+        )
+        for ((index, _) in arrayIndexExpr.indices.withIndex()) {
+            add(
+                Instruction(
+                    InstructionType.ADD,
+                    InstructionArg(ImmediateValue("8"), Direct),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Move past array info"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Pop expression to register 1"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.IMUL,
+                    InstructionArg(ImmediateValue("8"), Direct),
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Multiply index with 8"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.ADD,
+                    InstructionArg(Register(OpReg1), Direct),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Move pointer by index"
+                )
+            )
+            if (index < arrayIndexExpr.indices.size - 1) {
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Register(OpReg2), Indirect),
+                        InstructionArg(Register(OpReg2), Direct),
+                        comment = "Follow pointer"
+                    )
+                )
+            }
+        }
+        // Only follow last pointer if we want to return a value
+        if (!arrayIndexExpr.reference) {
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(OpReg2), Indirect),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Follow pointer"
+                )
+            )
+        }
+    }
+
+    override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
+        indexIntoArray(arrayIndexExpr)
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Push value to stack"
+            )
+        )
+    }
+
+    override fun postVisit(lenExpr: LenExpr) {
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop array reference from stack"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Register(OpReg1), Indirect),
+                comment = "Push array length to stack"
+            )
+        )
+    }
+
     override fun postVisit(printStmt: PrintStmt) {
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(
@@ -605,10 +750,10 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
     }
 
     override fun postVisit(varAssign: VarAssign<*>) {
-        variableAssignment(varAssign.ids)
+        variableAssignment(varAssign.ids, varAssign.indexExprs)
     }
 
-    private fun variableAssignment(ids: List<String>) {
+    private fun variableAssignment(ids: List<String>, arrayIds: List<ArrayIndexExpr> = listOf()) {
         // Find each variable/parameter location and set their value to the expression result
         add(Instruction(InstructionType.POP, InstructionArg(Register(DataReg), Direct), comment = "Expression result"))
         val symbols = ids.map { symbolTable.lookup(it)!! }
@@ -620,6 +765,23 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) : Visitor {
                     InstructionArg(Register(DataReg), Direct),
                     idLocation,
                     comment = "Set value of ${symbol.type.toString().toLowerCase()} ${symbol.id} to expression result"
+                )
+            )
+        }
+        for (id in arrayIds) {
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Pop pointer into register 2"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(DataReg), Direct),
+                    InstructionArg(Register(OpReg2), Indirect),
+                    comment = "Set value of ${id.id} at index to expression result"
                 )
             )
         }

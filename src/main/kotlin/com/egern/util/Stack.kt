@@ -1,6 +1,7 @@
 package com.egern.util
 
 typealias Stack<T> = MutableList<T>
+
 fun <T> stackOf(): Stack<T> = mutableListOf()
 fun <T> stackOf(vararg elements: T): Stack<T> = mutableListOf(*elements)
 fun <T> Stack<T>.push(item: T?) = item?.let { this.add(this.count(), it) }

@@ -6,6 +6,15 @@ interface Visitor {
     fun midVisit(arithExpr: ArithExpr) {}
     fun postVisit(arithExpr: ArithExpr) {}
 
+    fun preVisit(arrayExpr: ArrayExpr) {}
+    fun midVisit(arrayExpr: ArrayExpr) {}
+    fun postVisit(arrayExpr: ArrayExpr) {}
+
+    fun preVisit(arrayIndexExpr: ArrayIndexExpr) {}
+    fun preMidVisit(arrayIndexExpr: ArrayIndexExpr) {}
+    fun postMidVisit(arrayIndexExpr: ArrayIndexExpr) {}
+    fun postVisit(arrayIndexExpr: ArrayIndexExpr) {}
+
     fun preVisit(block: Block) {}
     fun preFuncCallVisit(block: Block) {}
     fun postFuncCallVisit(block: Block) {}
@@ -13,6 +22,7 @@ interface Visitor {
 
     fun visit(booleanExpr: BooleanExpr) {}
 
+    fun preVisit(booleanOpExpr: BooleanOpExpr) {}
     fun midVisit(booleanOpExpr: BooleanOpExpr) {}
     fun postVisit(booleanOpExpr: BooleanOpExpr) {}
 
@@ -37,6 +47,9 @@ interface Visitor {
 
     fun visit(intExpr: IntExpr) {}
 
+    fun preVisit(lenExpr: LenExpr) {}
+    fun postVisit(lenExpr: LenExpr) {}
+
     fun preVisit(parenExpr: ParenExpr) {}
     fun postVisit(parenExpr: ParenExpr) {}
 
@@ -53,6 +66,7 @@ interface Visitor {
     fun postVisit(returnStmt: ReturnStmt) {}
 
     fun preVisit(varAssign: VarAssign<*>) {}
+    fun midVisit(varAssign: VarAssign<*>) {}
     fun postVisit(varAssign: VarAssign<*>) {}
 
     fun preVisit(varDecl: VarDecl<*>) {}

@@ -6,6 +6,7 @@ func test(a: int): int {
     } else {
         return 3;
     }
+    return -1;
 }
 
 print(test(6));
