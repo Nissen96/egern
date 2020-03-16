@@ -14,14 +14,12 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: ./gradlew build -x test
-    - uses: actions/upload-artifact@v1
+    - uses: actions/cache@v1
       with:
-        name: build-files
-        path: build
-    - uses: actions/upload-artifact@v1
-      with:
-        name: gradle-files
-        path: .gradle
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
   
   test:
     name: Test
@@ -29,12 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: actions/download-artifact@v1
-      with:
-        name: build-files
-    - uses: actions/download-artifact@v1
-      with:
-        name: gradle-files
     - name: Test outputs
       working-directory: src/test
       run: for i in success/*.egern; do echo $i; ./test $i; done
