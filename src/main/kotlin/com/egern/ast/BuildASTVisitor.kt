@@ -106,7 +106,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
-    fun visitArrayIndexExprReference(ctx: MainParser.ArrayIndexExprContext): ArrayIndexExpr {
+    private fun visitArrayIndexExprReference(ctx: MainParser.ArrayIndexExprContext): ArrayIndexExpr {
         return ArrayIndexExpr(
             ctx.idExpr().text,
             ctx.expr().map { visitExpr(it) as Expr },
@@ -119,17 +119,13 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
         val ids = mutableListOf<String>()
         val indexExprs = mutableListOf<ArrayIndexExpr>()
-        for (assignable in ctx.assignable()) {
+        ctx.assignable().forEach {
             when {
-                assignable.arrayIndexExpr() != null -> {
-                    val expr = assignable.arrayIndexExpr()
-                    indexExprs.add(
-                        visitArrayIndexExprReference(expr)
-                    )
-                }
-                assignable.idExpr() != null -> ids.add(assignable.idExpr().text)
+                it.idExpr() != null -> ids.add(it.idExpr().text)
+                it.arrayIndexExpr() != null -> indexExprs.add(visitArrayIndexExprReference(it.arrayIndexExpr()))
             }
         }
+
         return VarAssign(
             ids, indexExprs,
             ctx.expr().accept(this) as Expr,
@@ -139,15 +135,17 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitOpAssign(ctx: MainParser.OpAssignContext): ASTNode {
-        val ids = if (ctx.assignable().idExpr() != null) listOf(
-            IdExpr(
-                ctx.assignable().idExpr().ID().text,
-                ctx.start.line,
-                -1
+        val ids = mutableListOf<IdExpr>()
+        val arrayIndexExprs = mutableListOf<ArrayIndexExpr>()
+        when {
+            ctx.assignable().idExpr() != null -> ids.add(
+                IdExpr(ctx.assignable().idExpr().ID().text, lineNumber = ctx.start.line, charPosition = -1)
             )
-        ) else emptyList()
-        val arrayIndexExprs =
-            if (ctx.assignable().arrayIndexExpr() != null) listOf(visitArrayIndexExprReference(ctx.assignable().arrayIndexExpr())) else emptyList()
+            ctx.assignable().arrayIndexExpr() != null -> arrayIndexExprs.add(
+                visitArrayIndexExprReference(ctx.assignable().arrayIndexExpr())
+            )
+        }
+
         return VarAssign(
             ids.map { it.id },
             arrayIndexExprs,

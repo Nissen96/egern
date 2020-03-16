@@ -50,11 +50,11 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("add", "r15", "48")
             .addLine("push", "r15")
             .addLine("lea", "rdx", "[rsp]")
-            .addLine("mov","r8", "1")
+            .addLine("mov", "r8", "1")
             .addLine("lea", "r9", "[REL Written]")
             .addLine("mov", "qword [rsp + 4 * 8]", "NULL")
             .addLine("call", "WriteFile")
-            .addLine("add","rsp","40")
+            .addLine("add", "rsp", "40")
 
     }
 

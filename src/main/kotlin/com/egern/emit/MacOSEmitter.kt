@@ -21,7 +21,7 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         builder.addLine("call malloc")
     }
 
-    var printfCounter = 0;
+    private var printfCounter = 0
 
     override fun emitPrint(isEmpty: Boolean) {
         // TODO: double check alignment (MacOS requires 16 byte)

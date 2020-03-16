@@ -101,3 +101,19 @@ Y - Use arithmetic operators on booleans
 Y - Use boolean operators on arithmetic expressions
 Y - Compare operands of different types
 Y - Compare booleans with invalid comparison operators (<, >, <=, >=)
+
+N - Compare arrays with invalid comparison operators (<, >, <=, >=)
+N - Compare array with different type
+N - Index too deeply into array with fewer dimensions
+N - Return deeper array than return type
+N - Return more shallow array than return type
+N - Pass deeper array than parameter type
+N - Pass more shallow array than parameter type
+N - Array index out of bounds
+N - Negative array index
+N - Use index of wrong type (e.g. boolean)
+N - Use arithmetic operators on arrays
+N - Use boolean operators on arrays
+
+N - Get length of int
+N - Get length of boolean
