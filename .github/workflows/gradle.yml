@@ -3,8 +3,8 @@ name: CI
 on: [push]
 
 jobs:
-  build:
-    name: Build
+  test:
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -20,13 +20,7 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: ./gradlew build -x test
-  
-  test:
-    name: Test
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: Test outputs
-      working-directory: src/test
-      run: for i in success/*.egern; do echo $i; ./test $i; done
+    - name: Compile and validate test files
+      working-directory: src/test/egern
+      run: for i in success/*egern; do echo $i; ./test $i; done
+
