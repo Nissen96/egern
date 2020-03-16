@@ -515,7 +515,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
     }
 
     // Indexes into array, result is in OpReg2
-    private fun indexIntoArray(arrayIndexExpr: ArrayIndexExpr, returnValue: Boolean) {
+    private fun indexIntoArray(arrayIndexExpr: ArrayIndexExpr) {
         val idLocation = getIdLocation(arrayIndexExpr.id)
         add(
             Instruction(
@@ -569,7 +569,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
             }
         }
         // Only follow last pointer if we want to return a value
-        if (returnValue) {
+        if (!arrayIndexExpr.reference) {
             add(
                 Instruction(
                     InstructionType.MOV,
@@ -582,7 +582,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
     }
 
     override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
-        indexIntoArray(arrayIndexExpr, true)
+        indexIntoArray(arrayIndexExpr)
         add(
             Instruction(
                 InstructionType.PUSH,
@@ -724,7 +724,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
     }
 
     override fun postVisit(varAssign: VarAssign<*>) {
-        variableAssignment(varAssign.ids, varAssign.indices)
+        variableAssignment(varAssign.ids, varAssign.indexExprs)
     }
 
     private fun variableAssignment(ids: List<String>, arrayIds: List<ArrayIndexExpr> = listOf()) {
@@ -743,7 +743,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
             )
         }
         for (id in arrayIds) {
-            indexIntoArray(id, false);
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Pop pointer into register 2"
+                )
+            )
             add(
                 Instruction(
                     InstructionType.MOV,
