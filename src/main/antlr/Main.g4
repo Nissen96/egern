@@ -33,15 +33,17 @@ whileLoop: 'while' '(' expr ')' block ;
 
 block:  '{' ( stmt | funcCall ';'? )* '}' ;
 
-classDecl: 'class' ID '{' classBody '}' ;
+classDecl: 'class' CLASSNAME '(' paramList ')' '{' classBody '}' ;
 classBody: (funcDecl | varDecl)* ;
 
-methodCall: ID '.' funcCall ;
-classField: ID '.' ID ;
+methodCall: CLASSNAME '.' funcCall ;
+classField: CLASSNAME '.' ID ;
+objectInstantiate: CLASSNAME '(' argList ')' ;
 
 arrayIndexExpr: idExpr ('[' expr ']')+ ;
 
 expr: funcCall
+    | objectInstantiate
     | methodCall
     | classField
     | arrayIndexExpr
@@ -78,4 +80,5 @@ INT      : [0-9]+ ;
 BOOLEAN  : 'true' | 'false' ;
 VOID     : 'void' ;
 PRIMITIVE: 'int' | 'boolean' ;
-ID       : [A-Za-z_]+[A-Za-z_0-9]* ;
+ID       : [a-z_]+[A-Za-z_0-9]* ;
+CLASSNAME: [A-Z]+[A-Za-z_0-9]* ;

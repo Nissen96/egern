@@ -15,7 +15,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
         return ClassDecl(
-            ctx.ID().text,
+            ctx.CLASSNAME().text,
             ctx.classBody().varDecl().map { it.accept(this) as VarDecl<*> },
             ctx.classBody().funcDecl().map { it.accept(this) as FuncDecl },
             lineNumber = ctx.start.line,
@@ -26,7 +26,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitMethodCall(ctx: MainParser.MethodCallContext): ASTNode {
         val funcCall = ctx.funcCall()
         return MethodCall(
-            ctx.ID().text,
+            ctx.CLASSNAME().text,
             funcCall.ID().text,
             funcCall.argList().expr().map { it.accept(this) as Expr },
             lineNumber = ctx.start.line,
@@ -36,8 +36,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitClassField(ctx: MainParser.ClassFieldContext): ASTNode {
         return ClassField(
-            ctx.ID()[0].text,
-            ctx.ID()[1].text,
+            ctx.CLASSNAME().text,
+            ctx.ID().text,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
