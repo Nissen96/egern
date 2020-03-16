@@ -13,6 +13,36 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return Program(children, lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine)
     }
 
+    override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
+        return ClassDecl(
+            ctx.ID().text,
+            ctx.classBody().varDecl().map { it.accept(this) as VarDecl<*> },
+            ctx.classBody().funcDecl().map { it.accept(this) as FuncDecl },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitMethodCall(ctx: MainParser.MethodCallContext): ASTNode {
+        val funcCall = ctx.funcCall()
+        return MethodCall(
+            ctx.ID().text,
+            funcCall.ID().text,
+            funcCall.argList().expr().map { it.accept(this) as Expr },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitClassField(ctx: MainParser.ClassFieldContext): ASTNode {
+        return ClassField(
+            ctx.ID()[0].text,
+            ctx.ID()[1].text,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {
         return when {
             ctx.ifElse() != null -> ctx.ifElse().accept(this)

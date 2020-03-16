@@ -1,6 +1,6 @@
 grammar Main;
 
-prog:	( stmt | funcDecl | funcCall ';'? )* ;
+prog:	( classDecl | stmt | funcDecl | funcCall ';'? )* ;
 stmt:   varDecl
     |   varAssign
     |   opAssign
@@ -33,9 +33,17 @@ whileLoop: 'while' '(' expr ')' block ;
 
 block:  '{' ( stmt | funcCall ';'? )* '}' ;
 
+classDecl: 'class' ID '{' classBody '}' ;
+classBody: (funcDecl | varDecl)* ;
+
+methodCall: ID '.' funcCall ;
+classField: ID '.' ID ;
+
 arrayIndexExpr: idExpr ('[' expr ']')+ ;
 
 expr: funcCall
+    | methodCall
+    | classField
     | arrayIndexExpr
     | op='-' expr
     | op='!' expr
