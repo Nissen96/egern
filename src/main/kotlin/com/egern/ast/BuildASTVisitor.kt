@@ -135,11 +135,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitOpAssign(ctx: MainParser.OpAssignContext): ASTNode {
+        val ids = if (ctx.assignable().idExpr() != null) listOf(ctx.assignable().idExpr()) else emptyList()
+        val arrayIndexExprs =
+            if (ctx.assignable().arrayIndexExpr() != null) listOf(ctx.assignable().arrayIndexExpr().accept(this) as ArrayIndexExpr) else emptyList();
         return VarAssign(
-            listOf(ctx.assignable().idExpr().text),
-            listOf(),
+            ids.map { it.text },
+            arrayIndexExprs,
             ArithExpr(
-                IdExpr(ctx.assignable().idExpr().text, lineNumber = ctx.start.line, charPosition = -1),
+                (if (ids.isNotEmpty()) ids[0] else arrayIndexExprs[0]) as Expr,
                 ctx.expr().accept(this) as Expr,
                 ArithOp.fromString(ctx.op.text[0].toString())!!,
                 lineNumber = ctx.start.line,
