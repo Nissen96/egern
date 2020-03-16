@@ -146,7 +146,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ids.map { it.text },
             arrayIndexExprs,
             ArithExpr(
-                if (ids.isNotEmpty()) ids[0].accept(this) as Expr else arrayIndexExprs[0],
+                (if (ids.isNotEmpty()) ids[0].accept(this) else ctx.assignable().arrayIndexExpr().accept(this)) as Expr,
                 ctx.expr().accept(this) as Expr,
                 ArithOp.fromString(ctx.op.text[0].toString())!!,
                 lineNumber = ctx.start.line,
