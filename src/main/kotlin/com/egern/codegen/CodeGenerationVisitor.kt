@@ -755,14 +755,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
 
     private fun variableAssignment(ids: List<String>, arrayIds: List<ArrayIndexExpr> = listOf()) {
         // Find each variable/parameter location and set their value to the expression result
-        add(Instruction(InstructionType.POP, InstructionArg(Register(DataReg), Direct), comment = "Expression result"))
+        add(Instruction(InstructionType.POP, InstructionArg(Register(OpReg1), Direct), comment = "Expression result"))
         val symbols = ids.map { symbolTable.lookup(it)!! }
         for (symbol in symbols) {
             val idLocation = getIdLocation(symbol.id)
             add(
                 Instruction(
                     InstructionType.MOV,
-                    InstructionArg(Register(DataReg), Direct),
+                    InstructionArg(Register(OpReg1), Direct),
                     idLocation,
                     comment = "Set value of ${symbol.type.toString().toLowerCase()} ${symbol.id} to expression result"
                 )
@@ -779,7 +779,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
             add(
                 Instruction(
                     InstructionType.MOV,
-                    InstructionArg(Register(DataReg), Direct),
+                    InstructionArg(Register(OpReg1), Direct),
                     InstructionArg(Register(OpReg2), Indirect),
                     comment = "Set value of ${id.id} at index to expression result"
                 )
