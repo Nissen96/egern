@@ -1,10 +1,35 @@
 var a = [[1], [3, 4, 5], [6]]
-print(a)
+print(a[0][0])
+print(a[1][0])
+print(a[1][1])
+print(a[1][2])
+print(a[2][0])
+
 var b = [[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [9, 8, 7]], [[], [0]]]
-print(b)
+print(b[0][0][0])
+print(b[0][0][1])
+print(b[0][0][2])
+
+print(b[0][1][0])
+print(b[0][1][1])
+print(b[0][1][2])
+
+print(b[1][0][0])
+print(b[1][0][1])
+print(b[1][0][2])
+
+print(b[1][1][0])
+print(b[1][1][1])
+print(b[1][1][2])
+
+print(b[2][1][0])
+
 a[0][0] = 2
 print(a[0][0])
-print(a);
+
 b[2] = [[3, 2, 1], [], [10, 20]]
-print(b[2]);
-print(b);
+print(b[2][0][0])
+print(b[2][0][1])
+print(b[2][0][2])
+print(b[2][2][0])
+print(b[2][2][1])

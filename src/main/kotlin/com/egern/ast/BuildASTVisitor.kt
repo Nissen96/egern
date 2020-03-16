@@ -10,7 +10,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
         val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
         children.add(ReturnStmt(IntExpr(0, isVoid = true)))  // Implicit "return 0"
-        return Program(children, ctx.start.line, ctx.start.charPositionInLine)
+        return Program(children, lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine)
     }
 
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {
@@ -30,13 +30,17 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         // Return 0 implicitly if return value is undefined
         return ReturnStmt(
             (if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0, -1, -1, isVoid = true)) as Expr,
-            ctx.start.line,
-            ctx.start.charPositionInLine
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
     override fun visitPrintStmt(ctx: MainParser.PrintStmtContext): ASTNode {
-        return PrintStmt(ctx.expr()?.accept(this) as? Expr, ctx.start.line, ctx.start.charPositionInLine)
+        return PrintStmt(
+            ctx.expr()?.accept(this) as? Expr,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
     }
 
     private fun getType(ctx: MainParser.TypeDeclContext): ExprType {
@@ -79,8 +83,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.paramList().ID().mapIndexed { index, it -> it.text to getType(ctx.paramList().typeDecl()[index]) },
             returnType,
             children,
-            ctx.start.line,
-            ctx.start.charPositionInLine
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
@@ -88,8 +92,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return FuncCall(
             ctx.ID().text,
             ctx.argList().expr().map { it.accept(this) as Expr },
-            ctx.start.line,
-            ctx.start.charPositionInLine
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
@@ -97,8 +101,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return VarDecl(
             ctx.ID().map { it.text },
             ctx.expr().accept(this) as Expr,
-            ctx.start.line,
-            ctx.start.charPositionInLine
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
@@ -113,8 +117,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                         ArrayIndexExpr(
                             expr.idExpr().text,
                             expr.expr().map { visitExpr(it) as Expr },
-                            ctx.start.line,
-                            ctx.start.charPositionInLine
+                            reference = true,
+                            lineNumber = ctx.start.line,
+                            charPosition = ctx.start.charPositionInLine
                         )
                     )
                 }
@@ -124,8 +129,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return VarAssign(
             ids, indexExprs,
             ctx.expr().accept(this) as Expr,
-            ctx.start.line,
-            ctx.start.charPositionInLine
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
@@ -134,14 +139,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             listOf(ctx.assignable().idExpr().text),
             listOf(),
             ArithExpr(
-                IdExpr(ctx.assignable().idExpr().text, ctx.start.line, -1),
+                IdExpr(ctx.assignable().idExpr().text, lineNumber = ctx.start.line, charPosition = -1),
                 ctx.expr().accept(this) as Expr,
                 ArithOp.fromString(ctx.op.text[0].toString())!!,
-                ctx.start.line,
-                ctx.start.charPositionInLine
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
             ),
-            ctx.start.line,
-            ctx.start.charPositionInLine
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
@@ -149,7 +154,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return IfElse(
             ctx.expr().accept(this) as Expr, ctx.block(0).accept(this) as Block,
             if (ctx.ifElse() != null) (ctx.ifElse().accept(this) as IfElse) else (ctx.block(1)?.accept(this) as? Block),
-            ctx.start.line, ctx.start.charPositionInLine
+            lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
         )
     }
 
@@ -157,14 +162,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return WhileLoop(
             ctx.expr().accept(this) as Expr,
             ctx.block().accept(this) as Block,
-            ctx.start.line, ctx.start.charPositionInLine
+            lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
         )
     }
 
     override fun visitBlock(ctx: MainParser.BlockContext): ASTNode {
         return Block(
             ctx.children?.map { it.accept(this) } ?: emptyList(),
-            ctx.start.line, ctx.start.charPositionInLine
+            lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
         )
     }
 
@@ -172,26 +177,30 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return when {
             ctx.booleanExpr() != null -> BooleanExpr(
                 ctx.booleanExpr().BOOLEAN().text!!.toBoolean(),
-                ctx.start.line,
-                ctx.start.charPositionInLine
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
             )
             ctx.intExpr() != null -> IntExpr(
                 ctx.intExpr().INT().text.toInt(),
-                ctx.start.line,
-                ctx.start.charPositionInLine
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
             )
-            ctx.idExpr() != null -> IdExpr(ctx.idExpr().ID().text, ctx.start.line, ctx.start.charPositionInLine)
+            ctx.idExpr() != null -> IdExpr(
+                ctx.idExpr().ID().text,
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
+            )
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             ctx.arrayExpr() != null -> visitArrayExpr(ctx.arrayExpr())
             ctx.arrayIndexExpr() != null -> visitArrayIndexExpr(ctx.arrayIndexExpr())
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
-                    IntExpr(-1, ctx.start.line, -1),
+                    IntExpr(-1, lineNumber = ctx.start.line, charPosition = -1),
                     ctx.expr()[0].accept(this) as Expr,
                     ArithOp.TIMES,
-                    ctx.start.line,
-                    ctx.start.charPositionInLine
+                    lineNumber = ctx.start.line,
+                    charPosition = ctx.start.charPositionInLine
                 )
                 BooleanOp.NOT.value -> BooleanOpExpr(
                     ctx.expr()[0].accept(this) as Expr,
@@ -209,20 +218,28 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitArrayExpr(ctx: MainParser.ArrayExprContext): ASTNode {
-        return ArrayExpr(ctx.expr().map { visitExpr(it) as Expr }, ctx.start.line, ctx.start.charPositionInLine)
+        return ArrayExpr(
+            ctx.expr().map { visitExpr(it) as Expr },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
     }
 
     override fun visitArrayIndexExpr(ctx: MainParser.ArrayIndexExprContext): ASTNode {
         return ArrayIndexExpr(
             ctx.idExpr().ID().text,
             ctx.expr().map { visitExpr(it) as Expr },
-            ctx.start.line,
-            ctx.start.charPositionInLine
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
     override fun visitParenExpr(ctx: MainParser.ParenExprContext): ASTNode {
-        return ParenExpr(visitExpr(ctx.expr()) as Expr, ctx.start.line, ctx.start.charPositionInLine)
+        return ParenExpr(
+            visitExpr(ctx.expr()) as Expr,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
     }
 
     private fun visitBooleanExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {

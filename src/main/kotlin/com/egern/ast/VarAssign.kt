@@ -12,11 +12,8 @@ class VarAssign<T : Expr>(
     Statement(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
+        indexExprs.map { it.accept(visitor) }
         expr.accept(visitor)
-        indexExprs.map {
-            it.reference = true
-            it.accept(visitor)
-        }
         visitor.postVisit(this)
     }
 }
