@@ -13,6 +13,7 @@ class VarAssign<T : Expr>(
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         indexExprs.map { it.accept(visitor) }
+        visitor.midVisit(this)
         expr.accept(visitor)
         visitor.postVisit(this)
     }
