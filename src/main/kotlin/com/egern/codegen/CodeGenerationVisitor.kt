@@ -557,7 +557,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                     comment = "Move pointer by index"
                 )
             )
-            if ((!returnValue && index != arrayIndexExpr.indices.size - 1) || returnValue) {
+            if (index < arrayIndexExpr.indices.size - 1) {
                 add(
                     Instruction(
                         InstructionType.MOV,
@@ -567,6 +567,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                     )
                 )
             }
+        }
+        // Only follow last pointer if we want to return a value
+        if (returnValue) {
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(OpReg2), Indirect),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Follow pointer"
+                )
+            )
         }
     }
 
