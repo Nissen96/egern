@@ -34,7 +34,7 @@ abstract class Emitter(
 
     private fun emitAllocateProgramHeap(heapSize: Int) {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * heapSize}"), syntax.register("rdi"))
-        val (arg3, arg4) = syntax.argOrder(syntax.register("rax"), syntax.register("rbx"))
+        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for malloc call"
@@ -44,6 +44,7 @@ abstract class Emitter(
             syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
             "Move returned heap pointer to fixed heap pointer register"
         )
+        // TODO: ASSIGN VTABLE POINTER
     }
 
     private fun emitInstruction(instruction: Instruction) {
@@ -98,6 +99,7 @@ abstract class Emitter(
             RBP -> syntax.register("rbp")
             RSP -> syntax.register("rsp")
             RHP -> syntax.register("rbx")
+            VTable -> syntax.register("r14")
             ReturnValue -> syntax.register("rax")
             StaticLink -> syntax.register("r15")
             MainLabel -> emitMainLabel()
