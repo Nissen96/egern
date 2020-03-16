@@ -21,6 +21,6 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build -x test
     - name: Compile and validate test files
-      working-directory: src/test/egern
+      working-directory: src/test
       run: for i in success/*egern; do echo $i; ./test $i; done
 
