@@ -9,7 +9,8 @@ import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
-class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val heapSize: Int = 256) : Visitor {
+class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val heapSize: Int = 256 * pow(1024, 2)) :
+    Visitor {
     val instructions = ArrayList<Instruction>()
     private val functionStack = stackOf<FuncDecl>()
 
