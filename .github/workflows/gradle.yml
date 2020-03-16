@@ -21,9 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Compile tests
-      working-directory: src/test/egern
-      run: for i in success/*.egern; do echo $i; ./run $i; done
     - name: Test outputs
-      working-directory: src/test/egern
+      working-directory: src/test
       run: for i in success/*.egern; do echo $i; ./test $i; done

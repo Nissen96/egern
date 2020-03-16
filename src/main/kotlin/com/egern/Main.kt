@@ -75,7 +75,3 @@ fun main(args: Array<String>) {
         print(code)
     }
 }
-
-fun hello(): String {
-    return "hello"
-}
