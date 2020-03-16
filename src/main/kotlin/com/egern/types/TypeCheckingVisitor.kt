@@ -56,7 +56,11 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             is ArrayExpr -> deriveArrayType(expr)
             is ArrayIndexExpr -> {
                 val array = getVariableType(expr.id) as ARRAY
-                if (expr.indices.size > 1) ARRAY(array.depth - expr.indices.size, array.innerExpr) else array.innerExpr
+                if (array.depth - expr.indices.size > 0) {
+                    ARRAY(array.depth - expr.indices.size, array.innerExpr)
+                } else {
+                    array.innerExpr
+                }
             }
             else -> throw Exception("Can't derive type for expr!")
         }
@@ -69,7 +73,14 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             depth++
             expr = if (expr.entries.isNotEmpty()) expr.entries[0] else IntExpr(0, isVoid = true)
         }
-        return ARRAY(depth, deriveType(expr))
+
+        var innerExpr = deriveType(expr)
+        if (innerExpr is ARRAY) {
+            depth += innerExpr.depth
+            innerExpr = innerExpr.innerExpr
+        }
+
+        return ARRAY(depth, innerExpr)
     }
 
     private fun isMatchingType(expr1: Expr, expr2: Expr?): Boolean {
