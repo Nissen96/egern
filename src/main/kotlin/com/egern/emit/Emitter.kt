@@ -93,7 +93,6 @@ abstract class Emitter(
             is Register -> when (target.register) {
                 OpReg1 -> syntax.register("r12")
                 OpReg2 -> syntax.register("r13")
-                DataReg -> syntax.register("r14")
                 is ParamReg -> syntax.register(CALLER_SAVE_REGISTERS[target.register.paramNum])
             }
             RBP -> syntax.register("rbp")
