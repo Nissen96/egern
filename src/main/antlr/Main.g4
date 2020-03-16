@@ -49,6 +49,7 @@ expr: funcCall
     | intExpr
     | arrayExpr
     | parenExpr
+    | lenExpr
     ;
 
 idExpr: ID ;
@@ -56,6 +57,7 @@ intExpr: INT ;
 booleanExpr: BOOLEAN ;
 parenExpr: '(' expr ')';
 arrayExpr: '[' (expr ',')* expr? ']';
+lenExpr: 'len' '(' expr ')';
 
 typeDecl: VOID | PRIMITIVE | arrayType;
 arrayType: '[' (arrayType | PRIMITIVE) ']';

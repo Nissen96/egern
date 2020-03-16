@@ -53,6 +53,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
             is IdExpr -> getVariableType(expr.id)
             is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
             is ParenExpr -> deriveType(expr.expr)
+            is LenExpr -> INT
             is ArrayExpr -> deriveArrayType(expr)
             is ArrayIndexExpr -> {
                 val array = getVariableType(expr.id) as ARRAY
@@ -130,6 +131,12 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     override fun preVisit(printStmt: PrintStmt) {
         if (printStmt.expr != null && deriveType(printStmt.expr) == VOID) {
             ErrorLogger.log(printStmt.expr, "Printing void is not valid.")
+        }
+    }
+
+    override fun preVisit(lenExpr: LenExpr) {
+        if (deriveType(lenExpr.expr) !is ARRAY) {
+            ErrorLogger.log(lenExpr.expr, "Len function is only defined for arrays")
         }
     }
 

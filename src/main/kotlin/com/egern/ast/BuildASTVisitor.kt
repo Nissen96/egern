@@ -194,6 +194,11 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             ctx.arrayExpr() != null -> visitArrayExpr(ctx.arrayExpr())
             ctx.arrayIndexExpr() != null -> visitArrayIndexExpr(ctx.arrayIndexExpr())
+            ctx.lenExpr() != null -> LenExpr(
+                ctx.lenExpr().expr().accept(this) as Expr,
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
+            )
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
                     IntExpr(-1, lineNumber = ctx.start.line, charPosition = -1),

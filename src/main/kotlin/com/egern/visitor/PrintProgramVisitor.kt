@@ -151,6 +151,14 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         print(intExpr.value)
     }
 
+    override fun preVisit(lenExpr: LenExpr) {
+        print("len(")
+    }
+
+    override fun postVisit(lenExpr: LenExpr) {
+        print(")")
+    }
+
     override fun preVisit(parenExpr: ParenExpr) {
         print("(")
     }

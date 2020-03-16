@@ -47,6 +47,9 @@ interface Visitor {
 
     fun visit(intExpr: IntExpr) {}
 
+    fun preVisit(lenExpr: LenExpr) {}
+    fun postVisit(lenExpr: LenExpr) {}
+
     fun preVisit(parenExpr: ParenExpr) {}
     fun postVisit(parenExpr: ParenExpr) {}
 

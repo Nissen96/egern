@@ -488,6 +488,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         )
 
         val arrayLen = arrayExpr.entries.size
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue(arrayLen.toString()), Direct),
+                InstructionArg(ReturnValue, Indirect),
+                comment = "Write size information before array"
+            )
+        )
+
         for (index in arrayExpr.entries.indices) {
             add(
                 Instruction(
@@ -588,6 +597,23 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 InstructionType.PUSH,
                 InstructionArg(Register(OpReg2), Direct),
                 comment = "Push value to stack"
+            )
+        )
+    }
+
+    override fun postVisit(lenExpr: LenExpr) {
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop array reference from stack"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Register(OpReg1), Indirect),
+                comment = "Push array length to stack"
             )
         )
     }
