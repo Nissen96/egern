@@ -4,7 +4,8 @@ enum class ExprTypeEnum {
     INT,
     BOOLEAN,
     VOID,
-    ARRAY
+    ARRAY,
+    CLASS
 }
 
 
@@ -18,3 +19,4 @@ object INT : ExprType(ExprTypeEnum.INT)
 object BOOLEAN : ExprType(ExprTypeEnum.BOOLEAN)
 object VOID : ExprType(ExprTypeEnum.VOID)
 data class ARRAY(val depth: Int, val innerExpr: ExprType) : ExprType(ExprTypeEnum.ARRAY)
+data class CLASS(val className: String) : ExprType(ExprTypeEnum.CLASS)

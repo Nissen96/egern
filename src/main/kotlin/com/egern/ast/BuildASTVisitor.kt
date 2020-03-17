@@ -23,10 +23,19 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
+    override fun visitObjectInstantiation(ctx: MainParser.ObjectInstantiationContext): ASTNode {
+        return ObjectInstantiation(
+            ctx.CLASSNAME().text,
+            ctx.argList().expr().map { it.accept(this) as Expr },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
     override fun visitMethodCall(ctx: MainParser.MethodCallContext): ASTNode {
         val funcCall = ctx.funcCall()
         return MethodCall(
-            ctx.CLASSNAME().text,
+            if (ctx.ID() != null) ctx.ID().text else "this",
             funcCall.ID().text,
             funcCall.argList().expr().map { it.accept(this) as Expr },
             lineNumber = ctx.start.line,
@@ -34,13 +43,18 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
-    override fun visitClassField(ctx: MainParser.ClassFieldContext): ASTNode {
+    private fun visitClassField(ctx: MainParser.ClassFieldContext, reference: Boolean): ClassField {
         return ClassField(
-            ctx.CLASSNAME().text,
-            ctx.ID().text,
+            if (ctx.ID().size > 1) ctx.ID(0).text else "this",
+            ctx.ID(if (ctx.ID().size > 1) 1 else 0).text,
+            reference = reference,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
+    }
+
+    override fun visitClassField(ctx: MainParser.ClassFieldContext): ASTNode {
+        return visitClassField(ctx, reference = false)
     }
 
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {
@@ -77,10 +91,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return when {
             ctx.PRIMITIVE() != null -> getPrimitiveType(ctx.PRIMITIVE())
             ctx.VOID() != null -> VOID
-            ctx.arrayType() != null -> {
-                val (depth, innerType) = getArrayType(ctx.arrayType())
-                return ARRAY(depth, innerType)
-            }
+            ctx.arrayType() != null -> getArrayType(ctx.arrayType())
+            ctx.CLASSNAME() != null -> CLASS(ctx.CLASSNAME().text)
             else -> throw Exception("Cannot find type")
         }
     }
@@ -89,14 +101,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ExprType.primitives()[primitive.symbol.text] ?: error("Primitive type not found")
     }
 
-    private fun getArrayType(ctx: MainParser.ArrayTypeContext): Pair<Int, ExprType> {
+    private fun getArrayType(ctx: MainParser.ArrayTypeContext): ExprType {
         var depth = 1
         var element = ctx
         while (element.PRIMITIVE() == null) {
             element = element.arrayType()
             depth++
         }
-        return Pair(depth, getPrimitiveType(element.PRIMITIVE()))
+        return ARRAY(depth, getPrimitiveType(element.PRIMITIVE()))
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
@@ -149,15 +161,19 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
         val ids = mutableListOf<String>()
         val indexExprs = mutableListOf<ArrayIndexExpr>()
+        val classFields = mutableListOf<ClassField>()
         ctx.assignable().forEach {
             when {
                 it.idExpr() != null -> ids.add(it.idExpr().text)
                 it.arrayIndexExpr() != null -> indexExprs.add(visitArrayIndexExprReference(it.arrayIndexExpr()))
+                it.classField() != null -> classFields.add(
+                    visitClassField(it.classField(), reference = true)
+                )
             }
         }
 
         return VarAssign(
-            ids, indexExprs,
+            ids, indexExprs, classFields,
             ctx.expr().accept(this) as Expr,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
@@ -167,6 +183,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitOpAssign(ctx: MainParser.OpAssignContext): ASTNode {
         val ids = mutableListOf<IdExpr>()
         val arrayIndexExprs = mutableListOf<ArrayIndexExpr>()
+        val classFields = mutableListOf<ClassField>()
         when {
             ctx.assignable().idExpr() != null -> ids.add(
                 IdExpr(ctx.assignable().idExpr().ID().text, lineNumber = ctx.start.line, charPosition = -1)
@@ -174,13 +191,21 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.assignable().arrayIndexExpr() != null -> arrayIndexExprs.add(
                 visitArrayIndexExprReference(ctx.assignable().arrayIndexExpr())
             )
+            ctx.assignable().classField() != null -> classFields.add(
+                visitClassField(ctx.assignable().classField(), reference = true)
+            )
         }
 
         return VarAssign(
             ids.map { it.id },
             arrayIndexExprs,
+            classFields,
             ArithExpr(
-                (if (ids.isNotEmpty()) ids[0] else ctx.assignable().arrayIndexExpr().accept(this)) as Expr,
+                (when {
+                    ids.isNotEmpty() -> ids[0]
+                    arrayIndexExprs.isNotEmpty() -> ctx.assignable().arrayIndexExpr().accept(this)
+                    else -> ctx.assignable().classField().accept(this)
+                }) as Expr,
                 ctx.expr().accept(this) as Expr,
                 ArithOp.fromString(ctx.op.text[0].toString())!!,
                 lineNumber = ctx.start.line,
@@ -240,6 +265,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                 lineNumber = ctx.start.line,
                 charPosition = ctx.start.charPositionInLine
             )
+            ctx.classField() != null -> visitClassField(ctx.classField())
+            ctx.methodCall() != null -> visitMethodCall(ctx.methodCall())
+            ctx.objectInstantiation() != null -> visitObjectInstantiation(ctx.objectInstantiation())
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
                     IntExpr(-1, lineNumber = ctx.start.line, charPosition = -1),

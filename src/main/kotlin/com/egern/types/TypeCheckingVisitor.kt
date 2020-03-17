@@ -63,6 +63,9 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
                     array.innerExpr
                 }
             }
+            is ObjectInstantiation -> CLASS(expr.classId)
+            is MethodCall -> TODO() // VTABLE LOOKUP
+            is ClassField -> TODO()
             else -> throw Exception("Can't derive type for expr!")
         }
     }

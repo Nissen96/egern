@@ -2,7 +2,7 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class MethodCall(val classId: String, val id: String, val args: List<Expr>, lineNumber: Int, charPosition: Int) :
+class MethodCall(val objectId: String, val id: String, val args: List<Expr>, lineNumber: Int, charPosition: Int) :
     Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
