@@ -155,10 +155,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitVarDecl(ctx: MainParser.VarDeclContext): ASTNode {
-        return visitVarDecl(ctx)
+        return visitVarDecl(ctx, null)
     }
 
-    private fun visitVarDecl(ctx: MainParser.VarDeclContext, classId: String): ASTNode {
+    private fun visitVarDecl(ctx: MainParser.VarDeclContext, classId: String?): ASTNode {
         return VarDecl(
             ctx.ID().map { it.text },
             ctx.expr().accept(this) as Expr,
