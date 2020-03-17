@@ -1,9 +1,11 @@
 package com.egern.ast
 
+import com.egern.types.ExprType
 import com.egern.visitor.Visitor
 
 class ClassDecl(
     val id: String,
+    val constructor: List<Pair<String, ExprType>>,
     val varDecl: List<VarDecl<*>>,
     val funcDecl: List<FuncDecl>,
     lineNumber: Int, charPosition: Int

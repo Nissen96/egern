@@ -17,6 +17,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         val classId = ctx.CLASSNAME().text
         return ClassDecl(
             classId,
+            if (ctx.paramList() != null) ctx.paramList().ID().mapIndexed { index, it -> it.text to getType(ctx.paramList().typeDecl()[index]) } else emptyList(),
             ctx.classBody().fieldDecl().map { visitFieldDecl(it, classId) as VarDecl<*> },
             ctx.classBody().methodDecl().map { visitMethodDecl(it, classId) as FuncDecl },
             lineNumber = ctx.start.line,
