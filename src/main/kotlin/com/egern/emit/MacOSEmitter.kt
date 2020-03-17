@@ -21,6 +21,10 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         builder.addLine("call malloc")
     }
 
+    override fun emitFreeProgramHeap() {
+        builder.addLine("call free")
+    }
+
     private var printfCounter = 0
 
     override fun emitPrint(isEmpty: Boolean) {

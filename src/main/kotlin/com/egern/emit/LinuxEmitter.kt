@@ -26,6 +26,10 @@ class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
         builder.addLine("call malloc")
     }
 
+    override fun emitFreeProgramHeap() {
+        builder.addLine("call free")
+    }
+
     override fun emitPrint(isEmpty: Boolean) {
         builder
             .newline()

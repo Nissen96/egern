@@ -13,6 +13,7 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("extern", "WriteFile")
             .addLine("extern", "ExitProcess")
             .addLine("extern", "malloc")
+            .addLine("extern", "free")
             .addLine("NULL EQU 0")
             .addLine("STD_HANDLE EQU -11")
             .addLine("section .bss")
@@ -28,6 +29,10 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
 
     override fun emitRequestProgramHeap() {
         builder.addLine("call malloc")
+    }
+
+    override fun emitFreeProgramHeap() {
+        builder.addLine("call free")
     }
 
     override fun emitPrint(isEmpty: Boolean) {
