@@ -9,6 +9,7 @@ class FuncDecl(
     val params: List<Pair<String, ExprType>>,
     val returnType: ExprType,
     val children: List<ASTNode>,
+    val classId: String? = null,
     lineNumber: Int, charPosition: Int
 ) :
     ASTNode(lineNumber, charPosition), Scopable {

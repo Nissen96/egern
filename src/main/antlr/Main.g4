@@ -1,6 +1,6 @@
 grammar Main;
 
-prog:	( classDecl | stmt | funcDecl | funcCall ';'? )* ;
+prog:	( classDecl | stmt | funcDecl | funcCall ';'? | methodCall ';'? )* ;
 stmt:   varDecl
     |   varAssign
     |   opAssign
@@ -12,14 +12,16 @@ stmt:   varDecl
 
 returnStmt: 'return' expr? ';'? ;
 funcDecl:   'func' ID '(' paramList ')' ':' typeDecl '{' funcBody '}'  ;
-funcBody:   ( stmt | funcDecl | funcCall ';'? )* ;
+funcBody:   ( stmt | funcDecl | funcCall ';'? | methodCall ';'? )* ;
 funcCall:   ID '(' argList ')' ;
 
 paramList:  (ID ':' typeDecl ',')* (ID ':' typeDecl)? ;
 argList:    (expr ',')* expr? ;
 
 assignable: idExpr
-          | arrayIndexExpr ;
+          | arrayIndexExpr
+          | classField
+          ;
 
 varDecl: 'var' (ID '=')+ expr ';'? ;
 varAssign: (assignable '=')+ expr ';'?;
@@ -31,19 +33,21 @@ ifElse:  'if' '(' expr ')' block
 
 whileLoop: 'while' '(' expr ')' block ;
 
-block:  '{' ( stmt | funcCall ';'? )* '}' ;
+block:  '{' ( stmt | funcCall ';'? | methodCall ';'? )* '}' ;
 
 classDecl: 'class' CLASSNAME '(' paramList ')' '{' classBody '}' ;
-classBody: (funcDecl | varDecl)* ;
+classBody: (methodDecl | fieldDecl)* ;
 
-methodCall: CLASSNAME '.' funcCall ;
-classField: CLASSNAME '.' ID ;
-objectInstantiate: CLASSNAME '(' argList ')' ;
+methodDecl: funcDecl ;
+fieldDecl: varDecl ;
+methodCall: (ID | 'this') '.' funcCall ;
+classField: (ID | 'this') '.' ID ;
+objectInstantiation: CLASSNAME '(' argList ')' ;
 
 arrayIndexExpr: idExpr ('[' expr ']')+ ;
 
 expr: funcCall
-    | objectInstantiate
+    | objectInstantiation
     | methodCall
     | classField
     | arrayIndexExpr
@@ -69,7 +73,7 @@ parenExpr: '(' expr ')';
 arrayExpr: '[' (expr ',')* expr? ']';
 lenExpr: 'len' '(' expr ')';
 
-typeDecl: VOID | PRIMITIVE | arrayType;
+typeDecl: VOID | PRIMITIVE | arrayType | CLASSNAME ;
 arrayType: '[' (arrayType | PRIMITIVE) ']';
 
 printStmt: 'print' '(' expr? ')' ';'?;

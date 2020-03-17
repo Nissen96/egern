@@ -8,6 +8,7 @@ class SymbolVisitor : Visitor {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
     var currentTable = SymbolTable(0, null)
+    var classDefinition = ClassDefinition("Base", null)
 
     private fun returnToParentScope() {
         currentTable = currentTable.parent!!
@@ -67,5 +68,20 @@ class SymbolVisitor : Visitor {
             varCountStack.apply { it + 1 }
         }
         varDecl.symbolTable = currentTable
+    }
+
+    override fun preVisit(classDecl: ClassDecl) {
+        createNewScope()
+        val newClassDefinition = ClassDefinition(classDecl.id, classDefinition)
+        classDefinition = newClassDefinition
+    }
+
+    override fun postVisit(classDecl: ClassDecl) {
+        classDefinition = classDefinition.parent!!
+        returnToParentScope()
+    }
+
+    override fun preVisit(methodCall: MethodCall) {
+        classDefinition.insertMethod(methodCall.methodId)
     }
 }

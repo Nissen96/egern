@@ -1,7 +1,5 @@
 package com.egern.ast
 
-import com.egern.symbols.SymbolTable
-import com.egern.types.ExprType
 import com.egern.visitor.Visitor
 
 class ClassDecl(
@@ -9,9 +7,8 @@ class ClassDecl(
     val varDecl: List<VarDecl<*>>,
     val funcDecl: List<FuncDecl>,
     lineNumber: Int, charPosition: Int
-) :
-    ASTNode(lineNumber, charPosition), Scopable {
-    override lateinit var symbolTable: SymbolTable
+) : ASTNode(lineNumber, charPosition) {
+    //lateinit var fields
 
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)

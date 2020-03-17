@@ -14,13 +14,18 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
+        val classId = ctx.CLASSNAME().text
         return ClassDecl(
-            ctx.CLASSNAME().text,
-            ctx.classBody().varDecl().map { it.accept(this) as VarDecl<*> },
-            ctx.classBody().funcDecl().map { it.accept(this) as FuncDecl },
+            classId,
+            ctx.classBody().fieldDecl().map { visitFieldDecl(it, classId) as VarDecl<*> },
+            ctx.classBody().methodDecl().map { visitMethodDecl(it, classId) as FuncDecl },
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
+    }
+
+    private fun visitMethodDecl(ctx: MainParser.MethodDeclContext, classId: String): ASTNode {
+        return visitFuncDecl(ctx.funcDecl(), classId)
     }
 
     override fun visitObjectInstantiation(ctx: MainParser.ObjectInstantiationContext): ASTNode {
@@ -41,6 +46,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
+    }
+
+    private fun visitFieldDecl(ctx: MainParser.FieldDeclContext, classId: String): ASTNode {
+        return visitVarDecl(ctx.varDecl(), classId)
     }
 
     private fun visitClassField(ctx: MainParser.ClassFieldContext, reference: Boolean): ClassField {
@@ -112,6 +121,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
+        return visitFuncDecl(ctx)
+    }
+
+    private fun visitFuncDecl(ctx: MainParser.FuncDeclContext, classId: String? = null): ASTNode {
         val returnType = getType(ctx.typeDecl())
         val children = (ctx.funcBody().children?.map { it.accept(this) } ?: emptyList()).toMutableList()
 
@@ -125,6 +138,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.paramList().ID().mapIndexed { index, it -> it.text to getType(ctx.paramList().typeDecl()[index]) },
             returnType,
             children,
+            classId,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -140,9 +154,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitVarDecl(ctx: MainParser.VarDeclContext): ASTNode {
+        return visitVarDecl(ctx)
+    }
+
+    private fun visitVarDecl(ctx: MainParser.VarDeclContext, classId: String): ASTNode {
         return VarDecl(
             ctx.ID().map { it.text },
             ctx.expr().accept(this) as Expr,
+            classId,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
