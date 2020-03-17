@@ -20,7 +20,9 @@ abstract class Emitter(
 
         val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
+        const val HEAP_POINTER: String = "heap_pointer"
         const val HEAP_SIZE: Int = 256
+        const val VTABLE_POINTER: String = "vtable_pointer"
         const val VTABLE_SIZE: Int = 256
     }
 
@@ -42,6 +44,7 @@ abstract class Emitter(
     private fun emitAllocateProgramHeap() {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"), syntax.register("rdi"))
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
+        val (arg5, arg6) = syntax.argOrder(arg3, syntax.indirect(HEAP_POINTER))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for malloc call"
@@ -51,11 +54,16 @@ abstract class Emitter(
             syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
             "Move returned heap pointer to fixed heap pointer register"
         )
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
+            "Save start of heap pointer globally"
+        )
     }
 
     private fun emitAllocateVTable() {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"), syntax.register("rdi"))
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(VTable))
+        val (arg5, arg6) = syntax.argOrder(arg3, syntax.indirect(VTABLE_POINTER))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for malloc call"
@@ -65,15 +73,19 @@ abstract class Emitter(
             syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
             "Move returned heap pointer to vtable pointer register"
         )
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
+            "Save start of vtable pointer globally"
+        )
     }
 
     private fun emitDeallocateInternalHeaps() {
-        emitDeallocateInternalHeap(RHP)
-        emitDeallocateInternalHeap(VTable)
+        emitDeallocateInternalHeap(HEAP_POINTER)
+        emitDeallocateInternalHeap(VTABLE_POINTER)
     }
 
-    private fun emitDeallocateInternalHeap(target: InstructionTarget) {
-        val (arg1, arg2) = syntax.argOrder(emitInstructionTarget(target), syntax.register("rdi"))
+    private fun emitDeallocateInternalHeap(pointer: String) {
+        val (arg1, arg2) = syntax.argOrder(syntax.indirect(pointer), syntax.register("rdi"))
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,

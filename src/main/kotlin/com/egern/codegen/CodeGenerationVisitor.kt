@@ -88,6 +88,26 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) :
                 InstructionArg(Memory("main_end"), Direct)
             )
         )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Save return value before program deallocation"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.DeallocateInternalHeap
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Restore return value"
+            )
+        )
     }
 
     override fun postVisit(program: Program) {
@@ -95,12 +115,6 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) :
             Instruction(
                 InstructionType.LABEL,
                 InstructionArg(Memory("main_end"), Direct)
-            )
-        )
-        add(
-            Instruction(
-                InstructionType.META,
-                MetaOperation.DeallocateInternalHeap
             )
         )
         add(

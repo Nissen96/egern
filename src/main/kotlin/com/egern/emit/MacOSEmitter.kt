@@ -10,6 +10,10 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("global", "_main")
             .addLine("extern", "_printf")
             .addLine("default rel")
+            .addLine(".bss")
+            .addLine("$HEAP_POINTER: resq 1")
+            .addLine("$VTABLE_POINTER: resq 1")
+            .newline()
             .addLine("section .text")
     }
 
