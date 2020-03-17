@@ -11,6 +11,7 @@ enum class MetaOperation : Arg {
     AllocateStackSpace,
     DeallocateStackSpace,
     AllocateInternalHeap,
+    DeallocateInternalHeap,
     AllocateHeapSpace,
     DeallocateHeapSpace
 }
