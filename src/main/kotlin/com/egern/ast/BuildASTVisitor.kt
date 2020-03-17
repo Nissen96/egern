@@ -122,10 +122,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
-        return visitFuncDecl(ctx)
+        return visitFuncDecl(ctx, null)
     }
 
-    private fun visitFuncDecl(ctx: MainParser.FuncDeclContext, classId: String? = null): ASTNode {
+    private fun visitFuncDecl(ctx: MainParser.FuncDeclContext, classId: String?): ASTNode {
         val returnType = getType(ctx.typeDecl())
         val children = (ctx.funcBody().children?.map { it.accept(this) } ?: emptyList()).toMutableList()
 
