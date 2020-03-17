@@ -1,8 +1,6 @@
 package com.egern.emit
 
 import com.egern.codegen.*
-import com.egern.util.pow
-import java.lang.Exception
 
 abstract class Emitter(
     private val instructions: List<Instruction>,
@@ -75,7 +73,7 @@ abstract class Emitter(
     }
 
     private fun emitDeallocateInternalHeap(target: InstructionTarget) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate(emitInstructionTarget(target)), syntax.register("rdi"))
+        val (arg1, arg2) = syntax.argOrder(emitInstructionTarget(target), syntax.register("rdi"))
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
