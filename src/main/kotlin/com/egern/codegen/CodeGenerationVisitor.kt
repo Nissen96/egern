@@ -306,7 +306,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
 
         // Push return value to stack as function/method calls can be used as an expression
-        add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct)))
+        add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct), comment = "Push return value"))
     }
 
     override fun preVisit(block: Block) {
@@ -812,7 +812,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun visit(thisExpr: ThisExpr) {
-        add(Instruction(InstructionType.PUSH, getIdLocation(thisExpr.objectId)))
+        add(Instruction(InstructionType.PUSH, getIdLocation(thisExpr.objectId), comment = "Push object reference"))
     }
 
     override fun visit(classField: ClassField) {
@@ -826,14 +826,16 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             Instruction(
                 InstructionType.MOV,
                 classPointer,
-                InstructionArg(Register(OpReg1), Direct)
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Store class pointer in register"
             )
         )
 
         add(
             Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Register(OpReg1), IndirectRelative(fieldOffset + 1))
+                InstructionArg(Register(OpReg1), IndirectRelative(-(fieldOffset + 1))),
+                comment = "Push field value to stack"
             )
         )
     }
