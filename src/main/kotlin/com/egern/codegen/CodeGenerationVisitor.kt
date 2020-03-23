@@ -86,14 +86,32 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     private fun populateVTable() {
         var currentOffset = 0
+
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(VTable, Indirect),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Store Vtable base address in register"
+            )
+        )
+
         classDefinitions.forEach {
             it.vTableOffset = currentOffset
             it.getMethods().forEach { method ->
                 add(
                     Instruction(
                         InstructionType.MOV,
-                        InstructionArg(Memory(method.startLabel), Direct),
-                        InstructionArg(VTable, IndirectRelative(currentOffset)),
+                        InstructionArg(ImmediateValue(method.startLabel), Direct),
+                        InstructionArg(Register(OpReg2), Direct),
+                        comment = "Store address of function"
+                    )
+                )
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Register(OpReg2), Direct),
+                        InstructionArg(Register(OpReg1), IndirectRelative(currentOffset)),
                         comment = "Add method to Vtable"
                     )
                 )
@@ -215,32 +233,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         val scopeDiff = symbolTable.scope - decl.symbolTable.scope
         val numArgs = funcCall.args.size
 
-        // Move first arguments (after caller saved registers) to registers
-        for (index in (0 until min(PARAMS_IN_REGISTERS, numArgs))) {
-            add(
-                Instruction(
-                    InstructionType.MOV,
-                    InstructionArg(RSP, IndirectRelative(-numArgs + index + 1)),
-                    InstructionArg(Register(ParamReg(index)), Direct),
-                    comment = "Move argument to parameter register $index"
-                )
-            )
-        }
-
-
-        // Push remaining arguments to stack in reverse order
-        for (index in (0 until numArgs - PARAMS_IN_REGISTERS)) {
-            add(
-                Instruction(
-                    InstructionType.PUSH,
-                    InstructionArg(
-                        RSP,
-                        IndirectRelative(-(2 * index))
-                    ),
-                    comment = "Push argument to stack"
-                )
-            )
-        }
+        passFunctionArgs(numArgs)
 
         if (scopeDiff < 0) {
             // Call is in nested func declaration
@@ -266,6 +259,39 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 comment = "Call function"
             )
         )
+
+        functionEpilogue(numArgs)
+    }
+
+    private fun passFunctionArgs(numArgs: Int) {
+        // Move first arguments (after caller saved registers) to registers
+        for (index in (0 until min(PARAMS_IN_REGISTERS, numArgs))) {
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(RSP, IndirectRelative(-numArgs + index + 1)),
+                    InstructionArg(Register(ParamReg(index)), Direct),
+                    comment = "Move argument to parameter register $index"
+                )
+            )
+        }
+
+        // Push remaining arguments to stack in reverse order
+        for (index in (0 until numArgs - PARAMS_IN_REGISTERS)) {
+            add(
+                Instruction(
+                    InstructionType.PUSH,
+                    InstructionArg(
+                        RSP,
+                        IndirectRelative(-(2 * index))
+                    ),
+                    comment = "Push argument to stack"
+                )
+            )
+        }
+    }
+
+    private fun functionEpilogue(numArgs: Int) {
         val parametersOnStack = max(numArgs - PARAMS_IN_REGISTERS, 0)
         add(
             Instruction(
@@ -278,7 +304,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(Instruction(InstructionType.META, MetaOperation.DeallocateStackSpace, MetaOperationArg(numArgs)))
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
 
-        // Push return value to stack as FuncCall can be used as an expression
+        // Push return value to stack as function/method calls can be used as an expression
         add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct)))
     }
 
@@ -659,6 +685,25 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         )
     }
 
+    override fun midVisit(classDecl: ClassDecl) {
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(classDecl.endLabel), Direct),
+                comment = "Jump to end of class"
+            )
+        )
+    }
+
+    override fun postVisit(classDecl: ClassDecl) {
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(classDecl.endLabel), Direct)
+            )
+        )
+    }
+
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         add(
             Instruction(
@@ -672,13 +717,27 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, IndirectRelative(vTableOffset)),
-                InstructionArg(ReturnValue, Indirect),
+                InstructionArg(VTable, Indirect),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Save pointer to vtable class entry"
             )
         )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), IndirectRelative(vTableOffset)),
+                InstructionArg(Register(OpReg1), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(ReturnValue, Indirect)
+            )
+        )
 
-        val argSize = objectInstantiation.args.size;
+        val argSize = objectInstantiation.args.size
         for ((index, _) in objectInstantiation.args.withIndex()) {
             add(
                 Instruction(
@@ -703,6 +762,39 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 comment = "Push result to stack"
             )
         )
+    }
+
+    override fun preVisit(methodCall: MethodCall) {
+        add(Instruction(InstructionType.META, MetaOperation.CallerSave))
+    }
+
+    override fun postVisit(methodCall: MethodCall) {
+        // VTable lookup
+        val instance = symbolTable.lookup(methodCall.objectId)!!.info["expr"] as ObjectInstantiation
+        val classDefinition = classDefinitions.find { instance.classId == it.className }!!
+        val vTablePointer = classDefinition.vTableOffset
+        val methodOffset = classDefinition.getMethods().indexOfFirst { it.id == methodCall.methodId }
+        val numArgs = methodCall.args.size
+
+        passFunctionArgs(numArgs)
+
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(VTable, Indirect),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Move Vtable pointer to register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.CALL,
+                InstructionArg(Register(OpReg1), IndirectRelative(vTablePointer + methodOffset)),
+                comment = "Call method"
+            )
+        )
+
+        functionEpilogue(numArgs)
     }
 
     override fun postVisit(printStmt: PrintStmt) {

@@ -8,12 +8,14 @@ class Program(val children: List<ASTNode>, lineNumber: Int, charPosition: Int) :
         visitor.preVisit(this)
         children.forEach {
             when (it) {
+                is ClassDecl -> it.accept(visitor)
                 is Statement -> it.accept(visitor)
                 is FuncCall -> {
                     visitor.preFuncCallVisit(this)
                     it.accept(visitor)
                     visitor.postFuncCallVisit(this)
                 }
+                is MethodCall -> it.accept(visitor)
             }
         }
         visitor.midVisit(this)

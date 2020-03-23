@@ -11,13 +11,14 @@ class ClassDecl(
     val funcDecl: List<FuncDecl>,
     lineNumber: Int, charPosition: Int
 ) : ASTNode(lineNumber, charPosition) {
-    //lateinit var fields
+    lateinit var endLabel: String
 
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         varDecl.forEach {
             it.accept(visitor)
         }
+        visitor.midVisit(this)
         funcDecl.forEach {
             it.accept(visitor)
         }

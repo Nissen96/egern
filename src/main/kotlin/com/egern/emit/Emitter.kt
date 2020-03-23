@@ -62,8 +62,7 @@ abstract class Emitter(
 
     private fun emitAllocateVTable() {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"), syntax.register("rdi"))
-        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(VTable))
-        val (arg5, arg6) = syntax.argOrder(arg3, syntax.indirect(VTABLE_POINTER))
+        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(VTABLE_POINTER))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for malloc call"
@@ -71,10 +70,6 @@ abstract class Emitter(
         emitRequestProgramHeap()
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
-            "Move returned heap pointer to vtable pointer register"
-        )
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
             "Save start of vtable pointer globally"
         )
     }
@@ -146,7 +141,7 @@ abstract class Emitter(
             RBP -> syntax.register("rbp")
             RSP -> syntax.register("rsp")
             RHP -> syntax.register("rbx")
-            VTable -> syntax.register("r14")
+            VTable -> VTABLE_POINTER
             ReturnValue -> syntax.register("rax")
             StaticLink -> syntax.register("r15")
             MainLabel -> emitMainLabel()
@@ -259,10 +254,10 @@ abstract class Emitter(
         val (arg3, arg4) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * size}"), emitInstructionTarget(RHP))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            "Move pointer to return value"
+            "Move heap pointer to return value"
         ).addLine(
             syntax.ops.getValue(InstructionType.ADD), arg3, arg4,
-            "Offset pointer by allocated bytes"
+            "Offset heap pointer by allocated bytes"
         )
     }
 
