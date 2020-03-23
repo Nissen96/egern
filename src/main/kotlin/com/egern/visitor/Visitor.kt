@@ -79,6 +79,8 @@ interface Visitor {
     fun preVisit(returnStmt: ReturnStmt) {}
     fun postVisit(returnStmt: ReturnStmt) {}
 
+    fun visit(thisExpr: ThisExpr) {}
+
     fun preVisit(varAssign: VarAssign<*>) {}
     fun midVisit(varAssign: VarAssign<*>) {}
     fun postVisit(varAssign: VarAssign<*>) {}

@@ -2,6 +2,7 @@ package com.egern.types
 
 import com.egern.ast.*
 import com.egern.error.ErrorLogger
+import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
@@ -9,7 +10,8 @@ import com.egern.util.*
 import com.egern.visitor.Visitor
 import java.lang.Exception
 
-class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
+class TypeCheckingVisitor(private var currentTable: SymbolTable, private val classDefinitions: List<ClassDefinition>) :
+    Visitor {
     private val functionStack = stackOf<FuncDecl>()
 
     override fun preVisit(funcDecl: FuncDecl) {
@@ -38,6 +40,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         return when (symbol.type) {
             SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
             SymbolType.Parameter -> symbol.info["type"] as ExprType
+            SymbolType.Field -> symbol.info["type"] as ExprType
             else -> throw Exception("Can't derive type for IdExpr")
         }
     }
@@ -112,7 +115,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     override fun preVisit(varAssign: VarAssign<*>) {
-        varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter)) }
+        varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field)) }
         val type = deriveType(varAssign.expr)
         if (type == VOID) {
             ErrorLogger.log(varAssign, "Assigning to void is not valid.")
@@ -144,7 +147,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
     }
 
     override fun visit(idExpr: IdExpr) {
-        lookupSymbol(idExpr.id, listOf(SymbolType.Variable, SymbolType.Parameter))
+        lookupSymbol(idExpr.id, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field))
     }
 
     override fun postVisit(returnStmt: ReturnStmt) {
@@ -206,6 +209,13 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
                 }
             }
         }
+    }
 
+    override fun preVisit(classDecl: ClassDecl) {
+        currentTable = classDefinitions.find { classDecl.id == it.className }!!.symbolTable
+    }
+
+    override fun postVisit(classDecl: ClassDecl) {
+        currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
     }
 }

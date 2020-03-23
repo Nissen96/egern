@@ -43,10 +43,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitMethodCall(ctx: MainParser.MethodCallContext): ASTNode {
         val funcCall = ctx.funcCall()
+
+        // Method calls have an implicit first argument, referencing the object
         return MethodCall(
             if (ctx.ID() != null) ctx.ID().text else "this",
             funcCall.ID().text,
-            funcCall.argList().expr().map { it.accept(this) as Expr },
+            listOf(ThisExpr(ctx.ID().text)) + funcCall.argList().expr().map { it.accept(this) as Expr },
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )

@@ -58,7 +58,7 @@ fun main(args: Array<String>) {
         ast.accept(printVisitor)
     }
 
-    val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable)
+    val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable, classVisitor.classDefinitions)
     ast.accept(typeCheckingVisitor)
 
     val platform = PlatformManager()

@@ -1,5 +1,6 @@
 package com.egern.ast
 
+import com.egern.symbols.SymbolTable
 import com.egern.types.ExprType
 import com.egern.visitor.Visitor
 

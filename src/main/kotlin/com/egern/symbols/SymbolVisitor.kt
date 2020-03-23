@@ -10,6 +10,7 @@ class SymbolVisitor : Visitor {
     var currentTable = SymbolTable(0, null)
     private val baseClass = ClassDefinition("Base", null)
     val classDefinitions = mutableListOf(baseClass)
+    private var isInsideClass = false
 
     private fun returnToParentScope() {
         currentTable = currentTable.parent!!
@@ -61,9 +62,12 @@ class SymbolVisitor : Visitor {
             currentTable.insert(
                 Symbol(
                     id,
-                    SymbolType.Variable,
+                    if (isInsideClass) SymbolType.Field else SymbolType.Variable,
                     currentScopeLevel,
-                    mapOf("variableOffset" to varCountStack.peek(), "expr" to varDecl.expr)
+                    mapOf(
+                        (if (isInsideClass) "fieldOffset" else "variableOffset") to varCountStack.peek(),
+                        "expr" to varDecl.expr
+                    )
                 )
             )
             varCountStack.apply { it + 1 }
@@ -72,11 +76,29 @@ class SymbolVisitor : Visitor {
     }
 
     override fun preVisit(classDecl: ClassDecl) {
+        currentScopeLevel++
         createNewScope()
-        classDefinitions.add(ClassDefinition(classDecl.id, baseClass))
+        for ((index, field) in classDecl.constructor.withIndex()) {
+            currentTable.insert(
+                Symbol(
+                    field.first,
+                    SymbolType.Field,
+                    currentScopeLevel,
+                    mapOf("fieldOffset" to index, "type" to field.second)
+                )
+            )
+        }
+        val classDefinition = ClassDefinition(classDecl.id, baseClass)
+        classDefinition.symbolTable = currentTable
+        classDefinitions.add(classDefinition)
+        varCountStack.push(classDecl.constructor.size)
+        isInsideClass = true
     }
 
     override fun postVisit(classDecl: ClassDecl) {
+        isInsideClass = false
+        currentScopeLevel--
         returnToParentScope()
+        classDefinitions.last().numFields = varCountStack.pop()!!
     }
 }

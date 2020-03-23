@@ -3,6 +3,7 @@ package com.egern.codegen
 import com.egern.ast.*
 import com.egern.labels.LabelGenerator
 import com.egern.symbols.ClassDefinition
+import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.util.*
@@ -348,6 +349,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     private fun getIdLocation(id: String, checkDeclared: Boolean = false): InstructionArg {
+        // Find static link address for scope containing given id
+        val symbol = symbolTable.lookup(id, checkDeclared) ?: throw Exception("Symbol $id is undefined")
+        return if (symbol.type == SymbolType.Field) getMethodFieldLocation(symbol) else getStackLocation(symbol)
+    }
+
+    private fun getStackLocation(symbol: Symbol): InstructionArg {
         /**
          * Get the location of a local variable or parameter from id
          * The id can be in the current scope or any parent scope of this,
@@ -357,13 +364,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
          * First 6 parameters are for the current scope saved in registers
          * For any enclosing scope, they have been saved at the top of the relevant stack frame
          */
-        // Find static link address for scope containing given id
-        val symbol = symbolTable.lookup(id, checkDeclared) ?: throw Exception("Symbol $id is undefined")
-        val scopeDiff = symbolTable.scope - symbol.scope
-        val symbolOffset =
-            symbol.info[if (symbol.type == SymbolType.Variable) "variableOffset" else "paramOffset"] as Int
+
+        val symbolOffset = when (symbol.type) {
+            SymbolType.Variable -> symbol.info["variableOffset"]
+            SymbolType.Parameter -> symbol.info["paramOffset"]
+            else -> throw Exception("That's illegal - no higher order functions please")
+        } as Int
 
         // Symbol is a parameter (1-6) in current scope - value is in register
+        val scopeDiff = symbolTable.scope - symbol.scope
         if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {
             return InstructionArg(Register(ParamReg(symbolOffset)), Direct)
         }
@@ -379,10 +388,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 // Calculate offset for params on stack (in non-reversed order)
                 else -> PARAM_OFFSET - (symbolOffset - PARAMS_IN_REGISTERS)
             }
-            else -> throw Exception("Invalid id $id")
+            else -> throw Exception("Invalid id ${symbol.id}")
         }
 
         return InstructionArg(StaticLink, IndirectRelative(offset))
+    }
+
+    private fun getMethodFieldLocation(symbol: Symbol): InstructionArg {
+        val fieldOffset = symbol.info["fieldOffset"] as Int
+        return InstructionArg(Register(ParamReg(0)), IndirectRelative(fieldOffset + 1))
     }
 
     override fun postVisit(compExpr: CompExpr) {
@@ -795,6 +809,33 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         )
 
         functionEpilogue(numArgs)
+    }
+
+    override fun visit(thisExpr: ThisExpr) {
+        add(Instruction(InstructionType.PUSH, getIdLocation(thisExpr.objectId)))
+    }
+
+    override fun visit(classField: ClassField) {
+        val className = (symbolTable.lookup(classField.objectId)!!.info["expr"] as ObjectInstantiation).classId
+        val classDefinition = classDefinitions.find { className == it.className }!!
+        val fieldSymbol = classDefinition.symbolTable.lookup(classField.fieldId)!!
+        val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
+        val classPointer = getIdLocation(classField.objectId)
+
+        add(
+            Instruction(
+                InstructionType.MOV,
+                classPointer,
+                InstructionArg(Register(OpReg1), Direct)
+            )
+        )
+
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Register(OpReg1), IndirectRelative(fieldOffset + 1))
+            )
+        )
     }
 
     override fun postVisit(printStmt: PrintStmt) {
