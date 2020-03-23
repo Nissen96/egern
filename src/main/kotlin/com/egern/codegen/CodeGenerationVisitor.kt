@@ -638,6 +638,44 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) :
         )
     }
 
+    override fun postVisit(objectInstantiation: ObjectInstantiation) {
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateHeapSpace,
+                MetaOperationArg(objectInstantiation.args.size + 1)
+            )
+        )
+
+        // TODO: Move VTable pointer to first entry
+
+        val argSize = objectInstantiation.args.size;
+        for ((index, _) in objectInstantiation.args.withIndex()) {
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Pop expression to register 1"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(OpReg1), Direct),
+                    InstructionArg(ReturnValue, IndirectRelative(-(argSize - index))),
+                    comment = "Move expression to variable $index"
+                )
+            )
+        }
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Push result to stack"
+            )
+        )
+    }
+
     override fun postVisit(printStmt: PrintStmt) {
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(
