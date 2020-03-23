@@ -124,12 +124,6 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     override fun midVisit(program: Program) {
         add(
             Instruction(
-                InstructionType.JMP,
-                InstructionArg(Memory("main_end"), Direct)
-            )
-        )
-        add(
-            Instruction(
                 InstructionType.PUSH,
                 InstructionArg(ReturnValue, Direct),
                 comment = "Save return value before program deallocation"
@@ -146,6 +140,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 InstructionType.POP,
                 InstructionArg(ReturnValue, Direct),
                 comment = "Restore return value"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory("main_end"), Direct),
+                comment = "Jump to end of program"
             )
         )
     }
