@@ -5,6 +5,7 @@ import MainParser
 import com.egern.antlr.ThrowingErrorListener
 import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
+import com.egern.classes.ClassVisitor
 import com.egern.codegen.CodeGenerationVisitor
 import com.egern.codegen.PreCodeGenerationVisitor
 import com.egern.emit.*
@@ -45,6 +46,9 @@ fun main(args: Array<String>) {
 
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)
+
+    val classVisitor = ClassVisitor(symbolVisitor.classDefinitions)
+    ast.accept(classVisitor)
 
     if (doPrint) {
         val printVisitor = PrintSymbolTableVisitor()

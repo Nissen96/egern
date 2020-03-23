@@ -35,7 +35,7 @@ whileLoop: 'while' '(' expr ')' block ;
 
 block:  '{' ( stmt | funcCall ';'? | methodCall ';'? )* '}' ;
 
-classDecl: 'class' CLASSNAME ('(' paramList ')')? '{' classBody '}' ;
+classDecl: 'class' CLASSNAME ('(' paramList ')')? (':' CLASSNAME)? '{' classBody '}' ;
 classBody: (methodDecl | fieldDecl)* ;
 
 methodDecl: funcDecl ;

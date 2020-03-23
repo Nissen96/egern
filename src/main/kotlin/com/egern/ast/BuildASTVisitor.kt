@@ -14,10 +14,13 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
-        val classId = ctx.CLASSNAME().text
+        val classId = ctx.CLASSNAME(0).text
         return ClassDecl(
             classId,
-            if (ctx.paramList() != null) ctx.paramList().ID().mapIndexed { index, it -> it.text to getType(ctx.paramList().typeDecl()[index]) } else emptyList(),
+            if (ctx.paramList() != null) ctx.paramList().ID().mapIndexed { index, it ->
+                it.text to getType(ctx.paramList().typeDecl()[index])
+            } else emptyList(),
+            if (ctx.CLASSNAME(1) != null) ctx.CLASSNAME(1).text else "Base",
             ctx.classBody().fieldDecl().map { visitFieldDecl(it, classId) as VarDecl<*> },
             ctx.classBody().methodDecl().map { visitMethodDecl(it, classId) as FuncDecl },
             lineNumber = ctx.start.line,

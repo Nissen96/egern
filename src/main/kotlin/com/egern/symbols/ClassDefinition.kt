@@ -3,7 +3,7 @@ package com.egern.symbols
 import com.egern.error.ErrorLogger
 import java.lang.Exception
 
-class ClassDefinition(val className: String, val parent: ClassDefinition?) {
+class ClassDefinition(val className: String, var superclass: ClassDefinition?) {
     private val fields: MutableList<String> = mutableListOf()
     private val methods: MutableList<String> = mutableListOf()
 
@@ -19,6 +19,6 @@ class ClassDefinition(val className: String, val parent: ClassDefinition?) {
     fun lookupMethod(id: String): Boolean? {
         // Find symbol in this scope or any parent's
         val foundSymbol = id in methods
-        return if (foundSymbol) true else parent?.lookupMethod(id)
+        return if (foundSymbol) true else superclass?.lookupMethod(id)
     }
 }
