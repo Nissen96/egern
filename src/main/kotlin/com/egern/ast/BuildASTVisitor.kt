@@ -139,9 +139,15 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             children.add(ReturnStmt(IntExpr(0, isVoid = true)))
         }
 
+        val paramList = mutableListOf<Pair<String, ExprType>>()
+        if (classId != null) paramList.add("this" to CLASS(classId))  // Add implicit object reference to method calls
+        paramList.addAll(ctx.paramList().ID().mapIndexed { index, it ->
+            it.text to getType(ctx.paramList().typeDecl()[index])
+        })
+
         return FuncDecl(
             ctx.ID().text,
-            ctx.paramList().ID().mapIndexed { index, it -> it.text to getType(ctx.paramList().typeDecl()[index]) },
+            paramList,
             returnType,
             children,
             classId,

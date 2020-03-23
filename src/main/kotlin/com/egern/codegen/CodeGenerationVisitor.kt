@@ -91,7 +91,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Indirect),
+                InstructionArg(VTable, Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Store Vtable base address in register"
             )
@@ -732,23 +732,25 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Indirect),
+                InstructionArg(VTable, Direct),
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Save pointer to vtable class entry"
+                comment = "Get pointer to vtable"
             )
         )
         add(
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(Register(OpReg1), IndirectRelative(vTableOffset)),
-                InstructionArg(Register(OpReg1), Direct)
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Get pointer to specific class entry in vtable"
             )
         )
         add(
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(Register(OpReg1), Direct),
-                InstructionArg(ReturnValue, Indirect)
+                InstructionArg(ReturnValue, Indirect),
+                comment = "Save class pointer at beginning of object in heap"
             )
         )
 
@@ -758,7 +760,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 Instruction(
                     InstructionType.POP,
                     InstructionArg(Register(OpReg1), Direct),
-                    comment = "Pop expression to register 1"
+                    comment = "Pop expression result to register 1"
                 )
             )
             add(
@@ -766,7 +768,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
                     InstructionArg(ReturnValue, IndirectRelative(-(argSize - index))),
-                    comment = "Move expression to variable $index"
+                    comment = "Save value at object's constructor field $index"
                 )
             )
         }
@@ -783,9 +785,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
     }
 
+    private fun getObjectInstance(objectId: String): ObjectInstantiation {
+        var instance = symbolTable.lookup(objectId)!!.info["expr"]
+        while (instance is IdExpr) {
+            instance = symbolTable.lookup(instance.id)!!.info["expr"]
+        }
+        return instance as ObjectInstantiation
+    }
+
     override fun postVisit(methodCall: MethodCall) {
         // VTable lookup
-        val instance = symbolTable.lookup(methodCall.objectId)!!.info["expr"] as ObjectInstantiation
+        val instance = getObjectInstance(methodCall.objectId)
         val classDefinition = classDefinitions.find { instance.classId == it.className }!!
         val vTablePointer = classDefinition.vTableOffset
         val methodOffset = classDefinition.getMethods().indexOfFirst { it.id == methodCall.methodId }
@@ -808,14 +818,21 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 comment = "Call method"
             )
         )
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop object reference"
+            )
+        )
 
         functionEpilogue(numArgs)
     }
-
+/*
     override fun visit(thisExpr: ThisExpr) {
         add(Instruction(InstructionType.PUSH, getIdLocation(thisExpr.objectId), comment = "Push object reference"))
     }
-
+*/
     override fun visit(classField: ClassField) {
         val className = (symbolTable.lookup(classField.objectId)!!.info["expr"] as ObjectInstantiation).classId
         val classDefinition = classDefinitions.find { className == it.className }!!
@@ -831,7 +848,6 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 comment = "Store class pointer in register"
             )
         )
-
         add(
             Instruction(
                 InstructionType.PUSH,
@@ -839,6 +855,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 comment = "Push field value to stack"
             )
         )
+    /*
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop object reference"
+            )
+        )
+     */
     }
 
     override fun postVisit(printStmt: PrintStmt) {

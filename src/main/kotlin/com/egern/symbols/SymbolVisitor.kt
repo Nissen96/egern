@@ -76,7 +76,6 @@ class SymbolVisitor : Visitor {
     }
 
     override fun preVisit(classDecl: ClassDecl) {
-        currentScopeLevel++
         createNewScope()
         for ((index, field) in classDecl.constructor.withIndex()) {
             currentTable.insert(
@@ -97,7 +96,6 @@ class SymbolVisitor : Visitor {
 
     override fun postVisit(classDecl: ClassDecl) {
         isInsideClass = false
-        currentScopeLevel--
         returnToParentScope()
         classDefinitions.last().numFields = varCountStack.pop()!!
     }
