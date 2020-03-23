@@ -96,6 +96,7 @@ abstract class Emitter(
             InstructionType.MOD -> emitModulo(instruction)
             InstructionType.NOT -> emitBooleanNot(instruction)
             InstructionType.LABEL -> emitLabel(instruction)
+            InstructionType.CALL -> emitCall(instruction)
             InstructionType.META -> emitMetaOp(instruction)
             in syntax.ops -> emitSimpleInstruction(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
@@ -105,6 +106,12 @@ abstract class Emitter(
             builder.addComment(instruction.comment)
         }
         builder.newline()
+    }
+
+    private fun emitCall(instruction: Instruction) {
+        val instr = syntax.ops.getValue(instruction.instructionType)
+        builder.addOp(instr)
+        builder.addRegs("*${emitArg(instruction.args[0])}")
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
