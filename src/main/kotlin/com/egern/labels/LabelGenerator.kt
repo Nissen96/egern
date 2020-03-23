@@ -1,4 +1,4 @@
-package com.egern.codegen
+package com.egern.labels
 
 object LabelGenerator {
     private var counter = 0

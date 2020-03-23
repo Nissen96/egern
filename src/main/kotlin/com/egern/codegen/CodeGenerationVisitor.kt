@@ -1,6 +1,8 @@
 package com.egern.codegen
 
 import com.egern.ast.*
+import com.egern.labels.LabelGenerator
+import com.egern.symbols.ClassDefinition
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.util.*
@@ -9,7 +11,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
-class CodeGenerationVisitor(private var symbolTable: SymbolTable) :
+class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val classDefinitions: List<ClassDefinition>) :
     Visitor {
     val instructions = ArrayList<Instruction>()
     private val functionStack = stackOf<FuncDecl>()
@@ -73,12 +75,31 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) :
                 MetaOperationArg(program.variableCount)
             )
         )
+        populateVTable()
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.CalleeSave
             )
         )
+    }
+
+    private fun populateVTable() {
+        var currentOffset = 0
+        classDefinitions.forEach {
+            it.vTableOffset = currentOffset
+            it.getMethods().forEach { method ->
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Memory(method.startLabel), Direct),
+                        InstructionArg(VTable, IndirectRelative(currentOffset)),
+                        comment = "Add method to Vtable"
+                    )
+                )
+                currentOffset++
+            }
+        }
     }
 
     override fun midVisit(program: Program) {
@@ -647,7 +668,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable) :
             )
         )
 
-        // TODO: Move VTable pointer to first entry
+        val vTableOffset = classDefinitions.find { it.className == objectInstantiation.classId }!!.vTableOffset
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(VTable, IndirectRelative(vTableOffset)),
+                InstructionArg(ReturnValue, Indirect),
+                comment = "Save pointer to vtable class entry"
+            )
+        )
 
         val argSize = objectInstantiation.args.size;
         for ((index, _) in objectInstantiation.args.withIndex()) {

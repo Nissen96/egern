@@ -1,24 +1,30 @@
 package com.egern.symbols
 
+import com.egern.ast.FuncDecl
 import com.egern.error.ErrorLogger
 import java.lang.Exception
 
 class ClassDefinition(val className: String, var superclass: ClassDefinition?) {
     private val fields: MutableList<String> = mutableListOf()
-    private val methods: MutableList<String> = mutableListOf()
+    private val methods: MutableList<FuncDecl> = mutableListOf()
+    var vTableOffset: Int = -1
 
-    fun insertMethod(id: String) {
+    fun insertMethod(methodDecl: FuncDecl) {
         // Add symbol if it is does not already exist
-        if (id !in methods) {
-            methods.add(id)
+        if (methodDecl !in methods) {
+            methods.add(methodDecl)
         } else {
-            ErrorLogger.log(Exception("Method $id has already been declared in this class!"))
+            ErrorLogger.log(Exception("Method ${methodDecl.id} has already been declared in this class!"))
         }
     }
 
-    fun lookupMethod(id: String): Boolean? {
-        // Find symbol in this scope or any parent's
-        val foundSymbol = id in methods
-        return if (foundSymbol) true else superclass?.lookupMethod(id)
+    fun getMethods(): List<FuncDecl> {
+        return (superclass?.getMethods() ?: emptyList()) + methods
     }
+
+    /*fun lookupMethod(id: String): Boolean? {
+        // Find symbol in this scope or any parent's
+        val foundSymbol = methods.find { it.id == id }
+        return if (foundSymbol) true else superclass?.lookupMethod(id)
+    }*/
 }

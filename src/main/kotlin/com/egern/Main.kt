@@ -7,7 +7,7 @@ import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
 import com.egern.classes.ClassVisitor
 import com.egern.codegen.CodeGenerationVisitor
-import com.egern.codegen.PreCodeGenerationVisitor
+import com.egern.labels.LabelGenerationVisitor
 import com.egern.emit.*
 import com.egern.error.ErrorLogger
 import com.egern.symbols.SymbolVisitor
@@ -47,6 +47,9 @@ fun main(args: Array<String>) {
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)
 
+    val labelGenerationVisitor = LabelGenerationVisitor()
+    ast.accept(labelGenerationVisitor)
+
     val classVisitor = ClassVisitor(symbolVisitor.classDefinitions)
     ast.accept(classVisitor)
 
@@ -58,12 +61,9 @@ fun main(args: Array<String>) {
     val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable)
     ast.accept(typeCheckingVisitor)
 
-    val preCodeGenerationVisitor = PreCodeGenerationVisitor()
-    ast.accept(preCodeGenerationVisitor)
-
     val platform = PlatformManager()
 
-    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.currentTable)
+    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.currentTable, classVisitor.classDefinitions)
     ast.accept(codeGenVisitor)
 
     val emitter: Emitter = when (platform.platform) {
