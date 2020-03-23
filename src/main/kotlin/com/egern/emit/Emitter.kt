@@ -44,7 +44,7 @@ abstract class Emitter(
     private fun emitAllocateProgramHeap() {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"), syntax.register("rdi"))
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
-        val (arg5, arg6) = syntax.argOrder(arg3, syntax.indirect(HEAP_POINTER))
+        val (arg5, arg6) = syntax.argOrder(arg3, HEAP_POINTER)
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for malloc call"
@@ -62,7 +62,7 @@ abstract class Emitter(
 
     private fun emitAllocateVTable() {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"), syntax.register("rdi"))
-        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(VTABLE_POINTER))
+        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), VTABLE_POINTER)
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for malloc call"
@@ -75,12 +75,13 @@ abstract class Emitter(
     }
 
     private fun emitDeallocateInternalHeaps() {
-        emitDeallocateInternalHeap(HEAP_POINTER)
         emitDeallocateInternalHeap(VTABLE_POINTER)
+        emitDeallocateInternalHeap(HEAP_POINTER)
+
     }
 
     private fun emitDeallocateInternalHeap(pointer: String) {
-        val (arg1, arg2) = syntax.argOrder(syntax.indirect(pointer), syntax.register("rdi"))
+        val (arg1, arg2) = syntax.argOrder(pointer, syntax.register("rdi"))
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
@@ -286,7 +287,7 @@ abstract class Emitter(
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
-            "Move stack pointer to deallocate space for local variables"
+            "Move stack pointer to deallocate space for local variables/parameters"
         )
     }
 }

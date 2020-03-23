@@ -299,8 +299,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             Instruction(
                 InstructionType.META,
                 MetaOperation.DeallocateStackSpace,
-                MetaOperationArg(parametersOnStack + 1),
-                comment = "Deallocate pushed arguments"
+                MetaOperationArg(parametersOnStack + 1)
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.DeallocateStackSpace, MetaOperationArg(numArgs)))
@@ -742,7 +741,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 InstructionType.MOV,
                 InstructionArg(Register(OpReg1), IndirectRelative(vTableOffset)),
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Get pointer to specific class entry in vtable"
+                comment = "Get pointer to entry for class '${objectInstantiation.classId}' in vtable"
             )
         )
         add(
@@ -768,7 +767,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
                     InstructionArg(ReturnValue, IndirectRelative(-(argSize - index))),
-                    comment = "Save value at object's constructor field $index"
+                    comment = "Save value at object's constructor field ${index + 1}"
                 )
             )
         }
@@ -776,7 +775,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             Instruction(
                 InstructionType.PUSH,
                 InstructionArg(ReturnValue, Direct),
-                comment = "Push result to stack"
+                comment = "Push object location to stack"
             )
         )
     }
@@ -806,7 +805,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Indirect),
+                InstructionArg(VTable, Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Move Vtable pointer to register"
             )
@@ -818,23 +817,16 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 comment = "Call method"
             )
         )
-        add(
-            Instruction(
-                InstructionType.POP,
-                InstructionArg(Register(OpReg1), Direct),
-                comment = "Pop object reference"
-            )
-        )
-
         functionEpilogue(numArgs)
     }
-/*
+
+
     override fun visit(thisExpr: ThisExpr) {
         add(Instruction(InstructionType.PUSH, getIdLocation(thisExpr.objectId), comment = "Push object reference"))
     }
-*/
+
     override fun visit(classField: ClassField) {
-        val className = (symbolTable.lookup(classField.objectId)!!.info["expr"] as ObjectInstantiation).classId
+        val className = getObjectInstance(classField.objectId).classId
         val classDefinition = classDefinitions.find { className == it.className }!!
         val fieldSymbol = classDefinition.symbolTable.lookup(classField.fieldId)!!
         val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
@@ -855,15 +847,6 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 comment = "Push field value to stack"
             )
         )
-    /*
-        add(
-            Instruction(
-                InstructionType.POP,
-                InstructionArg(Register(OpReg1), Direct),
-                comment = "Pop object reference"
-            )
-        )
-     */
     }
 
     override fun postVisit(printStmt: PrintStmt) {
