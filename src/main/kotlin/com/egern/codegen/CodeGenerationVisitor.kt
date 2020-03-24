@@ -6,6 +6,7 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
+import com.egern.types.CLASS
 import com.egern.util.*
 import com.egern.visitor.Visitor
 import kotlin.math.max
@@ -124,7 +125,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                     Instruction(
                         InstructionType.MOV,
                         InstructionArg(Register(OpReg2), Direct),
-                        InstructionArg(Register(OpReg1), IndirectRelative(currentOffset)),
+                        InstructionArg(Register(OpReg1), IndirectRelative(-currentOffset)),
                         comment = "Add method to Vtable"
                     )
                 )
@@ -274,6 +275,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
 
+        // Deallocate static link
+        add(Instruction(InstructionType.META, MetaOperation.DeallocateStackSpace, MetaOperationArg(1)))
         functionEpilogue(numArgs)
     }
 
@@ -311,7 +314,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             Instruction(
                 InstructionType.META,
                 MetaOperation.DeallocateStackSpace,
-                MetaOperationArg(parametersOnStack + 1)
+                MetaOperationArg(parametersOnStack)
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.DeallocateStackSpace, MetaOperationArg(numArgs)))
@@ -830,18 +833,23 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
     }
 
-    private fun getObjectInstance(objectId: String): ObjectInstantiation {
-        var instance = symbolTable.lookup(objectId)!!.info["expr"]
-        while (instance is IdExpr) {
-            instance = symbolTable.lookup(instance.id)!!.info["expr"]
+    private fun getObjectClass(objectId: String): String {
+        val symbol = symbolTable.lookup(objectId)!!
+        return if (symbol.type == SymbolType.Variable) {
+            var instance = symbolTable.lookup(objectId)!!.info["expr"]
+            while (instance is IdExpr) {
+                instance = symbolTable.lookup(instance.id)!!.info["expr"]
+            }
+            (instance as ObjectInstantiation).classId
+        } else {
+            (symbol.info["type"] as CLASS).className
         }
-        return instance as ObjectInstantiation
     }
 
     override fun postVisit(methodCall: MethodCall) {
         // VTable lookup
-        val instance = getObjectInstance(methodCall.objectId)
-        val classDefinition = classDefinitions.find { instance.classId == it.className }!!
+        val classId = getObjectClass(methodCall.objectId)
+        val classDefinition = classDefinitions.find { classId == it.className }!!
         val vTablePointer = classDefinition.vTableOffset
         val methodOffset = classDefinition.getMethods().indexOfFirst { it.id == methodCall.methodId }
         val numArgs = methodCall.args.size
@@ -859,7 +867,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.CALL,
-                InstructionArg(Register(OpReg1), IndirectRelative(vTablePointer + methodOffset)),
+                InstructionArg(Register(OpReg1), IndirectRelative(-(vTablePointer + methodOffset))),
                 comment = "Call method"
             )
         )
@@ -872,18 +880,18 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun visit(classField: ClassField) {
-        val className = getObjectInstance(classField.objectId).classId
-        val classDefinition = classDefinitions.find { className == it.className }!!
+        val classId = getObjectClass(classField.objectId)
+        val classDefinition = classDefinitions.find { classId == it.className }!!
         val fieldSymbol = classDefinition.symbolTable.lookup(classField.fieldId)!!
         val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
-        val classPointer = getIdLocation(classField.objectId)
+        val objectPointer = getIdLocation(classField.objectId)
 
         add(
             Instruction(
                 InstructionType.MOV,
-                classPointer,
+                objectPointer,
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Store class pointer in register"
+                comment = "Store object pointer in register"
             )
         )
         add(

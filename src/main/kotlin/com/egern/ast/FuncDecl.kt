@@ -28,6 +28,7 @@ class FuncDecl(
                     it.accept(visitor)
                     visitor.postFuncCallVisit(this)
                 }
+                is MethodCall -> it.accept(visitor)
             }
         }
         children.forEach {

@@ -298,7 +298,7 @@ abstract class Emitter(
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
-            "Move stack pointer to deallocate space for local variables/parameters"
+            "Move stack pointer to deallocate space for local variables/parameters/arguments"
         )
     }
 }
