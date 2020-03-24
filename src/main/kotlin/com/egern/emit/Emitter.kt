@@ -113,7 +113,7 @@ abstract class Emitter(
         builder.addOp(instr)
 
         // Check for indirect function call
-        val prefix = if ((instruction.args[0] as InstructionArg).addressingMode is IndirectRelative) "*" else ""
+        val prefix = if ((instruction.args[0] as InstructionArg).instructionTarget is Register) "*" else ""
         builder.addRegs("$prefix${emitArg(instruction.args[0])}")
     }
 
