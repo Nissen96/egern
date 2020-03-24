@@ -35,6 +35,9 @@ interface Visitor {
     fun midVisit(compExpr: CompExpr) {}
     fun postVisit(compExpr: CompExpr) {}
 
+    fun preVisit(fieldDecl: FieldDecl) {}
+    fun postVisit(fieldDecl: FieldDecl) {}
+
     fun preVisit(funcCall: FuncCall) {}
     fun midVisit(funcCall: FuncCall) {}
     fun postVisit(funcCall: FuncCall) {}

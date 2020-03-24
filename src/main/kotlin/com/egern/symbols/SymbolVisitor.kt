@@ -61,11 +61,8 @@ class SymbolVisitor : Visitor {
         for (id in varDecl.ids) {
             currentTable.insert(
                 Symbol(
-                    id,
-                    if (isInsideClass) SymbolType.Field else SymbolType.Variable,
-                    currentScopeLevel,
-                    mapOf(
-                        (if (isInsideClass) "fieldOffset" else "variableOffset") to varCountStack.peek(),
+                    id, SymbolType.Variable, currentScopeLevel, mapOf(
+                        "variableOffset" to varCountStack.peek(),
                         "expr" to varDecl.expr
                     )
                 )
@@ -73,6 +70,21 @@ class SymbolVisitor : Visitor {
             varCountStack.apply { it + 1 }
         }
         varDecl.symbolTable = currentTable
+    }
+
+    override fun preVisit(fieldDecl: FieldDecl) {
+        for (id in fieldDecl.ids) {
+            currentTable.insert(
+                Symbol(
+                    id, SymbolType.Field, currentScopeLevel, mapOf(
+                        "fieldOffset" to varCountStack.peek(),
+                        "expr" to fieldDecl.expr
+                    )
+                )
+            )
+            varCountStack.apply { it + 1 }
+        }
+        fieldDecl.symbolTable = currentTable
     }
 
     override fun preVisit(classDecl: ClassDecl) {

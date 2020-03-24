@@ -1037,21 +1037,19 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun postVisit(varDecl: VarDecl<*>) {
-        // Ignore class fields
-        if (varDecl.classId != null) {
-            add(
-                Instruction(
-                    InstructionType.POP,
-                    InstructionArg(Memory(varDecl.staticDataField), Direct),
-                    comment = "Pop expression result to static data field"
-                )
-            )
-            return
-        }
-
         // First declaration of variable in this scope
         varDecl.ids.forEach { symbolTable.lookup(it)?.isDeclared = true }
         variableAssignment(varDecl.ids)
+    }
+
+    override fun postVisit(fieldDecl: FieldDecl) {
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Memory(fieldDecl.staticDataField), Direct),
+                comment = "Pop expression result to static data field"
+            )
+        )
     }
 
     override fun postVisit(varAssign: VarAssign<*>) {

@@ -1,13 +1,14 @@
 package com.egern.classes
 
 import com.egern.ast.ClassDecl
+import com.egern.ast.FieldDecl
 import com.egern.ast.FuncDecl
 import com.egern.ast.VarDecl
 import com.egern.symbols.ClassDefinition
 import com.egern.visitor.Visitor
 
 class ClassVisitor(val classDefinitions: List<ClassDefinition>) : Visitor {
-    var currentClass = classDefinitions[0]
+    private var currentClass = classDefinitions[0]
 
     override fun preVisit(classDecl: ClassDecl) {
         currentClass = classDefinitions.find { it.className == classDecl.id }!!
@@ -20,9 +21,7 @@ class ClassVisitor(val classDefinitions: List<ClassDefinition>) : Visitor {
         }
     }
 
-    override fun preVisit(varDecl: VarDecl<*>) {
-        if (varDecl.classId != null) {
-            currentClass.insertField(varDecl)
-        }
+    override fun preVisit(fieldDecl: FieldDecl) {
+        currentClass.insertField(fieldDecl)
     }
 }
