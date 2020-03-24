@@ -396,7 +396,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     private fun getMethodFieldLocation(symbol: Symbol): InstructionArg {
         val fieldOffset = symbol.info["fieldOffset"] as Int
-        return InstructionArg(Register(ParamReg(0)), IndirectRelative(fieldOffset + 1))
+        return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + 1)))
     }
 
     override fun postVisit(compExpr: CompExpr) {
