@@ -7,7 +7,7 @@ import com.egern.visitor.Visitor
 class VarDecl<T : Expr>(
     val ids: List<String>,
     val expr: T,
-    classId: String? = null,
+    val classId: String? = null,
     lineNumber: Int,
     charPosition: Int
 ) :

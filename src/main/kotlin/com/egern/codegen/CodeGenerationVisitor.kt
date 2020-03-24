@@ -699,6 +699,10 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         )
     }
 
+    override fun preVisit(classDecl: ClassDecl) {
+        symbolTable = classDefinitions.find { classDecl.id == it.className }!!.symbolTable
+    }
+
     override fun midVisit(classDecl: ClassDecl) {
         add(
             Instruction(
@@ -710,6 +714,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun postVisit(classDecl: ClassDecl) {
+        symbolTable = symbolTable.parent!!
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -719,15 +724,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
+        val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
+        val totalFields = classDefinition.numFields
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(objectInstantiation.args.size + 1)
+                MetaOperationArg(totalFields + 1)
             )
         )
 
-        val vTableOffset = classDefinitions.find { it.className == objectInstantiation.classId }!!.vTableOffset
+        val vTableOffset = classDefinition.vTableOffset
         add(
             Instruction(
                 InstructionType.MOV,
@@ -842,9 +849,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         )
         add(
             Instruction(
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("${fieldOffset + 1}"), Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Store address of field"
+            )
+        )
+        add(
+            Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Register(OpReg1), IndirectRelative(-(fieldOffset + 1))),
-                comment = "Push field value to stack"
+                InstructionArg(Register(OpReg1), if (classField.reference) Direct else Indirect),
+                comment = "Push field ${if (classField.reference) "reference" else "value"} to stack"
             )
         )
     }
@@ -975,16 +990,33 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun postVisit(varDecl: VarDecl<*>) {
+        // Ignore class fields
+        if (varDecl.classId != null) {
+            add(
+                Instruction(
+                    InstructionType.ADD,
+                    InstructionArg(ImmediateValue("8"), Direct),
+                    InstructionArg(RSP, Direct),
+                    comment = "Pop unused field value"
+                )
+            )
+            return
+        }
+
         // First declaration of variable in this scope
         varDecl.ids.forEach { symbolTable.lookup(it)?.isDeclared = true }
         variableAssignment(varDecl.ids)
     }
 
     override fun postVisit(varAssign: VarAssign<*>) {
-        variableAssignment(varAssign.ids, varAssign.indexExprs)
+        variableAssignment(varAssign.ids, varAssign.indexExprs, varAssign.classFields)
     }
 
-    private fun variableAssignment(ids: List<String>, arrayIds: List<ArrayIndexExpr> = listOf()) {
+    private fun variableAssignment(
+        ids: List<String>,
+        arrayIds: List<ArrayIndexExpr> = emptyList(),
+        classFields: List<ClassField> = emptyList()
+    ) {
         // Find each variable/parameter location and set their value to the expression result
         add(Instruction(InstructionType.POP, InstructionArg(Register(OpReg1), Direct), comment = "Expression result"))
         val symbols = ids.map { symbolTable.lookup(it)!! }
@@ -999,7 +1031,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 )
             )
         }
-        for (id in arrayIds) {
+        for (id in arrayIds + classFields) {
+            val name = when (id) {
+                is ClassField -> id.fieldId
+                is ArrayIndexExpr -> id.id
+                else -> throw Exception("Invalid ID type")
+            }
             add(
                 Instruction(
                     InstructionType.POP,
@@ -1012,7 +1049,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
                     InstructionArg(Register(OpReg2), Indirect),
-                    comment = "Set value of ${id.id} at index to expression result"
+                    comment = "Set value of $name at index to expression result"
                 )
             )
         }

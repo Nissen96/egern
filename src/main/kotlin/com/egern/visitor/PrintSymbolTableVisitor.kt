@@ -2,6 +2,7 @@ package com.egern.visitor
 
 import com.egern.ast.*
 import com.egern.symbols.Symbol
+import com.egern.symbols.SymbolType
 
 class PrintSymbolTableVisitor : Visitor {
     override fun preVisit(program: Program) {
@@ -23,7 +24,11 @@ class PrintSymbolTableVisitor : Visitor {
         val scope = varDecl.symbolTable.scope
         for (id in varDecl.ids) {
             val symbol = varDecl.symbolTable.lookup(id)
-            printSymbolLine(symbol, scope, "offset", symbol?.info?.get("variableOffset") as? Int)
+            printSymbolLine(
+                symbol, scope, "offset", symbol?.info?.get(
+                    if (symbol.type == SymbolType.Variable) "variableOffset" else "fieldOffset"
+                ) as? Int
+            )
         }
     }
 
