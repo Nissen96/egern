@@ -8,13 +8,13 @@ import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.util.*
 import com.egern.visitor.Visitor
-import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
 class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val classDefinitions: List<ClassDefinition>) :
     Visitor {
-    val instructions = ArrayList<Instruction>()
+    val instructions = mutableListOf<Instruction>()
+    val dataFields = mutableListOf<String>()
     private val functionStack = stackOf<FuncDecl>()
 
     companion object {
@@ -51,6 +51,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     override fun preVisit(program: Program) {
         functionStack.push(null)
+        populateDataSection()
+
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -83,6 +85,16 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 MetaOperation.CalleeSave
             )
         )
+    }
+
+    private fun populateDataSection() {
+        classDefinitions.forEach { classDef ->
+            classDef.getLocalFields().forEach {
+                val label = DataFieldGenerator.nextLabel(it.ids[0])
+                dataFields.add(label)
+                it.staticDataField = label
+            }
+        }
     }
 
     private fun populateVTable() {
@@ -734,6 +746,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
 
+        // Move class pointer to first object field
         val vTableOffset = classDefinition.vTableOffset
         add(
             Instruction(
@@ -760,6 +773,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
 
+        // Move constructor args to object
         val argSize = objectInstantiation.args.size
         for ((index, _) in objectInstantiation.args.withIndex()) {
             add(
@@ -778,6 +792,31 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 )
             )
         }
+
+        // Move local class fields to object
+        var fieldOffset = argSize + 1
+        classDefinition.getFields().forEach { fieldDecl ->
+            fieldDecl.ids.forEach { _ ->
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Memory(fieldDecl.staticDataField), Direct),
+                        InstructionArg(Register(OpReg1), Direct),
+                        comment = "Get field value from data section"
+                    )
+                )
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Register(OpReg1), Direct),
+                        InstructionArg(ReturnValue, IndirectRelative(-fieldOffset)),
+                        comment = "Save value at object's constructor field ${fieldOffset + 1}"
+                    )
+                )
+                fieldOffset++
+            }
+        }
+
         add(
             Instruction(
                 InstructionType.PUSH,
@@ -850,7 +889,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.ADD,
-                InstructionArg(ImmediateValue("${fieldOffset + 1}"), Direct),
+                InstructionArg(ImmediateValue("${8 * (fieldOffset + 1)}"), Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Store address of field"
             )
@@ -994,10 +1033,9 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         if (varDecl.classId != null) {
             add(
                 Instruction(
-                    InstructionType.ADD,
-                    InstructionArg(ImmediateValue("8"), Direct),
-                    InstructionArg(RSP, Direct),
-                    comment = "Pop unused field value"
+                    InstructionType.POP,
+                    InstructionArg(Memory(varDecl.staticDataField), Direct),
+                    comment = "Pop expression result to static data field"
                 )
             )
             return

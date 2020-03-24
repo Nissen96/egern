@@ -12,11 +12,12 @@ class VarDecl<T : Expr>(
     charPosition: Int
 ) :
     Statement(lineNumber, charPosition), Scopable {
+    lateinit var staticDataField: String
+    override lateinit var symbolTable: SymbolTable
+
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         expr.accept(visitor)
         visitor.postVisit(this)
     }
-
-    override lateinit var symbolTable: SymbolTable
 }

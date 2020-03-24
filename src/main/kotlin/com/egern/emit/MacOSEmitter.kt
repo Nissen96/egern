@@ -2,7 +2,7 @@ package com.egern.emit
 
 import com.egern.codegen.*
 
-class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
+class MacOSEmitter(instructions: List<Instruction>, private val dataFields: List<String>, syntax: SyntaxManager) :
     Emitter(instructions, AsmStringBuilder(";"), syntax) {
 
     override fun emitProgramPrologue() {
@@ -10,11 +10,20 @@ class MacOSEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("global", "_main")
             .addLine("extern", "_printf")
             .addLine("default rel")
+            .newline()
+        emitDataSection()
+        builder.addLine("section .text")
+    }
+
+    override fun emitDataSection() {
+        builder
             .addLine(".bss")
             .addLine("$HEAP_POINTER: resq 1")
             .addLine("$VTABLE_POINTER: resq 1")
-            .newline()
-            .addLine("section .text")
+        dataFields.forEach {
+            builder.addLine("$it: resq 1")
+        }
+        builder.newline()
     }
 
     override fun emitProgramEpilogue() {

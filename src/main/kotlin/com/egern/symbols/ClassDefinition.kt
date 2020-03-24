@@ -34,6 +34,10 @@ class ClassDefinition(val className: String, var superclass: ClassDefinition?) {
         return (superclass?.getMethods() ?: emptyList()) + methods
     }
 
+    fun getLocalFields(): List<VarDecl<*>> {
+        return localFields
+    }
+
     fun getFields(): List<VarDecl<*>> {
         return (superclass?.getFields() ?: emptyList()) + localFields
     }

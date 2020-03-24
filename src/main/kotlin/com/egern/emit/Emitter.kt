@@ -8,6 +8,7 @@ abstract class Emitter(
     private val syntax: SyntaxManager
 ) {
     abstract fun emitProgramPrologue()
+    abstract fun emitDataSection()
     abstract fun emitProgramEpilogue()
     abstract fun emitRequestProgramHeap()
     abstract fun emitFreeProgramHeap()

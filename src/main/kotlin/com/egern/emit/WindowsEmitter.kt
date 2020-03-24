@@ -1,9 +1,8 @@
 package com.egern.emit
 
 import com.egern.codegen.Instruction
-import com.egern.codegen.MetaOperationArg
 
-class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
+class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, syntax: SyntaxManager) :
     Emitter(instructions, AsmStringBuilder(";"), syntax) {
 
     override fun emitProgramPrologue() {
@@ -16,11 +15,17 @@ class WindowsEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("extern", "free")
             .addLine("NULL EQU 0")
             .addLine("STD_HANDLE EQU -11")
+        emitDataSection()
+        builder.addLine("section .text")
+    }
+
+    override fun emitDataSection() {
+        builder
             .addLine("section .bss")
             .addLine("alignb", "8")
             .addLine("Handle", "resq 1")
             .addLine("Written", "resq 1")
-            .addLine("section .text")
+            .newline()
     }
 
     override fun emitProgramEpilogue() {
