@@ -28,7 +28,11 @@ class FuncDecl(
                     it.accept(visitor)
                     visitor.postFuncCallVisit(this)
                 }
-                is MethodCall -> it.accept(visitor)
+                is MethodCall -> {
+                    visitor.preFuncCallVisit(this)
+                    it.accept(visitor)
+                    visitor.postFuncCallVisit(this)
+                }
             }
         }
         children.forEach {

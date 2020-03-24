@@ -251,7 +251,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitIfElse(ctx: MainParser.IfElseContext): ASTNode {
         return IfElse(
             ctx.expr().accept(this) as Expr, ctx.block(0).accept(this) as Block,
-            if (ctx.ifElse() != null) (ctx.ifElse().accept(this) as IfElse) else (ctx.block(1)?.accept(this) as? Block),
+            if (ctx.ifElse() != null)
+                (ctx.ifElse().accept(this) as IfElse)
+            else (ctx.block(1)?.accept(this) as? Block),
             lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
         )
     }

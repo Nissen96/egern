@@ -15,7 +15,11 @@ class Program(val children: List<ASTNode>, lineNumber: Int, charPosition: Int) :
                     it.accept(visitor)
                     visitor.postFuncCallVisit(this)
                 }
-                is MethodCall -> it.accept(visitor)
+                is MethodCall -> {
+                    visitor.preFuncCallVisit(this)
+                    it.accept(visitor)
+                    visitor.postFuncCallVisit(this)
+                }
             }
         }
         visitor.midVisit(this)

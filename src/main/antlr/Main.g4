@@ -27,9 +27,7 @@ varDecl: 'var' (ID '=')+ expr ';'? ;
 varAssign: (assignable '=')+ expr ';'?;
 opAssign: assignable op=('+=' | '-=' | '*=' | '/=' | '%=' ) expr ';'?;
 
-ifElse:  'if' '(' expr ')' block
-      |  'if' '(' expr ')' block 'else' (block | ifElse)
-      ;
+ifElse: 'if' '(' expr ')' block ('else' (block | ifElse))? ;
 
 whileLoop: 'while' '(' expr ')' block ;
 

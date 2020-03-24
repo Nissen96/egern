@@ -5,12 +5,19 @@ import com.egern.types.*
 
 class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     private var level = 0
-    private val fib = listOf(0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)
-    private var dontIndent = false
 
     private fun printIndented(text: Any = "") {
-        val indent = if (indentation >= 0) indentation * level else fib[level] * 4
-        print(" ".repeat(indent) + "$text")
+        print(" ".repeat(indentation * level) + "$text")
+    }
+
+    private fun getType(type: ExprType): String {
+        return when (type) {
+            INT -> "int"
+            BOOLEAN -> "boolean"
+            VOID -> "void"
+            is ARRAY -> "[".repeat(type.depth) + getType(type.innerExpr) + "]".repeat(type.depth)
+            is CLASS -> type.className
+        }
     }
 
     override fun midVisit(arithExpr: ArithExpr) {
@@ -51,7 +58,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postFuncCallVisit(block: Block) {
-        println(";")
+        println()
     }
 
     override fun postVisit(block: Block) {
@@ -75,8 +82,34 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         }
     }
 
+    override fun preVisit(classDecl: ClassDecl) {
+        printIndented("class ${classDecl.id}")
+        if (classDecl.constructor.isNotEmpty()) {
+            print("(${classDecl.constructor.joinToString(", ") { "${it.first}: ${getType(it.second)}" }})")
+        }
+        println(": ${classDecl.superclass} {")
+        level++
+    }
+
+    override fun postVisit(classDecl: ClassDecl) {
+        level--
+        printIndented("}\n\n")
+    }
+
+    override fun visit(classField: ClassField) {
+        print("${classField.objectId}.${classField.fieldId}")
+    }
+
     override fun midVisit(compExpr: CompExpr) {
         print(" ${compExpr.op.value} ")
+    }
+
+    override fun preVisit(fieldDecl: FieldDecl) {
+        printIndented("var " + fieldDecl.ids.joinToString(" = ") + " = ")
+    }
+
+    override fun postVisit(fieldDecl: FieldDecl) {
+        println()
     }
 
     override fun preVisit(funcCall: FuncCall) {
@@ -89,16 +122,6 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun postVisit(funcCall: FuncCall) {
         print(")")
-    }
-
-    private fun getType(type: ExprType): String {
-        return when (type) {
-            INT -> "int"
-            BOOLEAN -> "boolean"
-            VOID -> "void"
-            is ARRAY -> "[".repeat(type.depth) + getType(type.innerExpr) + "]".repeat(type.depth)
-            is CLASS -> type.className
-        }
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
@@ -114,12 +137,12 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postFuncCallVisit(funcDecl: FuncDecl) {
-        println(";")
+        println()
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
         level--
-        printIndented("}\n")
+        printIndented("}\n\n")
     }
 
     override fun visit(idExpr: IdExpr) {
@@ -127,12 +150,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(ifElse: IfElse) {
-        if (dontIndent) {
-            print("if (")
-            dontIndent = false
-        } else {
-            printIndented("if (")
-        }
+        printIndented("if (")
     }
 
     override fun preMidVisit(ifElse: IfElse) {
@@ -141,7 +159,10 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun postMidVisit(ifElse: IfElse) {
         if (ifElse.elseBlock != null) print(" else ")
-        dontIndent = ifElse.elseBlock is IfElse
+        if (ifElse.elseBlock is IfElse) {
+            println("{")
+            level++
+        }
     }
 
     override fun postVisit(ifElse: IfElse) {
@@ -160,6 +181,30 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         print(")")
     }
 
+    override fun preVisit(methodCall: MethodCall) {
+        print("${methodCall.objectId}.${methodCall.methodId}(")
+    }
+
+    override fun midVisit(methodCall: MethodCall) {
+        print(", ")
+    }
+
+    override fun postVisit(methodCall: MethodCall) {
+        print(")")
+    }
+
+    override fun preVisit(objectInstantiation: ObjectInstantiation) {
+        print("${objectInstantiation.classId}(")
+    }
+
+    override fun midVisit(objectInstantiation: ObjectInstantiation) {
+        print(", ")
+    }
+
+    override fun postVisit(objectInstantiation: ObjectInstantiation) {
+        print(")")
+    }
+
     override fun preVisit(parenExpr: ParenExpr) {
         print("(")
     }
@@ -173,7 +218,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(printStmt: PrintStmt) {
-        println(");")
+        println(")")
     }
 
     override fun preVisit(program: Program) {
@@ -186,7 +231,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postFuncCallVisit(program: Program) {
-        println(";")
+        println()
     }
 
     override fun postVisit(program: Program) {
@@ -201,7 +246,11 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(returnStmt: ReturnStmt) {
-        print(";\n")
+        println()
+    }
+
+    override fun visit(thisExpr: ThisExpr) {
+        print("this")
     }
 
     override fun preVisit(varAssign: VarAssign<*>) {
@@ -216,7 +265,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(varAssign: VarAssign<*>) {
-        println(";")
+        println()
     }
 
     override fun preVisit(varDecl: VarDecl<*>) {
@@ -224,7 +273,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun postVisit(varDecl: VarDecl<*>) {
-        println(";")
+        println()
     }
 
     override fun preVisit(whileLoop: WhileLoop) {

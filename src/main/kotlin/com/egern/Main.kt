@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
     val ast = BuildASTVisitor().visit(cst) as Program
 
     if (doPrint) {
-        val printProgramVisitor = PrintProgramVisitor(-1)
+        val printProgramVisitor = PrintProgramVisitor()
         ast.accept(printProgramVisitor)
     }
 
