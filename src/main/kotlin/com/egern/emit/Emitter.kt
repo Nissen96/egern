@@ -111,7 +111,10 @@ abstract class Emitter(
     private fun emitCall(instruction: Instruction) {
         val instr = syntax.ops.getValue(instruction.instructionType)
         builder.addOp(instr)
-        builder.addRegs("*${emitArg(instruction.args[0])}")
+
+        // Check for indirect function call
+        val prefix = if ((instruction.args[0] as InstructionArg).addressingMode is IndirectRelative) "*" else ""
+        builder.addRegs("$prefix${emitArg(instruction.args[0])}")
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
