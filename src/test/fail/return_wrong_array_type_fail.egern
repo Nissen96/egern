@@ -1,0 +1,5 @@
+func arrayify(arg: int): [boolean] {
+    return [arg]
+}
+
+print(arrayify(4));
