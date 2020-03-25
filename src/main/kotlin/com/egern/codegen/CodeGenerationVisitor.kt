@@ -749,7 +749,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         variableAssignment(varDecl.ids)
     }
 
-    override fun postVisit(varAssign: VarAssign<*>) {
+    override fun postVisit(varAssign: VarAssign) {
         variableAssignment(varAssign.ids, varAssign.indexExprs)
     }
 

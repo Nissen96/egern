@@ -108,7 +108,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable) : Visitor {
         }
     }
 
-    override fun preVisit(varAssign: VarAssign<*>) {
+    override fun preVisit(varAssign: VarAssign) {
         varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter)) }
         val type = deriveType(varAssign.expr)
         if (type == VOID) {
