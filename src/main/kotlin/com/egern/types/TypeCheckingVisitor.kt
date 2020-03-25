@@ -19,7 +19,8 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             INT -> "int"
             BOOLEAN -> "boolean"
             VOID -> "void"
-            is ARRAY -> "[".repeat(type.depth) + typeString(type.innerExpr) + "]".repeat(type.depth)
+            is ARRAY -> "[".repeat(type.depth) + typeString(type.innerType) + "]".repeat(type.depth)
+            is CLASS -> type.className
         }
     }
 
@@ -72,9 +73,9 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             is ArrayIndexExpr -> {
                 val array = getVariableType(expr.id) as ARRAY
                 if (array.depth - expr.indices.size > 0) {
-                    ARRAY(array.depth - expr.indices.size, array.innerExpr)
+                    ARRAY(array.depth - expr.indices.size, array.innerType)
                 } else {
-                    array.innerExpr
+                    array.innerType
                 }
             }
             is ObjectInstantiation -> CLASS(expr.classId)
@@ -95,7 +96,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
         var innerExpr = deriveType(expr)
         if (innerExpr is ARRAY) {
             depth += innerExpr.depth
-            innerExpr = innerExpr.innerExpr
+            innerExpr = innerExpr.innerType
         }
 
         return ARRAY(depth, innerExpr)
@@ -202,7 +203,10 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
         val rhsType = booleanOpExpr.rhs?.let { deriveType(it) }
 
         if (lhsType != exprType) {
-            ErrorLogger.log(booleanOpExpr, "Type mismatch on boolean operator - LHS: ${typeString(lhsType)}")
+            ErrorLogger.log(
+                booleanOpExpr,
+                "Type mismatch on boolean operator${if (rhsType != null) " - LHS" else ""}: ${typeString(lhsType)}"
+            )
         }
         if (rhsType != null && rhsType != exprType) {
             ErrorLogger.log(booleanOpExpr, "Type mismatch on boolean operator - RHS: ${typeString(rhsType)}")
@@ -225,12 +229,12 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     override fun postVisit(compExpr: CompExpr) {
         val lhsType = deriveType(compExpr.lhs)
         if (compExpr.op !in CompOp.validOperators(lhsType)) {
-            ErrorLogger.log(compExpr, "${compExpr.op.value} operation not defined on type ${typeString(lhsType)}")
+            ErrorLogger.log(compExpr.lhs, "${compExpr.op.value} operation not defined on type ${typeString(lhsType)}")
         }
 
-        val rhsType = deriveType(compExpr.lhs)
+        val rhsType = deriveType(compExpr.rhs)
         if (compExpr.op !in CompOp.validOperators(rhsType)) {
-            ErrorLogger.log(compExpr, "${compExpr.op.value} operation not defined on type ${typeString(rhsType)}")
+            ErrorLogger.log(compExpr.rhs, "${compExpr.op.value} operation not defined on type ${typeString(rhsType)}")
         }
 
         if (lhsType != rhsType) {
@@ -242,6 +246,11 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
+        val arrayType = getVariableType(arrayIndexExpr.id) as ARRAY
+        if (arrayIndexExpr.indices.size > arrayType.depth) {
+            ErrorLogger.log(arrayIndexExpr, "Indexing too deeply into array of ${arrayType.depth} dimensions")
+        }
+
         arrayIndexExpr.indices.forEach {
             if (deriveType(it) !is INT) {
                 ErrorLogger.log(it, "Index must be an integer value")
@@ -256,23 +265,23 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             arrayExpr.entries.forEachIndexed { index, element ->
                 val elementType = deriveType(element) as ARRAY
                 if (elementType.depth != arrayType.depth - 1 ||
-                    (elementType.innerExpr != arrayType.innerExpr && elementType.innerExpr != VOID && arrayType.innerExpr != VOID)
+                    (elementType.innerType != arrayType.innerType && elementType.innerType != VOID && arrayType.innerType != VOID)
                 ) {
                     ErrorLogger.log(
                         element,
                         "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
-                                "expected type: ${typeString(arrayType.innerExpr)}"
+                                "expected type: ${typeString(arrayType.innerType)}"
                     )
                 }
             }
         } else {
             arrayExpr.entries.forEachIndexed { index, element ->
                 val elementType = deriveType(element)
-                if (elementType != arrayType.innerExpr) {
+                if (elementType != arrayType.innerType) {
                     ErrorLogger.log(
                         element,
                         "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
-                                "expected type: ${typeString(arrayType.innerExpr)}"
+                                "expected type: ${typeString(arrayType.innerType)}"
                     )
                 }
             }
