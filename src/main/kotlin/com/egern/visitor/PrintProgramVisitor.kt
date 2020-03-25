@@ -218,11 +218,11 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         println(";")
     }
 
-    override fun preVisit(varDecl: VarDecl<*>) {
+    override fun preVisit(varDecl: VarDecl) {
         printIndented("var " + varDecl.ids.joinToString(" = ") + " = ")
     }
 
-    override fun postVisit(varDecl: VarDecl<*>) {
+    override fun postVisit(varDecl: VarDecl) {
         println(";")
     }
 

@@ -54,7 +54,7 @@ class SymbolVisitor : Visitor {
         funcDecl.variableCount = varCountStack.pop()!!
     }
 
-    override fun preVisit(varDecl: VarDecl<*>) {
+    override fun preVisit(varDecl: VarDecl) {
         for (id in varDecl.ids) {
             currentTable.insert(
                 Symbol(
