@@ -16,6 +16,7 @@ import com.egern.util.Platform
 import com.egern.util.PlatformManager
 import com.egern.visitor.PrintProgramVisitor
 import com.egern.visitor.PrintSymbolTableVisitor
+import com.egern.weeding.WeedingVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.lang.Exception
@@ -44,6 +45,9 @@ fun main(args: Array<String>) {
         ast.accept(printProgramVisitor)
         println()
     }
+
+    val weedingVisitor = WeedingVisitor()
+    ast.accept(weedingVisitor)
 
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)

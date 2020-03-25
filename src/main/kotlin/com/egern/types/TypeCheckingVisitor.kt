@@ -34,15 +34,7 @@ class TypeCheckingVisitor(
             checkMethodDecl(funcDecl)
         }
     }
-
-    override fun postVisit(funcDecl: FuncDecl) {
-        symbolTable = symbolTable.parent ?: throw Exception("No more scopes -- please buy another")
-        functionStack.pop()
-        if (!funcDecl.stmts.any { it is ReturnStmt }) {
-            ErrorLogger.log(funcDecl, "No return statement found in function declaration")
-        }
-    }
-
+    
     private fun checkMethodDecl(methodDecl: FuncDecl) {
         // Check modifiers for the method itself
         val methodOverrides = Modifier.OVERRIDE in methodDecl.modifiers

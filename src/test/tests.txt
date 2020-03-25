@@ -92,6 +92,14 @@ Y - Use illegal character
 Y - Missing end brace
 Y - Unicode characters
 
+WEEDING:
+Y - Return nothing from function with non-void return type
+Y - Return only within if-block with no else-block
+Y - Return only in one branch of if-else
+Y - Return missing in one if-else-if branch
+Y - Return missing in a nested execution branch
+Y - Return only in while
+
 TYPECHECKING:
 Y - Calling undeclared function
 Y - Calling nested function from outside scope
@@ -123,7 +131,6 @@ Y - Assign function call with boolean return type to declared integer variable
 Y - Print result of void function
 Y - Assign result of void function
 Y - Pass argument of wrong type
-Y - Return nothing from function with non-void return type
 Y - Return value from function with void return type
 Y - Return value of different type than return type
 
