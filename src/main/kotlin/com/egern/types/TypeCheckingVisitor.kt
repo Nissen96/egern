@@ -24,6 +24,14 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
         }
     }
 
+    override fun preVisit(block: Block) {
+        currentTable = block.symbolTable
+    }
+
+    override fun postVisit(block: Block) {
+        currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
+    }
+
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable = funcDecl.symbolTable
         functionStack.push(funcDecl)
