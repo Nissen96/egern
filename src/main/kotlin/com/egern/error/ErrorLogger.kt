@@ -12,7 +12,7 @@ class ErrorLogger {
         }
 
         fun log(node: ASTNode, message: String) {
-            log(Exception("$message at line ${node.lineNumber} char ${node.charPosition}"))
+            log(Exception("$message [line ${node.lineNumber} char ${node.charPosition}]"))
         }
 
         fun log(exception: Exception) {
