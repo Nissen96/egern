@@ -54,7 +54,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     private fun getVariableType(id: String): ExprType {
-        val symbol = currentTable.lookup(id)!!
+        val symbol = lookupSymbol(id, listOf(SymbolType.Variable, SymbolType.Parameter))
         return when (symbol.type) {
             SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
             SymbolType.Parameter -> symbol.info["type"] as ExprType
@@ -101,33 +101,38 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             expr = if (expr.entries.isNotEmpty()) expr.entries[0] else IntExpr(0, isVoid = true)
         }
 
-        var innerExpr = deriveType(expr)
-        if (innerExpr is ARRAY) {
-            depth += innerExpr.depth
-            innerExpr = innerExpr.innerType
+        var innerType = deriveType(expr)
+        if (innerType is ARRAY) {
+            depth += innerType.depth
+            innerType = innerType.innerType
         }
 
-        return ARRAY(depth, innerExpr)
+        return ARRAY(depth, innerType)
     }
 
-    override fun preVisit(funcCall: FuncCall) {
+    override fun postVisit(funcCall: FuncCall) {
         val sym = lookupSymbol(funcCall.id, listOf(SymbolType.Function))
-        val params = (sym.info["funcDecl"] as FuncDecl).params
+        val funcDecl = sym.info["funcDecl"] as? FuncDecl
+        if (funcDecl == null) {
+            ErrorLogger.log(funcCall, "Invalid function call")
+            return
+        }
+
         val nArgs = funcCall.args.size
-        val nParams = params.size
+        val nParams = funcDecl.params.size
         if (nArgs != nParams) {
             ErrorLogger.log(
                 funcCall,
                 "Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected"
             )
         }
-        funcCall.args.forEachIndexed { index, arg ->
+        funcCall.args.take(nParams).forEachIndexed { index, arg ->
             val argType = deriveType(arg)
-            val paramType = params[index].second
+            val paramType = funcDecl.params[index].second
             if (argType != paramType) {
                 ErrorLogger.log(
                     arg,
-                    "Argument $index is of type ${typeString(argType)} but ${typeString(paramType)} was expected"
+                    "Argument ${index + 1} is of type ${typeString(argType)} but ${typeString(paramType)} was expected"
                 )
             }
         }
@@ -168,20 +173,20 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
         }
     }
 
-    override fun preVisit(varDecl: VarDecl) {
+    override fun postVisit(varDecl: VarDecl) {
         val type = deriveType(varDecl.expr)
         if (type == VOID) {
-            ErrorLogger.log(varDecl, "Declaring a variable of type void is not valid")
+            ErrorLogger.log(varDecl, "Declaring a variable of type void is invalid")
         }
     }
 
-    override fun preVisit(printStmt: PrintStmt) {
+    override fun postVisit(printStmt: PrintStmt) {
         if (printStmt.expr != null && deriveType(printStmt.expr) == VOID) {
-            ErrorLogger.log(printStmt.expr, "Printing void is not valid")
+            ErrorLogger.log(printStmt.expr, "Printing void is invalid")
         }
     }
 
-    override fun preVisit(lenExpr: LenExpr) {
+    override fun postVisit(lenExpr: LenExpr) {
         val exprType = deriveType(lenExpr.expr)
         if (exprType !is ARRAY) {
             ErrorLogger.log(lenExpr.expr, "Len function is undefined for type ${typeString(exprType)}")
