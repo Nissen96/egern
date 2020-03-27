@@ -1,5 +1,5 @@
 func nothing(n: int): int {
-    return;
+    return
 }
 
-nothing(4);
+nothing(4)

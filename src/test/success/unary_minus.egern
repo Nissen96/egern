@@ -1,5 +1,5 @@
 func get(a: int): int {
-    return -a;
+    return -a
 }
-var a = -4;
-print(-(-a * -get(-a)));
+var a = -4
+print(-(-a * -get(-a)))

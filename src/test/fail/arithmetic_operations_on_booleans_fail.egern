@@ -1,21 +1,21 @@
-print(true + 3);
-print(3 + false);
-print(true + false);
+print(true + 3)
+print(3 + false)
+print(true + false)
 
-print(true - 3);
-print(3 - false);
-print(true - false);
+print(true - 3)
+print(3 - false)
+print(true - false)
 
-print(true * 3);
-print(3 * false);
-print(true * false);
+print(true * 3)
+print(3 * false)
+print(true * false)
 
-print(true / 3);
-print(3 / false);
-print(true / false);
+print(true / 3)
+print(3 / false)
+print(true / false)
 
-print(true % 3);
-print(3 % false);
-print(true % false);
+print(true % 3)
+print(3 % false)
+print(true % false)
 
-print(-true);
+print(-true)

@@ -2,4 +2,4 @@ func arrayify(arg: int): [boolean] {
     return [arg]
 }
 
-print(arrayify(4));
+print(arrayify(4))

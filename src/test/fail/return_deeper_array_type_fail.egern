@@ -2,4 +2,4 @@ func arrayify(arg: [int]): [int] {
     return [arg]
 }
 
-print(arrayify([1, 2, 3]));
+print(arrayify([1, 2, 3]))

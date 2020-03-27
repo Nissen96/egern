@@ -1,4 +1,4 @@
 func noReturn(a: int): void {
-    print(a);
+    print(a)
 }
-noReturn(2);
+noReturn(2)

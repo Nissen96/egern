@@ -1,6 +1,6 @@
 func hello(): void {
-    return;
+    return
 }
 
-var a = hello;
-print(a);
+var a = hello
+print(a)

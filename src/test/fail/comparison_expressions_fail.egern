@@ -1,17 +1,17 @@
-print(true == 3);
-print(3 == false);
+print(true == 3)
+print(3 == false)
 
-print(true != 3);
-print(3 != false);
+print(true != 3)
+print(3 != false)
 
-print(true <= 3);
-print(3 <= false);
+print(true <= 3)
+print(3 <= false)
 
-print(true >= 3);
-print(3 >= false);
+print(true >= 3)
+print(3 >= false)
 
-print(true < 3);
-print(3 < false);
+print(true < 3)
+print(3 < false)
 
-print(true > 3);
-print(3 > false);
+print(true > 3)
+print(3 > false)

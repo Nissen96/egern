@@ -1,5 +1,5 @@
 func abc(abc: int): int {
-    return abc;
+    return abc
 }
 
-print(abc(4));
+print(abc(4))

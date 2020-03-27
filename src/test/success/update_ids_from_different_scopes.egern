@@ -1,35 +1,35 @@
-var main_before = 4;
+var main_before = 4
 
 func test(a: int, b: int, c: int, d: int, e: int, f: int, g: int, h: int): int {
-    var test_before = 3;
+    var test_before = 3
     func test2(i: int, j: int, k: int, l: int, m: int, n: int, o: int, p: int): int {
-        var test2_before = 5;
+        var test2_before = 5
         func inner(q: int, r: int, s: int, t: int, u: int, v: int, w: int, x: int): int {
-            main_before = a = test_before = h = test2_before = k = o = q = w = 0;
-            r = 100;
-            x = 14;
-            l = 10;
-            p = 12;
-            test2_after = 23;
-            main_after = 42;
-            return 0;
+            main_before = a = test_before = h = test2_before = k = o = q = w = 0
+            r = 100
+            x = 14
+            l = 10
+            p = 12
+            test2_after = 23
+            main_after = 42
+            return 0
         }
-        var test2_after = 2;
-        inner(main_before, main_after, test_before, test_after, test2_before, test2_after, j, p);
-        print(test2_before);
-        print(test2_after);
-        return 0;
+        var test2_after = 2
+        inner(main_before, main_after, test_before, test_after, test2_before, test2_after, j, p)
+        print(test2_before)
+        print(test2_after)
+        return 0
     }
-    var test_after = 4;
-    test2(h, main_before, f, test_after, d, main_after, test_before, g);
-    print(test_before);
-    print(test_after);
-    return 0;
+    var test_after = 4
+    test2(h, main_before, f, test_after, d, main_after, test_before, g)
+    print(test_before)
+    print(test_after)
+    return 0
 }
 
-var main_after = 3;
+var main_after = 3
 
-test(main_before, 1, 2, 3, 4, 5, 6, main_after);
+test(main_before, 1, 2, 3, 4, 5, 6, main_after)
 
-print(main_before);
-print(main_after);
+print(main_before)
+print(main_after)

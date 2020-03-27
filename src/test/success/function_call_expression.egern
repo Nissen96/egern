@@ -1,5 +1,5 @@
 func test(): int {
-    return 4;
+    return 4
 }
-var a = test();
-print(a);
+var a = test()
+print(a)

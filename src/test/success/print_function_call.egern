@@ -1,4 +1,4 @@
 func hello(a: int): int {
-    return a;
+    return a
 }
-print(hello(3));
+print(hello(3))

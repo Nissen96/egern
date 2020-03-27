@@ -1,15 +1,15 @@
 func outer(a: int): int {
-    var b = 3;
-    var c = inner(a, b);
-    print(c);
+    var b = 3
+    var c = inner(a, b)
+    print(c)
 
     func inner(a: int, b: int): int {
-        var c = 4;
-        return a - b + c;
+        var c = 4
+        return a - b + c
     }
 
-    var d = inner(b, a);
-    return d;
+    var d = inner(b, a)
+    return d
 }
 
-print(outer(4));
+print(outer(4))
