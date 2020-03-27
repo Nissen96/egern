@@ -73,6 +73,7 @@ Y - Print integer
 Y - Print variable
 Y - Print function call
 Y - Print empty
+Y - DOS end-of-line files
 
 
 SHOULD SUCCEED/FAIL?
@@ -94,7 +95,10 @@ Y - Using undeclared variable
 Y - Assigning value to undeclared variable
 Y - Assigning function name to variable
 Y - Assigning value to function name
+Y - Calling a variable as a function
+Y - Calling a parameter as a function
 
+Y - Declare variable before use
 Y - Redeclare variable
 P - Redeclare variable as function (not possible - functions are declared first)
 
