@@ -87,6 +87,11 @@ N - Surpassing min integer value
 
 SHOULD FAIL
 -----------------------------------------------------
+PARSING:
+Y - Use illegal character
+Y - Missing end brace
+Y - Unicode characters
+
 TYPECHECKING:
 Y - Calling undeclared function
 Y - Calling nested function from outside scope
