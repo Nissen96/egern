@@ -40,14 +40,14 @@ fun main(args: Array<String>) {
     val cst = parser.prog()
     val ast = BuildASTVisitor().visit(cst) as Program
 
+    val weedingVisitor = WeedingVisitor()
+    ast.accept(weedingVisitor)
+
     if (doPrint) {
         val printProgramVisitor = PrintProgramVisitor()
         ast.accept(printProgramVisitor)
         println()
     }
-
-    val weedingVisitor = WeedingVisitor()
-    ast.accept(weedingVisitor)
 
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)
