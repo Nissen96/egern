@@ -9,14 +9,24 @@ class WeedingVisitor : Visitor {
         val funcDecl: FuncDecl?,
         val parent: FunctionNode?,
         val children: MutableList<FunctionNode> = mutableListOf(),
-        var isCalled: Boolean = false
+        var calledBy: MutableSet<FunctionNode> = mutableSetOf()
     ) {
         override fun toString(): String {
-            return "${funcDecl?.id}: $isCalled"
+            return "Function ${funcDecl?.id}: $calledBy"
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (other !is FunctionNode) return false
+            return funcDecl == other.funcDecl
+        }
+
+        override fun hashCode(): Int {
+            return funcDecl.hashCode()
         }
     }
 
-    private var functionTree = FunctionNode(null, null)
+    private var functionTree = FunctionNode(null, null)  // Function hierarchy with caller info
+    private val confirmedCalled: MutableSet<FunctionNode> = mutableSetOf(functionTree)  // Memoize called functions
 
     private fun allBranchesReturn(stmts: List<Statement>): Boolean {
         /**
@@ -51,43 +61,14 @@ class WeedingVisitor : Visitor {
         }
     }
 
-    private fun markUsedFunctions(nodes: List<ASTNode>) {
-        /**
-         * Follow every function call to the corresponding function, marking it as used
-         */
-        val funcCalls = nodes.filterIsInstance<FuncCall>()
-
-        // For each function call, mark the corresponding function as used
-        funcCalls.forEach { funcCall ->
-            var currentFunc: FunctionNode? = functionTree
-            var calledFuncNode: FunctionNode? = null
-            while (currentFunc != null) {
-                for (func in currentFunc.children) {
-                    // Search for corresponding function declaration - skip already called functions
-                    if (func.funcDecl?.id == funcCall.id && !func.isCalled) {
-                        func.isCalled = true
-                        calledFuncNode = func
-                        break
-                    }
-                }
-
-                // Recursively visit called function
-                if (calledFuncNode != null) {
-                    functionTree = calledFuncNode
-                    markUsedFunctions(calledFuncNode.funcDecl!!.children)
-                    functionTree = calledFuncNode.parent!!
-                }
-
-                currentFunc = currentFunc.parent
-            }
-        }
-    }
 
     private fun sweepUnusedFunctions(node: ASTNode) {
         /**
-         * Remove all functions which have note been marked as used in the function tree
+         * Recursively remove all unused functions in each scope, starting from the outermost
+         * For each function, check it is part of a call chain starting from a previously confirmed used function
+         * If not, remove it immediately to prevent it being visited, automatically removing its nested functions
          */
-        val usedFunctions = functionTree.children.filter { it.isCalled }
+        val usedFunctions = functionTree.children.filter { functionIsUsed(it) }
 
         if (node is Program) {
             val nonFunctions = node.children.filterNot { it is FuncDecl }
@@ -104,20 +85,47 @@ class WeedingVisitor : Visitor {
         }
     }
 
+    private fun functionIsUsed(func: FunctionNode): Boolean {
+        // Function is used if any call chain involving it contains a previously confirmed used function
+        return if (func in confirmedCalled) {
+            confirmedCalled.add(func)
+            true
+        } else {
+            func.calledBy.any { functionIsUsed(it) }
+        }
+    }
+
     override fun preVisit(program: Program) {
-        // Mark and sweep unused functions
-        println(program.children)
         buildFunctionTree(program.children.filterIsInstance<FuncDecl>())
-        println(functionTree.children)
-        markUsedFunctions(program.children)
-        println(functionTree.children)
+    }
+
+    override fun postVisit(program: Program) {
         sweepUnusedFunctions(program)
-        println(program.children)
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
+        functionTree = functionTree.children.find { it.funcDecl == funcDecl }!!
         if (!allBranchesReturn(funcDecl.children.filterIsInstance<Statement>())) {
             ErrorLogger.log(funcDecl, "Function must always return a value")
+        }
+    }
+
+    override fun postVisit(funcDecl: FuncDecl) {
+        functionTree = functionTree.parent!!
+    }
+
+    override fun postVisit(funcCall: FuncCall) {
+        // Find the corresponding function in the function hierarchy
+        var currentFunc: FunctionNode? = functionTree
+        while (currentFunc != null) {
+            currentFunc.children.forEach {
+                if (it.funcDecl?.id == funcCall.id) {
+                    it.calledBy.add(functionTree)
+                    return
+                }
+            }
+
+            currentFunc = currentFunc.parent
         }
     }
 }
