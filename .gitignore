@@ -7,8 +7,8 @@ cache/
 *.o
 .floo
 .flooignore
-.exe
-.obj
+*.exe
+*.obj
 
 
 # Compiled class file
