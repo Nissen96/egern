@@ -13,13 +13,13 @@ class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, 
             .addLine("extern", "printf")
             .addLine("extern", "malloc")
             .addLine("segment", ".data")
-            .addLine("format_int: db \"%d\", 10, 13, 0")
-            .addLine("format_newline:  db \"\\n\", 0", comment = "Empty format string for C printf")
+            .addLine("format_int: db \"%d\", 10, 0")
+            .addLine("format_newline:  db \"\", 10, 0", comment = "Empty format string for C printf")
             emitDataSection()
             builder.addLine("segment", ".text")
     }
 
-    override fun emitDataSection() {
+	override fun emitDataSection() {
         builder
             .addLine("section .bss")
             .addLine("alignb", "8")
