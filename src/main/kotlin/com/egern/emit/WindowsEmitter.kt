@@ -1,22 +1,22 @@
 package com.egern.emit
 
 import com.egern.codegen.Instruction
+import com.egern.codegen.InstructionType
+import com.egern.codegen.MetaOperationArg
 
 class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, syntax: SyntaxManager) :
     Emitter(instructions, AsmStringBuilder(";"), syntax) {
 
     override fun emitProgramPrologue() {
         builder
-            .addLine("global", "main")
-            .addLine("extern", "GetStdHandle")
-            .addLine("extern", "WriteFile")
-            .addLine("extern", "ExitProcess")
+            .addLine("global", "_main")
+            .addLine("extern", "printf")
             .addLine("extern", "malloc")
-            .addLine("extern", "free")
-            .addLine("NULL EQU 0")
-            .addLine("STD_HANDLE EQU -11")
-        emitDataSection()
-        builder.addLine("section .text")
+            .addLine("segment", ".data")
+            .addLine("format_int: db \"%d\", 0")
+            .addLine("format_newline:  db \"\\n\"", comment = "Empty format string for C printf")
+            emitDataSection()
+            builder.addLine("segment", ".text")
     }
 
     override fun emitDataSection() {
@@ -33,43 +33,40 @@ class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, 
     }
 
     override fun emitRequestProgramHeap() {
-        builder.addLine("call malloc")
+        //builder.addLine("call malloc")
     }
 
     override fun emitFreeProgramHeap() {
         builder.addLine("call free")
     }
 
-    override fun emitPrint(value: Int) {
-        // TODO: handle print empty
+    override fun emitPrint(isEmpty: Boolean) {
+        val (arg1, arg2) = syntax.argOrder(syntax.register("format_${if (isEmpty) "newline" else "int"}"), syntax.register("rdi"))
+        val (arg3, arg4) = syntax.argOrder(syntax.indirectRelative("rsp", (8 * CALLER_SAVE_REGISTERS.size) + 32, 1), syntax.register("rdx"))
         builder
             .newline()
-            .addLine("; Get handle")
             .addLine("sub", "rsp", "32")
-            .addLine("mov", "ecx", "STD_HANDLE")
-            .addLine("call", "GetStdHandle")
-            .addLine("mov", "qword [REL Handle]", "rax")
-            .addLine("add", "rsp", "32")
-            .newline()
-            .addLine("; Write to file")
-            //.addLine("mov", "rdx", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size}]")
-            .addLine("sub", "rsp", "40")
-            .addLine("mov", "rcx", "qword [REL Handle]")
+            .addLine("; PRINTING USING PRINTF")
+            .addLine(
+                "mov", "rcx", arg2,
+                "Pass 1st argument in %rdi"
+            )
+        if (!isEmpty) {
+            builder.addLine(
+                syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
+                "Pass 2nd argument in %rsi"
+            )
+        }
+        builder
+            .addLine("xor", syntax.register("rax"), syntax.register("rax"), "No floating point registers used")
 
-            .addLine("mov", "r15", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size} + 40]")
-            .addLine("add", "r15", "48")
-            .addLine("push", "r15")
-            .addLine("lea", "rdx", "[rsp]")
-            .addLine("mov", "r8", "1")
-            .addLine("lea", "r9", "[REL Written]")
-            .addLine("mov", "qword [rsp + 4 * 8]", "NULL")
-            .addLine("call", "WriteFile")
-            .addLine("add", "rsp", "40")
+            .addLine("call", "printf", comment = "Call function printf")
+            .addLine("add", "rsp", "32")
 
     }
 
     override fun emitMainLabel(): String {
-        return "main"
+        return "_main"
     }
 
 }

@@ -5,7 +5,7 @@ import com.egern.codegen.*
 abstract class Emitter(
     private val instructions: List<Instruction>,
     protected val builder: AsmStringBuilder,
-    private val syntax: SyntaxManager
+    protected val syntax: SyntaxManager
 ) {
     abstract fun emitProgramPrologue()
     abstract fun emitDataSection()
