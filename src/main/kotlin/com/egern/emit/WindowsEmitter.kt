@@ -13,8 +13,8 @@ class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, 
             .addLine("extern", "printf")
             .addLine("extern", "malloc")
             .addLine("segment", ".data")
-            .addLine("format_int: db \"%d\", 0")
-            .addLine("format_newline:  db \"\\n\"", comment = "Empty format string for C printf")
+            .addLine("format_int: db \"%d\", 10, 13, 0")
+            .addLine("format_newline:  db \"\\n\", 0", comment = "Empty format string for C printf")
             emitDataSection()
             builder.addLine("segment", ".text")
     }
