@@ -22,5 +22,5 @@ jobs:
       run: ./gradlew build -x test --no-daemon
     - name: Compile and validate test files
       working-directory: src/test
-      run: for i in success/*egern; do echo $i; ./test $i; done
+      run: for i in success/*egern; do echo $i; linux/test $i; done
 
