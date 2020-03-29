@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 FOR %%i IN (success\*.*) DO call windows\test.cmd %%i
     
 if errorlevel 1 goto error

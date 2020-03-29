@@ -8,10 +8,10 @@ goto end
 
 :error
 echo Expected:
-cat %expected%
+call type %expected%
 echo.
 echo Actual:
-cat output.txt
+call type output.txt
 
 :end
 del output.txt
