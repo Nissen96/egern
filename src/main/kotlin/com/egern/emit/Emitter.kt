@@ -14,6 +14,7 @@ abstract class Emitter(
     abstract fun emitFreeProgramHeap()
     abstract fun emitPrint(type: Int)
     abstract fun emitMainLabel(): String
+    abstract val paramPassingRegs: List<String>
 
     protected companion object {
         const val VARIABLE_SIZE = 8
@@ -37,23 +38,15 @@ abstract class Emitter(
         return builder.toFinalStr()
     }
 
-    private fun emitAllocateInternalHeaps() {
-        emitAllocateProgramHeap()
-        emitAllocateVTable()
-    }
 
-    private fun emitAllocateProgramHeap() {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"), syntax.register("rdi"))
-        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
-        val (arg5, arg6) = syntax.argOrder(arg3, HEAP_POINTER)
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            "Move argument into parameter register for malloc call"
+            makeComment("Move argument into parameter register for malloc call")
         )
         emitRequestProgramHeap()
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
-            "Move returned heap pointer to fixed heap pointer register"
+            makeComment("Move returned heap pointer to fixed heap pointer register")
         )
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
@@ -104,7 +97,7 @@ abstract class Emitter(
         }
         // Add comment
         if (instruction.comment != null) {
-            builder.addComment(instruction.comment)
+            builder.addComment(makeComment(instruction.comment))
         }
         builder.newline()
     }
@@ -196,7 +189,7 @@ abstract class Emitter(
         val op = if (restore) InstructionType.POP else InstructionType.PUSH
         builder
             .newline()
-            .addComment("Caller/Callee ${if (restore) "Restore" else "Save"}")
+            .addComment(makeComment("Caller/Callee ${if (restore) "Restore" else "Save"}"))
             .newline()
         for (register in (if (restore) registers.reversed() else registers)) {
             builder.addLine(syntax.ops.getValue(op), syntax.register(register))
@@ -207,24 +200,24 @@ abstract class Emitter(
     private fun emitCalleePrologue() {
         val (reg1, reg2) = syntax.argOrder(syntax.register("rsp"), syntax.register("rbp"))
         builder
-            .addComment("Callee Prologue")
+            .addComment(makeComment("Callee Prologue"))
             .newline()
             .addLine(
                 syntax.ops.getValue(InstructionType.PUSH),
                 syntax.register("rbp"),
-                comment = "Save caller's base pointer"
+                comment = makeComment("Save caller's base pointer")
             )
-            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, "Make stack pointer new base pointer")
+            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, makeComment("Make stack pointer new base pointer"))
     }
 
     private fun emitCalleeEpilogue() {
         val (reg1, reg2) = syntax.argOrder(syntax.register("rbp"), syntax.register("rsp"))
         builder
-            .addComment("Callee Epilogue")
+            .addComment(makeComment("Callee Epilogue"))
             .newline()
-            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, "Restore stack pointer")
-            .addLine(syntax.ops.getValue(InstructionType.POP), syntax.register("rbp"), comment = "Restore base pointer")
-            .addLine(syntax.ops.getValue(InstructionType.RET), comment = "Return from call")
+            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, makeComment("Restore stack pointer"))
+            .addLine(syntax.ops.getValue(InstructionType.POP), syntax.register("rbp"), comment = makeComment("Restore base pointer"))
+            .addLine(syntax.ops.getValue(InstructionType.RET), comment = makeComment("Return from call"))
     }
 
     private fun emitLabel(instruction: Instruction) {
@@ -237,28 +230,28 @@ abstract class Emitter(
     private fun emitPerformDivision(inst: Instruction) {
         val (arg1, arg2) = syntax.argOrder(emitArg(inst.args[1]), syntax.register("rax"))
         builder
-            .addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Setup dividend")
-            .addLine("cqo", comment = "Sign extend into rdx")
-            .addLine(syntax.ops.getValue(InstructionType.IDIV), emitArg(inst.args[0]), comment = "Divide")
+            .addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, makeComment("Setup dividend"))
+            .addLine("cqo", comment = makeComment("Sign extend into rdx"))
+            .addLine(syntax.ops.getValue(InstructionType.IDIV), emitArg(inst.args[0]), comment = makeComment("Divide"))
     }
 
     private fun emitDivision(inst: Instruction) {
         emitPerformDivision(inst)
         val (arg1, arg2) = syntax.argOrder(syntax.register("rax"), emitArg(inst.args[1]))
-        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Move resulting quotient")
+        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, makeComment("Move resulting quotient"))
     }
 
     private fun emitModulo(inst: Instruction) {
         emitPerformDivision(inst)
         val (arg1, arg2) = syntax.argOrder(syntax.register("rdx"), emitArg(inst.args[1]))
-        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Move resulting remainder")
+        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, makeComment("Move resulting remainder"))
     }
 
     private fun emitBooleanNot(inst: Instruction) {
         val arg = emitArg(inst.args[0])
         builder
-            .addLine("test", arg, arg, "Test argument with itself")
-            .addLine("setz", "${arg}b", comment = "Set first byte to 1 if zero etc.")
+            .addLine("test", arg, arg, makeComment("Test argument with itself"))
+            .addLine("setz", "${arg}b", comment = makeComment("Set first byte to 1 if zero etc."))
     }
 
     private fun emitAllocateHeapSpace(size: Int) {
@@ -266,10 +259,10 @@ abstract class Emitter(
         val (arg3, arg4) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * size}"), emitInstructionTarget(RHP))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            "Move heap pointer to return value"
+            makeComment("Move pointer to return value")
         ).addLine(
             syntax.ops.getValue(InstructionType.ADD), arg3, arg4,
-            "Offset heap pointer by allocated bytes"
+            makeComment("Offset pointer by allocated bytes")
         )
     }
 
@@ -290,7 +283,7 @@ abstract class Emitter(
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${-VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
-            "Move stack pointer to allocate space for local variables"
+            makeComment("Move stack pointer to allocate space for local variables")
         )
     }
 
@@ -298,7 +291,7 @@ abstract class Emitter(
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
-            "Move stack pointer to deallocate space for local variables/parameters/arguments"
+            makeComment("Move stack pointer to deallocate space for local variables")
         )
     }
 }

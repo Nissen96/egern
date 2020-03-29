@@ -8,6 +8,7 @@ abstract class SyntaxManager {
     abstract fun register(reg: String): String
     abstract fun indirect(target: String): String
     abstract fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String
+    abstract fun commentSym(): String
 
     abstract val ops: Map<InstructionType, String>
 }

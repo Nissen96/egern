@@ -1,6 +1,12 @@
 package com.egern.emit
 
-class AsmStringBuilder(private val commentSym: String) {
+class Comment(val sym: String, val text: String) {
+    fun toStr(): String {
+        return "$sym $text"
+    }
+}
+
+class AsmStringBuilder() {
     private val builder = StringBuilder()
 
     companion object {
@@ -17,7 +23,7 @@ class AsmStringBuilder(private val commentSym: String) {
         op: String? = null,
         reg1: String? = null,
         reg2: String? = null,
-        comment: String? = null
+        comment: Comment? = null
     ): AsmStringBuilder {
         if (op != null) {
             addOp(op)
@@ -51,8 +57,8 @@ class AsmStringBuilder(private val commentSym: String) {
         return this
     }
 
-    fun addComment(comment: String): AsmStringBuilder {
-        add("$commentSym $comment")
+    fun addComment(comment: Comment): AsmStringBuilder {
+        add(comment.toStr())
         return this
     }
 

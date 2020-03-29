@@ -5,22 +5,25 @@ import com.egern.types.ExprTypeEnum
 import java.lang.Exception
 
 class LinuxEmitter(
-    instructions: List<Instruction>,
-    private val dataFields: List<String>,
+	instructions: List<Instruction>, 
+	private val dataFields: List<String>,
     private val staticStrings: Map<String, String>,
-    syntax: SyntaxManager
+	syntax: SyntaxManager
 ) :
-    Emitter(instructions, AsmStringBuilder("#"), syntax) {
+    Emitter(instructions, AsmStringBuilder(), syntax) {
+
+    override val paramPassingRegs: List<String> = listOf("rdi", "rsi", "rdx", "rcx", "r8", "r9")
+
 
     override fun emitProgramPrologue() {
         builder
             .addLine(".data")
             .addLine("format_int:")
-            .addLine(".string \"%d\\n\"", comment = "Integer format string for C printf")
+            .addLine(".string \"%d\\n\"", comment = makeComment("Integer format string for C printf"))
             .addLine("format_string:")
-            .addLine(".string \"%s\\n\"", comment = "String format string for C printf")
+            .addLine(".string \"%s\\n\"", comment = makeComment("String format string for C printf"))
             .addLine("format_newline:")
-            .addLine(".string \"\\n\"", comment = "Empty format string for C printf")
+            .addLine(".string \"\\n\"", comment = makeComment("Empty format string for C printf"))
             .newline()
         emitDataSection()
         builder
@@ -75,12 +78,12 @@ class LinuxEmitter(
         if (enumType != ExprTypeEnum.VOID) {
             builder.addLine(
                 "movq", "${8 * CALLER_SAVE_REGISTERS.size}(%rsp)", "%rsi",
-                "Pass 2nd argument in %rsi"
+                makeComment("Pass 2nd argument in %rsi")
             )
         }
         builder
-            .addLine("xor", "%rax", "%rax", "No floating point registers used")
-            .addLine("call", "printf", comment = "Call function printf")
+            .addLine("xor", "%rax", "%rax", makeComment("No floating point registers used"))
+            .addLine("call", "printf", comment = makeComment("Call function printf"))
     }
 
     override fun emitMainLabel(): String {

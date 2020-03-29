@@ -23,6 +23,10 @@ class ATTSyntax : SyntaxManager() {
         return "${addressingOffset * offset}($target)"
     }
 
+    override fun commentSym(): String {
+        return "#"
+    }
+
     override val ops = mapOf(
         InstructionType.MOV to "movq",
         InstructionType.ADD to "addq",

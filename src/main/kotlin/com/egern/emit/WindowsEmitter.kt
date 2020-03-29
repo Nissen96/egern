@@ -2,10 +2,12 @@ package com.egern.emit
 
 import com.egern.codegen.Instruction
 import com.egern.codegen.InstructionType
-import com.egern.codegen.MetaOperationArg
 
 class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, syntax: SyntaxManager) :
-    Emitter(instructions, AsmStringBuilder(";"), syntax) {
+    Emitter(instructions, AsmStringBuilder(), syntax) {
+
+    override val paramPassingRegs: List<String> = listOf("rcx", "rdx", "r8", "r9")
+
 
     override fun emitProgramPrologue() {
         builder
@@ -14,7 +16,7 @@ class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, 
             .addLine("extern", "malloc")
             .addLine("segment", ".data")
             .addLine("format_int: db \"%d\", 10, 0")
-            .addLine("format_newline:  db \"\", 10, 0", comment = "Empty format string for C printf")
+            .addLine("format_newline:  db \"\", 10, 0", comment = makeComment("Empty format string for C printf"))
             emitDataSection()
             builder.addLine("segment", ".text")
     }
@@ -33,7 +35,10 @@ class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, 
     }
 
     override fun emitRequestProgramHeap() {
-        //builder.addLine("call malloc")
+        builder
+            .addLine("sub", "rsp", "32")
+            .addLine("call malloc")
+            .addLine("add", "rsp", "32")
     }
 
     override fun emitFreeProgramHeap() {
@@ -49,18 +54,17 @@ class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, 
             .addLine("; PRINTING USING PRINTF")
             .addLine(
                 "mov", "rcx", arg2,
-                "Pass 1st argument in %rdi"
+                makeComment("Pass 1st argument in %rdi")
             )
         if (!isEmpty) {
             builder.addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
-                "Pass 2nd argument in %rsi"
+                makeComment("Pass 2nd argument in %rsi")
             )
         }
         builder
-            .addLine("xor", syntax.register("rax"), syntax.register("rax"), "No floating point registers used")
-
-            .addLine("call", "printf", comment = "Call function printf")
+            //.addLine("xor", syntax.register("rax"), syntax.register("rax"), "No floating point registers used")
+            .addLine("call", "printf", comment = makeComment("Call function printf"))
             .addLine("add", "rsp", "32")
 
     }

@@ -23,6 +23,10 @@ class IntelSyntax : SyntaxManager() {
         return "qword [$target + ${addressingOffset * offset}]"
     }
 
+    override fun commentSym(): String {
+        return ";"
+    }
+
     override val ops = mapOf(
         InstructionType.MOV to "mov",
         InstructionType.ADD to "add",
