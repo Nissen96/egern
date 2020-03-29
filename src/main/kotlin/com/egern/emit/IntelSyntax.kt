@@ -19,8 +19,8 @@ class IntelSyntax : SyntaxManager() {
         return "qword [$target]"
     }
 
-    override fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String {
-        return "qword [$target + ${addressingOffset * offset}]"
+    override fun indirectRelative(target: String, offset: Int): String {
+        return "qword [$target + $offset]"
     }
 
     override fun commentSym(): String {
@@ -48,6 +48,7 @@ class IntelSyntax : SyntaxManager() {
         InstructionType.PUSH to "push",
         InstructionType.POP to "pop",
         InstructionType.CALL to "call",
-        InstructionType.RET to "ret"
+        InstructionType.RET to "ret",
+        InstructionType.XOR to "xor"
     )
 }

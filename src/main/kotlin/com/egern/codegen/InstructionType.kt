@@ -25,5 +25,6 @@ enum class InstructionType {
     CALL,
     RET,
     LABEL,
-    META
+    META,
+    XOR
 }

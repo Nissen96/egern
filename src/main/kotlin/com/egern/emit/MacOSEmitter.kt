@@ -6,6 +6,9 @@ class MacOSEmitter(instructions: List<Instruction>, private val dataFields: List
     Emitter(instructions, AsmStringBuilder(), syntax) {
 
     override val paramPassingRegs: List<String> = listOf("rdi", "rsi", "rdx", "rcx", "r8", "r9")
+    override fun addPlatformPrefix(symbol: String): String {
+        return "_$symbol"
+    }
 
 
     override fun emitProgramPrologue() {

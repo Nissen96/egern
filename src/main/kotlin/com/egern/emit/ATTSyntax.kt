@@ -19,8 +19,8 @@ class ATTSyntax : SyntaxManager() {
         return "($target)"
     }
 
-    override fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String {
-        return "${addressingOffset * offset}($target)"
+    override fun indirectRelative(target: String, offset: Int): String {
+        return "$offset($target)"
     }
 
     override fun commentSym(): String {
@@ -48,6 +48,7 @@ class ATTSyntax : SyntaxManager() {
         InstructionType.PUSH to "pushq",
         InstructionType.POP to "popq",
         InstructionType.CALL to "call",
-        InstructionType.RET to "ret"
+        InstructionType.RET to "ret",
+        InstructionType.XOR to "xor"
     )
 }

@@ -15,10 +15,13 @@ abstract class Emitter(
     abstract fun emitPrint(type: Int)
     abstract fun emitMainLabel(): String
     abstract val paramPassingRegs: List<String>
+    open fun addPlatformPrefix(symbol: String): String {
+        return symbol
+    }
 
     protected companion object {
         const val VARIABLE_SIZE = 8
-        const val ADDRESSING_OFFSET = -8
+        const val ADDRESSING_OFFSET = -8 //
 
         val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
@@ -38,7 +41,46 @@ abstract class Emitter(
         return builder.toFinalStr()
     }
 
+    protected fun makeComment(text: String): Comment {
+        return Comment(syntax.commentSym(), text)
+    }
 
+    protected fun emitPrintBase(isEmpty: Boolean, additionalOffset: Int = 0) {
+        val (arg1, arg2) = syntax.argOrder(
+            syntax.immediate("format_${if (isEmpty) "newline" else "int"}"),
+            syntax.register(paramPassingRegs[0])
+        )
+        builder
+            .newline()
+            .addLine(comment = makeComment("PRINTING USING PRINTF"))
+            .addLine(
+                syntax.ops.getValue(InstructionType.MOV),
+                arg1, arg2,
+                makeComment("Pass formatting as 1st argument in ${paramPassingRegs[0]}")
+            )
+        if (!isEmpty) {
+            val (arg3, arg4) = syntax.argOrder(
+                syntax.indirectRelative("rsp", -ADDRESSING_OFFSET * CALLER_SAVE_REGISTERS.size + additionalOffset),
+                syntax.register(paramPassingRegs[1])
+            )
+            builder.addLine(
+                syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
+                makeComment("Pass possible value to print as 2nd argument in ${paramPassingRegs[1]}")
+            )
+        }
+        builder
+            .addLine(
+                syntax.ops.getValue(InstructionType.XOR),
+                syntax.register("rax"),
+                syntax.register("rax"),
+                makeComment("No floating point registers used")
+            )
+            .addLine("call", addPlatformPrefix("printf"), comment = makeComment("Call function printf"))
+    }
+
+    private fun emitAllocateProgramHeap(heapSize: Int) {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * heapSize}"), syntax.register(paramPassingRegs[0]))
+        val (arg3, arg4) = syntax.argOrder(syntax.register("rax"), syntax.register("rbx"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             makeComment("Move argument into parameter register for malloc call")
@@ -159,7 +201,7 @@ abstract class Emitter(
         return when (argument.addressingMode) {
             Direct -> target
             Indirect -> syntax.indirect(target)
-            is IndirectRelative -> syntax.indirectRelative(target, ADDRESSING_OFFSET, argument.addressingMode.offset)
+            is IndirectRelative -> syntax.indirectRelative(target, ADDRESSING_OFFSET * argument.addressingMode.offset)
         }
     }
 
