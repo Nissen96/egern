@@ -1,6 +1,6 @@
 #!/bin/sh
 
-./compile $1 > ko.s || exit 1
+linux/compile $1 > ko.s || exit 1
 gcc -no-pie ko.s || exit 1
 rm ko.s >/dev/null 2>&1
 ./a.out || exit 1
