@@ -39,11 +39,10 @@ class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, 
         //builder.addLine("format: db \"%d\", 10, 0")
     }
 
-    override fun emitRequestProgramHeap() {
-        builder
-            .addLine("sub", "rsp", "32")
-            .addLine("call malloc")
-            .addLine("add", "rsp", "32")
+    override fun emitAllocateProgramHeap(heapSize: Int) {
+        allocateShadowSpace()
+        emitAllocateProgramHeapBase(heapSize)
+        deallocateShadowSpace()
     }
 
 

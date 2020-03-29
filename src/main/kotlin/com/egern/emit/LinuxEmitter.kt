@@ -52,8 +52,8 @@ class LinuxEmitter(
         // Empty epilogue
     }
 
-    override fun emitRequestProgramHeap() {
-        builder.addLine("call malloc")
+    override fun emitAllocateProgramHeap(heapSize: Int) {
+        emitAllocateProgramHeapBase(heapSize)
     }
 
     override fun emitFreeProgramHeap() {

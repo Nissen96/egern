@@ -10,9 +10,9 @@ abstract class Emitter(
     abstract fun emitProgramPrologue()
     abstract fun emitDataSection()
     abstract fun emitProgramEpilogue()
-    abstract fun emitRequestProgramHeap()
-    abstract fun emitFreeProgramHeap()
-    abstract fun emitPrint(type: Int)
+    abstract fun emitAllocateProgramHeap(heapSize: Int)
+    //abstract fun emitRequestProgramHeap()
+    abstract fun emitPrint(isEmpty: Int)
     abstract fun emitMainLabel(): String
     abstract val paramPassingRegs: List<String>
     open fun addPlatformPrefix(symbol: String): String {
@@ -78,22 +78,19 @@ abstract class Emitter(
             .addLine("call", addPlatformPrefix("printf"), comment = makeComment("Call function printf"))
     }
 
-    private fun emitAllocateProgramHeap(heapSize: Int) {
+    protected fun emitAllocateProgramHeapBase(heapSize: Int) {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * heapSize}"), syntax.register(paramPassingRegs[0]))
         val (arg3, arg4) = syntax.argOrder(syntax.register("rax"), syntax.register("rbx"))
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            makeComment("Move argument into parameter register for malloc call")
-        )
-        emitRequestProgramHeap()
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
-            makeComment("Move returned heap pointer to fixed heap pointer register")
-        )
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
-            "Save start of heap pointer globally"
-        )
+        builder
+            .addLine(
+                syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+                makeComment("Move argument into parameter register for malloc call")
+            )
+            .addLine("call", addPlatformPrefix("malloc"))
+            .addLine(
+                syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
+                makeComment("Move returned heap pointer to fixed heap pointer register")
+            )
     }
 
     private fun emitAllocateVTable() {

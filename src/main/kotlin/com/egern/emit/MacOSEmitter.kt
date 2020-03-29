@@ -36,8 +36,9 @@ class MacOSEmitter(instructions: List<Instruction>, private val dataFields: List
         builder.addLine("format: db \"%d\", 10, 0")
     }
 
-    override fun emitRequestProgramHeap() {
-        builder.addLine("call malloc")
+    override fun emitAllocateProgramHeap(heapSize: Int) {
+        // TODO: align to 16 byte boundary
+        emitAllocateProgramHeapBase(heapSize)
     }
 
     override fun emitFreeProgramHeap() {
