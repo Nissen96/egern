@@ -10,9 +10,9 @@ class FieldDecl(
     lineNumber: Int,
     charPosition: Int
 ) :
-    Statement(lineNumber, charPosition), Scopable {
+    Statement(lineNumber, charPosition) {
     lateinit var staticDataField: String
-    override lateinit var symbolTable: SymbolTable
+    lateinit var symbolTable: SymbolTable
 
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)

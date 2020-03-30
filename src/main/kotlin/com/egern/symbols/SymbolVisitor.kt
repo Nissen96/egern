@@ -8,7 +8,10 @@ class SymbolVisitor : Visitor {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
     var currentTable = SymbolTable(0, null)
-    private val baseClass = ClassDefinition("Base", null)
+    private val baseClass = ClassDefinition(
+        "Base",
+        ClassDecl("Base", emptyList(), null, null, emptyList(), emptyList())
+    )
     val classDefinitions = mutableListOf(baseClass)
     private var isInsideClass = false
 
@@ -99,7 +102,7 @@ class SymbolVisitor : Visitor {
                 )
             )
         }
-        val classDefinition = ClassDefinition(classDecl.id, baseClass)
+        val classDefinition = ClassDefinition(classDecl.id, classDecl, baseClass, classDecl.superclassArgs)
         classDefinition.symbolTable = currentTable
         classDefinitions.add(classDefinition)
         varCountStack.push(classDecl.constructor.size)

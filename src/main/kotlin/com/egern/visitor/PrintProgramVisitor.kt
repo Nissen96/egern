@@ -87,7 +87,15 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         if (classDecl.constructor.isNotEmpty()) {
             print("(${classDecl.constructor.joinToString(", ") { "${it.first}: ${getType(it.second)}" }})")
         }
-        println(": ${classDecl.superclass} {")
+        print(": ${classDecl.superclass}(")
+    }
+
+    override fun midSuperclassArgVisit(classDecl: ClassDecl) {
+        print(", ")
+    }
+
+    override fun preMidVisit(classDecl: ClassDecl) {
+        println(") {")
         level++
     }
 

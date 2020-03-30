@@ -12,8 +12,8 @@ class FuncDecl(
     val classId: String? = null,
     lineNumber: Int, charPosition: Int
 ) :
-    ASTNode(lineNumber, charPosition), Scopable {
-    override lateinit var symbolTable: SymbolTable
+    ASTNode(lineNumber, charPosition) {
+    lateinit var symbolTable: SymbolTable
     var variableCount: Int = 0
     lateinit var startLabel: String
     lateinit var endLabel: String

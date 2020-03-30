@@ -9,6 +9,7 @@ import com.egern.symbols.SymbolType
 import com.egern.types.CLASS
 import com.egern.util.*
 import com.egern.visitor.Visitor
+import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.min
 
@@ -17,6 +18,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
     private val functionStack = stackOf<FuncDecl>()
+    private var currentObjectClass: ClassDefinition? = null
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
@@ -365,8 +367,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     private fun getIdLocation(id: String, checkDeclared: Boolean = false): InstructionArg {
         // Find static link address for scope containing given id
-        val symbol = symbolTable.lookup(id, checkDeclared) ?: throw Exception("Symbol $id is undefined")
-        return if (symbol.type == SymbolType.Field) getMethodFieldLocation(symbol) else getStackLocation(symbol)
+        val symbol = symbolTable.lookup(id, checkDeclared)
+        if (symbol != null) {
+            return if (symbol.type == SymbolType.Field) getMethodFieldLocation(symbol) else getStackLocation(symbol)
+        }
+
+        return getConstructorArgLocation(id) ?: throw Exception("Symbol $id is undefined")
     }
 
     private fun getStackLocation(symbol: Symbol): InstructionArg {
@@ -412,6 +418,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     private fun getMethodFieldLocation(symbol: Symbol): InstructionArg {
         val fieldOffset = symbol.info["fieldOffset"] as Int
         return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + 1)))
+    }
+
+    private fun getConstructorArgLocation(param: String): InstructionArg? {
+        // All constructor args from all superclasses are on stack - get offset in this
+        val constructor = currentObjectClass!!.getConstructor()
+        val paramOffset = constructor.indexOfFirst { it.first == param }
+
+        return InstructionArg(Register(OpReg1), IndirectRelative(paramOffset))
     }
 
     override fun postVisit(compExpr: CompExpr) {
@@ -718,7 +732,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         symbolTable = classDefinitions.find { classDecl.id == it.className }!!.symbolTable
     }
 
-    override fun midVisit(classDecl: ClassDecl) {
+    override fun postMidVisit(classDecl: ClassDecl) {
         add(
             Instruction(
                 InstructionType.JMP,
@@ -740,7 +754,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
-        val totalFields = classDefinition.numFields
+        val totalFields = classDefinition.getFields().size
+
         add(
             Instruction(
                 InstructionType.META,
@@ -776,48 +791,77 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
 
-        // Move constructor args to object
-        val argSize = objectInstantiation.args.size
-        for ((index, _) in objectInstantiation.args.withIndex()) {
-            add(
-                Instruction(
-                    InstructionType.POP,
-                    InstructionArg(Register(OpReg1), Direct),
-                    comment = "Pop expression result to register 1"
-                )
-            )
+
+        // Visit all superclass args, pushing results to stack
+        currentObjectClass = classDefinition
+        while (currentObjectClass != null) {
+            // Save "base pointer" for current class constructor
             add(
                 Instruction(
                     InstructionType.MOV,
+                    InstructionArg(RSP, Direct),
                     InstructionArg(Register(OpReg1), Direct),
-                    InstructionArg(ReturnValue, IndirectRelative(-(argSize - index))),
-                    comment = "Save value at object's constructor field ${index + 1}"
+                    comment = "Save constructor argument pointer"
                 )
             )
+
+            currentObjectClass!!.superclassArgs?.forEach {
+                it.accept(this)
+            }
+            currentObjectClass = currentObjectClass?.superclass
         }
 
-        // Move local class fields to object
-        var fieldOffset = argSize + 1
-        classDefinition.getFields().forEach { fieldDecl ->
-            fieldDecl.ids.forEach { _ ->
+        // Move all constructor args to object
+        val numArgs = classDefinition.getNumConstructorArgsPerClass()
+        var currentClass: ClassDefinition? = classDefinition
+        var argOffset = 0
+        numArgs.forEach { argSize ->
+            repeat(argSize) { index ->
                 add(
                     Instruction(
-                        InstructionType.MOV,
-                        InstructionArg(Memory(fieldDecl.staticDataField), Direct),
+                        InstructionType.POP,
                         InstructionArg(Register(OpReg1), Direct),
-                        comment = "Get field value from data section"
+                        comment = "Pop expression result to register 1"
                     )
                 )
                 add(
                     Instruction(
                         InstructionType.MOV,
                         InstructionArg(Register(OpReg1), Direct),
-                        InstructionArg(ReturnValue, IndirectRelative(-fieldOffset)),
-                        comment = "Save value at object's constructor field ${fieldOffset + 1}"
+                        InstructionArg(ReturnValue, IndirectRelative(-(argOffset + argSize - index))),
+                        comment = "Save value at object's constructor field ${argOffset + index + 1}"
                     )
                 )
-                fieldOffset++
             }
+
+
+            // Move local class fields to object
+            var fieldOffset = argSize + 1
+            val localFields = currentClass!!.getLocalFields()
+            localFields.forEach { fieldDecl ->
+                fieldDecl.ids.forEach { _ ->
+                    add(
+                        Instruction(
+                            InstructionType.MOV,
+                            InstructionArg(Memory(fieldDecl.staticDataField), Direct),
+                            InstructionArg(Register(OpReg1), Direct),
+                            comment = "Get field value from data section"
+                        )
+                    )
+                    add(
+                        Instruction(
+                            InstructionType.MOV,
+                            InstructionArg(Register(OpReg1), Direct),
+                            InstructionArg(ReturnValue, IndirectRelative(-(fieldOffset + argOffset))),
+                            comment = "Save value at object's constructor field ${fieldOffset + 1}"
+                        )
+                    )
+                    fieldOffset++
+                }
+            }
+            currentClass = currentClass?.superclass
+
+            argOffset += argSize + localFields.size
         }
 
         add(
@@ -882,7 +926,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     override fun visit(classField: ClassField) {
         val classId = getObjectClass(classField.objectId)
         val classDefinition = classDefinitions.find { classId == it.className }!!
-        val fieldSymbol = classDefinition.symbolTable.lookup(classField.fieldId)!!
+        val fieldSymbol = classDefinition.lookup(classField.fieldId)!!
         val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
         val objectPointer = getIdLocation(classField.objectId)
 

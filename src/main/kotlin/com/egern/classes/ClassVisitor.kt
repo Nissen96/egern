@@ -1,10 +1,9 @@
 package com.egern.classes
 
-import com.egern.ast.ClassDecl
-import com.egern.ast.FieldDecl
-import com.egern.ast.FuncDecl
-import com.egern.ast.VarDecl
+import com.egern.ast.*
 import com.egern.symbols.ClassDefinition
+import com.egern.symbols.Symbol
+import com.egern.symbols.SymbolType
 import com.egern.visitor.Visitor
 
 class ClassVisitor(val classDefinitions: List<ClassDefinition>) : Visitor {
@@ -13,15 +12,5 @@ class ClassVisitor(val classDefinitions: List<ClassDefinition>) : Visitor {
     override fun preVisit(classDecl: ClassDecl) {
         currentClass = classDefinitions.find { it.className == classDecl.id }!!
         currentClass.superclass = classDefinitions.find { it.className == classDecl.superclass }!!
-    }
-
-    override fun preVisit(funcDecl: FuncDecl) {
-        if (funcDecl.classId != null) {
-            currentClass.insertMethod(funcDecl)
-        }
-    }
-
-    override fun preVisit(fieldDecl: FieldDecl) {
-        currentClass.insertField(fieldDecl)
     }
 }

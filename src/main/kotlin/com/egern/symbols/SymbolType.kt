@@ -4,5 +4,6 @@ enum class SymbolType {
     Function,
     Variable,
     Parameter,
-    Field
+    Field,
+    ConstructorArg
 }

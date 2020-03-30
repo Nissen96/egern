@@ -6,20 +6,30 @@ import com.egern.visitor.Visitor
 class ClassDecl(
     val id: String,
     val constructor: List<Pair<String, ExprType>>,
-    val superclass: String,
+    val superclass: String?,
+    val superclassArgs: List<Expr>?,
     val fieldDecls: List<FieldDecl>,
-    val funcDecls: List<FuncDecl>,
-    lineNumber: Int, charPosition: Int
+    val methods: List<FuncDecl>,
+    lineNumber: Int? = null, charPosition: Int? = null
 ) : ASTNode(lineNumber, charPosition) {
     lateinit var endLabel: String
 
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
+        /*if (superclassArgs.isNotEmpty()) {
+            superclassArgs.dropLast(1).map {
+                it.accept(visitor)
+                visitor.midSuperclassArgVisit(this)
+            }
+            superclassArgs.last().accept(visitor)
+        }
+        visitor.preMidVisit(this)
+         */
         fieldDecls.forEach {
             it.accept(visitor)
         }
-        visitor.midVisit(this)
-        funcDecls.forEach {
+        visitor.postMidVisit(this)
+        methods.forEach {
             it.accept(visitor)
         }
         visitor.postVisit(this)
