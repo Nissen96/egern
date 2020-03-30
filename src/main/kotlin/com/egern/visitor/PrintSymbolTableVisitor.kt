@@ -20,7 +20,7 @@ class PrintSymbolTableVisitor : Visitor {
         }
     }
 
-    override fun preVisit(varDecl: VarDecl<*>) {
+    override fun preVisit(varDecl: VarDecl) {
         val scope = varDecl.symbolTable.scope
         for (id in varDecl.ids) {
             val symbol = varDecl.symbolTable.lookup(id)

@@ -1036,7 +1036,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         )
     }
 
-    override fun postVisit(varDecl: VarDecl<*>) {
+    override fun postVisit(varDecl: VarDecl) {
         // First declaration of variable in this scope
         varDecl.ids.forEach { symbolTable.lookup(it)?.isDeclared = true }
         variableAssignment(varDecl.ids)
@@ -1051,9 +1051,9 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
     }
-
-    override fun postVisit(varAssign: VarAssign<*>) {
-        variableAssignment(varAssign.ids, varAssign.indexExprs, varAssign.classFields)
+      
+    override fun postVisit(varAssign: VarAssign) {
+        variableAssignment(varAssign.ids, varAssign.indexExprs)
     }
 
     private fun variableAssignment(

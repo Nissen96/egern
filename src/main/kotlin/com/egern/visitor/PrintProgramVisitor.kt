@@ -253,27 +253,27 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         print("this")
     }
 
-    override fun preVisit(varAssign: VarAssign<*>) {
+    override fun preVisit(varAssign: VarAssign) {
         printIndented("")
         if (varAssign.ids.isNotEmpty()) {
             print(varAssign.ids.joinToString(" = "))
         }
     }
 
-    override fun midVisit(varAssign: VarAssign<*>) {
+    override fun midVisit(varAssign: VarAssign) {
         print(" = ")
     }
 
-    override fun postVisit(varAssign: VarAssign<*>) {
-        println()
+    override fun postVisit(varAssign: VarAssign) {
+        println(";")
     }
 
-    override fun preVisit(varDecl: VarDecl<*>) {
+    override fun preVisit(varDecl: VarDecl) {
         printIndented("var " + varDecl.ids.joinToString(" = ") + " = ")
     }
 
-    override fun postVisit(varDecl: VarDecl<*>) {
-        println()
+    override fun postVisit(varDecl: VarDecl) {
+        println(";")
     }
 
     override fun preVisit(whileLoop: WhileLoop) {

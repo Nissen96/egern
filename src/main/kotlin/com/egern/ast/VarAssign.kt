@@ -2,11 +2,11 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class VarAssign<T : Expr>(
+class VarAssign(
     val ids: List<String>,
     val indexExprs: List<ArrayIndexExpr>,
     val classFields: List<ClassField>,
-    val expr: T,
+    val expr: Expr,
     lineNumber: Int,
     charPosition: Int
 ) :

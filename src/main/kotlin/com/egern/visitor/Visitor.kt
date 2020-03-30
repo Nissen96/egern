@@ -83,13 +83,14 @@ interface Visitor {
     fun postVisit(returnStmt: ReturnStmt) {}
 
     fun visit(thisExpr: ThisExpr) {}
+  
+  
+    fun preVisit(varAssign: VarAssign) {}
+    fun midVisit(varAssign: VarAssign) {}
+    fun postVisit(varAssign: VarAssign) {}
 
-    fun preVisit(varAssign: VarAssign<*>) {}
-    fun midVisit(varAssign: VarAssign<*>) {}
-    fun postVisit(varAssign: VarAssign<*>) {}
-
-    fun preVisit(varDecl: VarDecl<*>) {}
-    fun postVisit(varDecl: VarDecl<*>) {}
+    fun preVisit(varDecl: VarDecl) {}
+    fun postVisit(varDecl: VarDecl) {}
 
     fun preVisit(whileLoop: WhileLoop) {}
     fun midVisit(whileLoop: WhileLoop) {}
