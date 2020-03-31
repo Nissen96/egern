@@ -20,6 +20,14 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         }
     }
 
+    override fun preStmtVisit() {
+        printIndented()
+    }
+
+    override fun postStmtVisit() {
+        println()
+    }
+
     override fun midVisit(arithExpr: ArithExpr) {
         print(" ${arithExpr.op.value} ")
     }
@@ -51,14 +59,6 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     override fun preVisit(block: Block) {
         println("{")
         level++
-    }
-
-    override fun preFuncCallVisit(block: Block) {
-        printIndented()
-    }
-
-    override fun postFuncCallVisit(block: Block) {
-        println()
     }
 
     override fun postVisit(block: Block) {
@@ -113,11 +113,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(fieldDecl: FieldDecl) {
-        printIndented("var " + fieldDecl.ids.joinToString(" = ") + " = ")
-    }
-
-    override fun postVisit(fieldDecl: FieldDecl) {
-        println()
+        print("var " + fieldDecl.ids.joinToString(" = ") + " = ")
     }
 
     override fun preVisit(funcCall: FuncCall) {
@@ -140,14 +136,6 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         level++
     }
 
-    override fun preFuncCallVisit(funcDecl: FuncDecl) {
-        printIndented()
-    }
-
-    override fun postFuncCallVisit(funcDecl: FuncDecl) {
-        println()
-    }
-
     override fun postVisit(funcDecl: FuncDecl) {
         level--
         printIndented("}\n")
@@ -158,7 +146,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(ifElse: IfElse) {
-        printIndented("if (")
+        print("if (")
     }
 
     override fun preMidVisit(ifElse: IfElse) {
@@ -167,14 +155,6 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun postMidVisit(ifElse: IfElse) {
         if (ifElse.elseBlock != null) print(" else ")
-        if (ifElse.elseBlock is IfElse) {
-            println("{")
-            level++
-        }
-    }
-
-    override fun postVisit(ifElse: IfElse) {
-        println()
     }
 
     override fun visit(intExpr: IntExpr) {
@@ -222,24 +202,17 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(printStmt: PrintStmt) {
-        printIndented("print(")
+        print("print(")
     }
 
     override fun postVisit(printStmt: PrintStmt) {
-        println(")")
+        print(")")
+        if (printStmt.expr == null) println()
     }
 
     override fun preVisit(program: Program) {
         println("Main Scope {")
         level++
-    }
-
-    override fun preFuncCallVisit(program: Program) {
-        printIndented()
-    }
-
-    override fun postFuncCallVisit(program: Program) {
-        println()
     }
 
     override fun postVisit(program: Program) {
@@ -249,12 +222,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(returnStmt: ReturnStmt) {
-        printIndented("return")
+        print("return")
         if (returnStmt.expr != null) print(" ")
-    }
-
-    override fun postVisit(returnStmt: ReturnStmt) {
-        println()
     }
 
     override fun visit(thisExpr: ThisExpr) {
@@ -262,37 +231,23 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(varAssign: VarAssign) {
-        printIndented("")
-        if (varAssign.ids.isNotEmpty()) {
-            print(varAssign.ids.joinToString(" = "))
-        }
+        varAssign.ids.forEach { print("$it = ") }
     }
 
     override fun midVisit(varAssign: VarAssign) {
         print(" = ")
     }
 
-    override fun postVisit(varAssign: VarAssign) {
-        println(";")
-    }
-
     override fun preVisit(varDecl: VarDecl) {
-        printIndented("var " + varDecl.ids.joinToString(" = ") + " = ")
-    }
-
-    override fun postVisit(varDecl: VarDecl) {
-        println(";")
+        print("var ")
+        varDecl.ids.forEach { print("$it = ") }
     }
 
     override fun preVisit(whileLoop: WhileLoop) {
-        printIndented("while (")
+        print("while (")
     }
 
     override fun midVisit(whileLoop: WhileLoop) {
         print(") ")
-    }
-
-    override fun postVisit(whileLoop: WhileLoop) {
-        println()
     }
 }
