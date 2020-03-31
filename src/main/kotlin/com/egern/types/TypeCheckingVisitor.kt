@@ -40,7 +40,9 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
         return when (symbol.type) {
             SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
             SymbolType.Parameter -> symbol.info["type"] as ExprType
-            SymbolType.Field -> symbol.info["type"] as ExprType
+
+            // Get type directly for constructor parameters, derive if local field
+            SymbolType.Field -> symbol.info["type"] as? ExprType ?: deriveType(symbol.info["expr"] as Expr)
             else -> throw Exception("Can't derive type for IdExpr")
         }
     }

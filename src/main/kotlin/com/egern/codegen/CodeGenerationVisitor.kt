@@ -9,7 +9,6 @@ import com.egern.symbols.SymbolType
 import com.egern.types.CLASS
 import com.egern.util.*
 import com.egern.visitor.Visitor
-import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.min
 
@@ -18,7 +17,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
     private val functionStack = stackOf<FuncDecl>()
-    private var currentObjectClass: ClassDefinition? = null
+    private var currentClassDefinition: ClassDefinition? = null
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
@@ -416,16 +415,16 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     private fun getMethodFieldLocation(symbol: Symbol): InstructionArg {
-        val fieldOffset = symbol.info["fieldOffset"] as Int
+        val fieldOffset = currentClassDefinition!!.getFieldOffset(symbol.id)
         return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + 1)))
     }
 
     private fun getConstructorArgLocation(param: String): InstructionArg? {
         // All constructor args from all superclasses are on stack - get offset in this
-        val constructor = currentObjectClass!!.getConstructor()
+        val constructor = currentClassDefinition!!.getConstructor()
         val paramOffset = constructor.indexOfFirst { it.first == param }
 
-        return InstructionArg(Register(OpReg1), IndirectRelative(paramOffset))
+        return InstructionArg(Register(OpReg1), IndirectRelative(paramOffset - 1))
     }
 
     override fun postVisit(compExpr: CompExpr) {
@@ -729,7 +728,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun preVisit(classDecl: ClassDecl) {
-        symbolTable = classDefinitions.find { classDecl.id == it.className }!!.symbolTable
+        currentClassDefinition = classDefinitions.find { classDecl.id == it.className }
+        symbolTable = currentClassDefinition!!.symbolTable
     }
 
     override fun midVisit(classDecl: ClassDecl) {
@@ -793,8 +793,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
 
         // Visit all superclass args, pushing results to stack
-        currentObjectClass = classDefinition
-        while (currentObjectClass != null) {
+        currentClassDefinition = classDefinition
+        while (currentClassDefinition != null) {
             // Save "base pointer" for current class constructor
             add(
                 Instruction(
@@ -805,10 +805,10 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 )
             )
 
-            currentObjectClass!!.superclassArgs?.forEach {
+            currentClassDefinition!!.superclassArgs?.forEach {
                 it.accept(this)
             }
-            currentObjectClass = currentObjectClass?.superclass
+            currentClassDefinition = currentClassDefinition?.superclass
         }
 
         // Move all constructor args to object
