@@ -13,7 +13,6 @@ class SymbolVisitor : Visitor {
         ClassDecl("Base", emptyList(), null, null, emptyList(), emptyList())
     )
     val classDefinitions = mutableListOf(baseClass)
-    private var isInsideClass = false
 
     private fun returnToParentScope() {
         currentTable = currentTable.parent!!
@@ -106,11 +105,9 @@ class SymbolVisitor : Visitor {
         classDefinition.symbolTable = currentTable
         classDefinitions.add(classDefinition)
         varCountStack.push(classDecl.constructor.size)
-        isInsideClass = true
     }
 
     override fun postVisit(classDecl: ClassDecl) {
-        isInsideClass = false
         returnToParentScope()
     }
 }
