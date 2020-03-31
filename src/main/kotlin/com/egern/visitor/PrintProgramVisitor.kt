@@ -113,7 +113,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     }
 
     override fun preVisit(fieldDecl: FieldDecl) {
-        print("var " + fieldDecl.ids.joinToString(" = ") + " = ")
+        print("var ")
+        fieldDecl.ids.forEach { print("$it = ") }
     }
 
     override fun preVisit(funcCall: FuncCall) {

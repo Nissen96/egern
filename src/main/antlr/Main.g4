@@ -1,6 +1,6 @@
 grammar Main;
 
-prog:	( stmt | funcDecl | classDecl )* ;
+prog:   ( stmt | funcDecl | classDecl )* ;
 stmt:   varDecl ';'?
     |   varAssign ';'?
     |   opAssign ';'?
