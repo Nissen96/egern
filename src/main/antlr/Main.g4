@@ -72,7 +72,7 @@ VOID     : 'void' ;
 PRIMITIVE: 'int' | 'boolean' ;
 ID       : [A-Za-z_]+[A-Za-z_0-9]* ;
 COMMENT
-    :   '/**' .*? '**/' -> skip
+    :   '/*' .*? '*/' -> skip
     ;
 
 LINE_COMMENT
