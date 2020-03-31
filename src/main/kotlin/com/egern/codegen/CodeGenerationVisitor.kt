@@ -1,17 +1,23 @@
 package com.egern.codegen
 
 import com.egern.ast.*
+import com.egern.labels.LabelGenerator
+import com.egern.symbols.ClassDefinition
+import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
+import com.egern.types.CLASS
 import com.egern.util.*
 import com.egern.visitor.Visitor
-import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
-class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val heapSize: Int = 256) : Visitor {
-    val instructions = ArrayList<Instruction>()
+class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val classDefinitions: List<ClassDefinition>) :
+    Visitor {
+    val instructions = mutableListOf<Instruction>()
+    val dataFields = mutableListOf<String>()
     private val functionStack = stackOf<FuncDecl>()
+    private var currentClassDefinition: ClassDefinition? = null
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
@@ -47,6 +53,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
 
     override fun preVisit(program: Program) {
         functionStack.push(null)
+        populateDataSection()
+
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -62,8 +70,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         add(
             Instruction(
                 InstructionType.META,
-                MetaOperation.AllocateInternalHeap,
-                MetaOperationArg(heapSize)
+                MetaOperation.AllocateInternalHeap
             )
         )
         add(
@@ -73,6 +80,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 MetaOperationArg(program.variableCount)
             )
         )
+        populateVTable()
         add(
             Instruction(
                 InstructionType.META,
@@ -81,11 +89,78 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         )
     }
 
+    private fun populateDataSection() {
+        classDefinitions.forEach { classDef ->
+            classDef.getLocalFields().forEach {
+                val label = DataFieldGenerator.nextLabel(it.ids[0])
+                dataFields.add(label)
+                it.staticDataField = label
+            }
+        }
+    }
+
+    private fun populateVTable() {
+        var currentOffset = 0
+
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(VTable, Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Store Vtable base address in register"
+            )
+        )
+
+        classDefinitions.forEach {
+            it.vTableOffset = currentOffset
+            it.getMethods().forEach { method ->
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(ImmediateValue(method.startLabel), Direct),
+                        InstructionArg(Register(OpReg2), Direct),
+                        comment = "Store address of function"
+                    )
+                )
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Register(OpReg2), Direct),
+                        InstructionArg(Register(OpReg1), IndirectRelative(-currentOffset)),
+                        comment = "Add method to Vtable"
+                    )
+                )
+                currentOffset++
+            }
+        }
+    }
+
     override fun midVisit(program: Program) {
         add(
             Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Save return value before program deallocation"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.DeallocateInternalHeap
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Restore return value"
+            )
+        )
+        add(
+            Instruction(
                 InstructionType.JMP,
-                InstructionArg(Memory("main_end"), Direct)
+                InstructionArg(Memory("main_end"), Direct),
+                comment = "Jump to end of program"
             )
         )
     }
@@ -174,32 +249,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         val scopeDiff = symbolTable.scope - decl.symbolTable.scope
         val numArgs = funcCall.args.size
 
-        // Move first arguments (after caller saved registers) to registers
-        for (index in (0 until min(PARAMS_IN_REGISTERS, numArgs))) {
-            add(
-                Instruction(
-                    InstructionType.MOV,
-                    InstructionArg(RSP, IndirectRelative(-numArgs + index + 1)),
-                    InstructionArg(Register(ParamReg(index)), Direct),
-                    comment = "Move argument to parameter register $index"
-                )
-            )
-        }
-
-
-        // Push remaining arguments to stack in reverse order
-        for (index in (0 until numArgs - PARAMS_IN_REGISTERS)) {
-            add(
-                Instruction(
-                    InstructionType.PUSH,
-                    InstructionArg(
-                        RSP,
-                        IndirectRelative(-(2 * index))
-                    ),
-                    comment = "Push argument to stack"
-                )
-            )
-        }
+        passFunctionArgs(numArgs)
 
         if (scopeDiff < 0) {
             // Call is in nested func declaration
@@ -225,20 +275,54 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 comment = "Call function"
             )
         )
+
+        // Deallocate static link
+        add(Instruction(InstructionType.META, MetaOperation.DeallocateStackSpace, MetaOperationArg(1)))
+        functionEpilogue(numArgs)
+    }
+
+    private fun passFunctionArgs(numArgs: Int) {
+        // Move first arguments (after caller saved registers) to registers
+        for (index in (0 until min(PARAMS_IN_REGISTERS, numArgs))) {
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(RSP, IndirectRelative(-numArgs + index + 1)),
+                    InstructionArg(Register(ParamReg(index)), Direct),
+                    comment = "Move argument to parameter register $index"
+                )
+            )
+        }
+
+        // Push remaining arguments to stack in reverse order
+        for (index in (0 until numArgs - PARAMS_IN_REGISTERS)) {
+            add(
+                Instruction(
+                    InstructionType.PUSH,
+                    InstructionArg(
+                        RSP,
+                        IndirectRelative(-(2 * index))
+                    ),
+                    comment = "Push argument to stack"
+                )
+            )
+        }
+    }
+
+    private fun functionEpilogue(numArgs: Int) {
         val parametersOnStack = max(numArgs - PARAMS_IN_REGISTERS, 0)
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.DeallocateStackSpace,
-                MetaOperationArg(parametersOnStack + 1),
-                comment = "Deallocate pushed arguments"
+                MetaOperationArg(parametersOnStack)
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.DeallocateStackSpace, MetaOperationArg(numArgs)))
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
 
-        // Push return value to stack as FuncCall can be used as an expression
-        add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct)))
+        // Push return value to stack as function/method calls can be used as an expression
+        add(Instruction(InstructionType.PUSH, InstructionArg(ReturnValue, Direct), comment = "Push return value"))
     }
 
     override fun preVisit(block: Block) {
@@ -281,6 +365,16 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
     }
 
     private fun getIdLocation(id: String, checkDeclared: Boolean = false): InstructionArg {
+        // Find static link address for scope containing given id
+        val symbol = symbolTable.lookup(id, checkDeclared)
+        if (symbol != null) {
+            return if (symbol.type == SymbolType.Field) getMethodFieldLocation(symbol) else getStackLocation(symbol)
+        }
+
+        return getConstructorArgLocation(id) ?: throw Exception("Symbol $id is undefined")
+    }
+
+    private fun getStackLocation(symbol: Symbol): InstructionArg {
         /**
          * Get the location of a local variable or parameter from id
          * The id can be in the current scope or any parent scope of this,
@@ -290,13 +384,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
          * First 6 parameters are for the current scope saved in registers
          * For any enclosing scope, they have been saved at the top of the relevant stack frame
          */
-        // Find static link address for scope containing given id
-        val symbol = symbolTable.lookup(id, checkDeclared) ?: throw Exception("Symbol $id is undefined")
-        val scopeDiff = symbolTable.scope - symbol.scope
-        val symbolOffset =
-            symbol.info[if (symbol.type == SymbolType.Variable) "variableOffset" else "paramOffset"] as Int
+
+        val symbolOffset = when (symbol.type) {
+            SymbolType.Variable -> symbol.info["variableOffset"]
+            SymbolType.Parameter -> symbol.info["paramOffset"]
+            else -> throw Exception("That's illegal - no higher order functions please")
+        } as Int
 
         // Symbol is a parameter (1-6) in current scope - value is in register
+        val scopeDiff = symbolTable.scope - symbol.scope
         if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {
             return InstructionArg(Register(ParamReg(symbolOffset)), Direct)
         }
@@ -312,10 +408,23 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 // Calculate offset for params on stack (in non-reversed order)
                 else -> PARAM_OFFSET - (symbolOffset - PARAMS_IN_REGISTERS)
             }
-            else -> throw Exception("Invalid id $id")
+            else -> throw Exception("Invalid id ${symbol.id}")
         }
 
         return InstructionArg(StaticLink, IndirectRelative(offset))
+    }
+
+    private fun getMethodFieldLocation(symbol: Symbol): InstructionArg {
+        val fieldOffset = currentClassDefinition!!.getFieldOffset(symbol.id)
+        return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + 1)))
+    }
+
+    private fun getConstructorArgLocation(param: String): InstructionArg? {
+        // All constructor args from all superclasses are on stack - get offset in this
+        val constructor = currentClassDefinition!!.getConstructor()
+        val paramOffset = constructor.indexOfFirst { it.first == param }
+
+        return InstructionArg(Register(OpReg1), IndirectRelative(paramOffset - 1))
     }
 
     override fun postVisit(compExpr: CompExpr) {
@@ -618,6 +727,234 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         )
     }
 
+    override fun preVisit(classDecl: ClassDecl) {
+        currentClassDefinition = classDefinitions.find { classDecl.id == it.className }
+        symbolTable = currentClassDefinition!!.symbolTable
+    }
+
+    override fun midVisit(classDecl: ClassDecl) {
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(classDecl.endLabel), Direct),
+                comment = "Jump to end of class"
+            )
+        )
+    }
+
+    override fun postVisit(classDecl: ClassDecl) {
+        symbolTable = symbolTable.parent!!
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(classDecl.endLabel), Direct)
+            )
+        )
+    }
+
+    override fun postVisit(objectInstantiation: ObjectInstantiation) {
+        val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
+        val totalFields = classDefinition.getNumFields()
+
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateHeapSpace,
+                MetaOperationArg(totalFields + 1)
+            )
+        )
+
+        // Move class pointer to first object field
+        val vTableOffset = classDefinition.vTableOffset
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(VTable, Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Get pointer to vtable"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), IndirectRelative(vTableOffset)),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Get pointer to entry for class '${objectInstantiation.classId}' in vtable"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(ReturnValue, Indirect),
+                comment = "Save class pointer at beginning of object in heap"
+            )
+        )
+
+
+        // Visit all superclass args, pushing results to stack
+        currentClassDefinition = classDefinition
+        while (currentClassDefinition != null) {
+            // Save "base pointer" for current class constructor
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(RSP, Direct),
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Save constructor argument pointer"
+                )
+            )
+
+            currentClassDefinition!!.superclassArgs?.forEach {
+                it.accept(this)
+            }
+            currentClassDefinition = currentClassDefinition?.superclass
+        }
+
+        // Move all constructor args to object
+        val numArgs = classDefinition.getNumConstructorArgsPerClass()
+        val fieldsPerClass = classDefinition.getLocalFieldsPerClass()
+        var heapOffset = 0
+        repeat(numArgs.size) { classNum ->
+            val numConstructorArgs = numArgs[classNum]
+            repeat(numConstructorArgs) { index ->
+                add(
+                    Instruction(
+                        InstructionType.POP,
+                        InstructionArg(Register(OpReg1), Direct),
+                        comment = "Pop expression result to register 1"
+                    )
+                )
+                add(
+                    Instruction(
+                        InstructionType.MOV,
+                        InstructionArg(Register(OpReg1), Direct),
+                        InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + numConstructorArgs - index))),
+                        comment = "Save value at object's constructor field ${heapOffset + index + 1}"
+                    )
+                )
+            }
+
+            heapOffset += numConstructorArgs
+
+            // Move local class fields to object
+            val localFields = fieldsPerClass[classNum]
+            var fieldOffset = 0
+            localFields.forEach { fieldDecl ->
+                fieldDecl.ids.forEach { _ ->
+                    add(
+                        Instruction(
+                            InstructionType.MOV,
+                            InstructionArg(Memory(fieldDecl.staticDataField), Direct),
+                            InstructionArg(Register(OpReg1), Direct),
+                            comment = "Get field value from data section"
+                        )
+                    )
+                    add(
+                        Instruction(
+                            InstructionType.MOV,
+                            InstructionArg(Register(OpReg1), Direct),
+                            InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + fieldOffset + 1))),
+                            comment = "Save value at object's constructor field ${fieldOffset + 1}"
+                        )
+                    )
+                    fieldOffset++
+                }
+            }
+
+            heapOffset += fieldOffset
+        }
+
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Push object location to stack"
+            )
+        )
+    }
+
+    override fun preVisit(methodCall: MethodCall) {
+        add(Instruction(InstructionType.META, MetaOperation.CallerSave))
+    }
+
+    private fun getObjectClass(objectId: String): String {
+        val symbol = symbolTable.lookup(objectId)!!
+        return if (symbol.type == SymbolType.Variable) {
+            var instance = symbolTable.lookup(objectId)!!.info["expr"]
+            while (instance is IdExpr) {
+                instance = symbolTable.lookup(instance.id)!!.info["expr"]
+            }
+            (instance as ObjectInstantiation).classId
+        } else {
+            (symbol.info["type"] as CLASS).className
+        }
+    }
+
+    override fun postVisit(methodCall: MethodCall) {
+        // VTable lookup
+        val classId = getObjectClass(methodCall.objectId)
+        val classDefinition = classDefinitions.find { classId == it.className }!!
+        val vTablePointer = classDefinition.vTableOffset
+        val methodOffset = classDefinition.getMethods().indexOfFirst { it.id == methodCall.methodId }
+        val numArgs = methodCall.args.size
+
+        passFunctionArgs(numArgs)
+
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(VTable, Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Move Vtable pointer to register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.CALL,
+                InstructionArg(Register(OpReg1), IndirectRelative(-(vTablePointer + methodOffset))),
+                comment = "Call method"
+            )
+        )
+        functionEpilogue(numArgs)
+    }
+
+
+    override fun visit(thisExpr: ThisExpr) {
+        add(Instruction(InstructionType.PUSH, getIdLocation(thisExpr.objectId), comment = "Push object reference"))
+    }
+
+    override fun visit(classField: ClassField) {
+        val classId = getObjectClass(classField.objectId)
+        val classDefinition = classDefinitions.find { classId == it.className }!!
+        val fieldOffset = classDefinition.getFieldOffset(classField.fieldId)
+        val objectPointer = getIdLocation(classField.objectId)
+
+        add(
+            Instruction(
+                InstructionType.MOV,
+                objectPointer,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Store object pointer in register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("${8 * (fieldOffset + 1)}"), Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Store address of field"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Register(OpReg1), if (classField.reference) Direct else Indirect),
+                comment = "Push field ${if (classField.reference) "reference" else "value"} to stack"
+            )
+        )
+    }
+
     override fun postVisit(printStmt: PrintStmt) {
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(
@@ -749,11 +1086,25 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
         variableAssignment(varDecl.ids)
     }
 
+    override fun postVisit(fieldDecl: FieldDecl) {
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Memory(fieldDecl.staticDataField), Direct),
+                comment = "Pop expression result to static data field"
+            )
+        )
+    }
+      
     override fun postVisit(varAssign: VarAssign) {
-        variableAssignment(varAssign.ids, varAssign.indexExprs)
+        variableAssignment(varAssign.ids, varAssign.indexExprs, varAssign.classFields)
     }
 
-    private fun variableAssignment(ids: List<String>, arrayIds: List<ArrayIndexExpr> = listOf()) {
+    private fun variableAssignment(
+        ids: List<String>,
+        arrayIds: List<ArrayIndexExpr> = emptyList(),
+        classFields: List<ClassField> = emptyList()
+    ) {
         // Find each variable/parameter location and set their value to the expression result
         add(Instruction(InstructionType.POP, InstructionArg(Register(OpReg1), Direct), comment = "Expression result"))
         val symbols = ids.map { symbolTable.lookup(it)!! }
@@ -768,7 +1119,12 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                 )
             )
         }
-        for (id in arrayIds) {
+        for (id in arrayIds + classFields) {
+            val name = when (id) {
+                is ClassField -> id.fieldId
+                is ArrayIndexExpr -> id.id
+                else -> throw Exception("Invalid ID type")
+            }
             add(
                 Instruction(
                     InstructionType.POP,
@@ -781,7 +1137,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val he
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
                     InstructionArg(Register(OpReg2), Indirect),
-                    comment = "Set value of ${id.id} at index to expression result"
+                    comment = "Set value of $name at index to expression result"
                 )
             )
         }

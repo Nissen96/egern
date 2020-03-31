@@ -1,7 +1,6 @@
 package com.egern.emit
 
 import com.egern.codegen.*
-import java.lang.Exception
 
 abstract class Emitter(
     private val instructions: List<Instruction>,
@@ -9,8 +8,10 @@ abstract class Emitter(
     private val syntax: SyntaxManager
 ) {
     abstract fun emitProgramPrologue()
+    abstract fun emitDataSection()
     abstract fun emitProgramEpilogue()
     abstract fun emitRequestProgramHeap()
+    abstract fun emitFreeProgramHeap()
     abstract fun emitPrint(isEmpty: Boolean)
     abstract fun emitMainLabel(): String
 
@@ -20,6 +21,10 @@ abstract class Emitter(
 
         val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
+        const val HEAP_POINTER: String = "heap_pointer"
+        const val HEAP_SIZE: Int = 256
+        const val VTABLE_POINTER: String = "vtable_pointer"
+        const val VTABLE_SIZE: Int = 256
     }
 
     fun emit(): String {
@@ -32,9 +37,15 @@ abstract class Emitter(
         return builder.toFinalStr()
     }
 
-    private fun emitAllocateProgramHeap(heapSize: Int) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * heapSize}"), syntax.register("rdi"))
-        val (arg3, arg4) = syntax.argOrder(syntax.register("rax"), syntax.register("rbx"))
+    private fun emitAllocateInternalHeaps() {
+        emitAllocateProgramHeap()
+        emitAllocateVTable()
+    }
+
+    private fun emitAllocateProgramHeap() {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"), syntax.register("rdi"))
+        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
+        val (arg5, arg6) = syntax.argOrder(arg3, HEAP_POINTER)
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
             "Move argument into parameter register for malloc call"
@@ -44,6 +55,40 @@ abstract class Emitter(
             syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
             "Move returned heap pointer to fixed heap pointer register"
         )
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
+            "Save start of heap pointer globally"
+        )
+    }
+
+    private fun emitAllocateVTable() {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"), syntax.register("rdi"))
+        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), VTABLE_POINTER)
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+            "Move argument into parameter register for malloc call"
+        )
+        emitRequestProgramHeap()
+        builder.addLine(
+            syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
+            "Save start of vtable pointer globally"
+        )
+    }
+
+    private fun emitDeallocateInternalHeaps() {
+        emitDeallocateInternalHeap(VTABLE_POINTER)
+        emitDeallocateInternalHeap(HEAP_POINTER)
+
+    }
+
+    private fun emitDeallocateInternalHeap(pointer: String) {
+        val (arg1, arg2) = syntax.argOrder(pointer, syntax.register("rdi"))
+        builder
+            .addLine(
+                syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+                "Move argument into parameter register for free call"
+            )
+        emitFreeProgramHeap()
     }
 
     private fun emitInstruction(instruction: Instruction) {
@@ -52,6 +97,7 @@ abstract class Emitter(
             InstructionType.MOD -> emitModulo(instruction)
             InstructionType.NOT -> emitBooleanNot(instruction)
             InstructionType.LABEL -> emitLabel(instruction)
+            InstructionType.CALL -> emitCall(instruction)
             InstructionType.META -> emitMetaOp(instruction)
             in syntax.ops -> emitSimpleInstruction(instruction)
             else -> throw Exception("Unsupported operation ${instruction.instructionType}")
@@ -61,6 +107,15 @@ abstract class Emitter(
             builder.addComment(instruction.comment)
         }
         builder.newline()
+    }
+
+    private fun emitCall(instruction: Instruction) {
+        val instr = syntax.ops.getValue(instruction.instructionType)
+        builder.addOp(instr)
+
+        // Check for indirect function call
+        val prefix = if ((instruction.args[0] as InstructionArg).instructionTarget is Register) "*" else ""
+        builder.addRegs("$prefix${emitArg(instruction.args[0])}")
     }
 
     private fun emitSimpleInstruction(instruction: Instruction) {
@@ -98,6 +153,7 @@ abstract class Emitter(
             RBP -> syntax.register("rbp")
             RSP -> syntax.register("rsp")
             RHP -> syntax.register("rbx")
+            VTable -> VTABLE_POINTER
             ReturnValue -> syntax.register("rax")
             StaticLink -> syntax.register("r15")
             MainLabel -> emitMainLabel()
@@ -124,12 +180,13 @@ abstract class Emitter(
             MetaOperation.CalleeRestore -> emitCallerCallee(true, CALLEE_SAVE_REGISTERS)
             MetaOperation.CalleePrologue -> emitCalleePrologue()
             MetaOperation.CalleeEpilogue -> emitCalleeEpilogue()
+            MetaOperation.AllocateInternalHeap -> emitAllocateInternalHeaps()
+            MetaOperation.DeallocateInternalHeap -> emitDeallocateInternalHeaps()
 
             // Meta operation with an argument
             MetaOperation.Print -> emitPrint(value == 0)
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(value)
             MetaOperation.DeallocateStackSpace -> emitDeallocateStackSpace(value)
-            MetaOperation.AllocateInternalHeap -> emitAllocateProgramHeap(value)
             MetaOperation.AllocateHeapSpace -> emitAllocateHeapSpace(value)
             MetaOperation.DeallocateHeapSpace -> emitDeallocateHeapSpace(value)
         }
@@ -209,10 +266,10 @@ abstract class Emitter(
         val (arg3, arg4) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * size}"), emitInstructionTarget(RHP))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            "Move pointer to return value"
+            "Move heap pointer to return value"
         ).addLine(
             syntax.ops.getValue(InstructionType.ADD), arg3, arg4,
-            "Offset pointer by allocated bytes"
+            "Offset heap pointer by allocated bytes"
         )
     }
 
@@ -241,7 +298,7 @@ abstract class Emitter(
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
-            "Move stack pointer to deallocate space for local variables"
+            "Move stack pointer to deallocate space for local variables/parameters/arguments"
         )
     }
 }

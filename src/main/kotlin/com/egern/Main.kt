@@ -5,8 +5,9 @@ import MainParser
 import com.egern.antlr.ThrowingErrorListener
 import com.egern.ast.BuildASTVisitor
 import com.egern.ast.Program
+import com.egern.classes.ClassVisitor
 import com.egern.codegen.CodeGenerationVisitor
-import com.egern.codegen.PreCodeGenerationVisitor
+import com.egern.labels.LabelGenerationVisitor
 import com.egern.emit.*
 import com.egern.error.ErrorLogger
 import com.egern.symbols.SymbolVisitor
@@ -39,33 +40,38 @@ fun main(args: Array<String>) {
     val ast = BuildASTVisitor().visit(cst) as Program
 
     if (doPrint) {
-        val printProgramVisitor = PrintProgramVisitor(-1)
+        val printProgramVisitor = PrintProgramVisitor()
         ast.accept(printProgramVisitor)
+        println()
     }
 
     val symbolVisitor = SymbolVisitor()
     ast.accept(symbolVisitor)
 
+    val labelGenerationVisitor = LabelGenerationVisitor()
+    ast.accept(labelGenerationVisitor)
+
+    val classVisitor = ClassVisitor(symbolVisitor.classDefinitions)
+    ast.accept(classVisitor)
+
     if (doPrint) {
         val printVisitor = PrintSymbolTableVisitor()
         ast.accept(printVisitor)
+        println()
     }
 
-    val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable)
+    val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable, classVisitor.classDefinitions)
     ast.accept(typeCheckingVisitor)
-
-    val preCodeGenerationVisitor = PreCodeGenerationVisitor()
-    ast.accept(preCodeGenerationVisitor)
 
     val platform = PlatformManager()
 
-    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.currentTable)
+    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.currentTable, classVisitor.classDefinitions)
     ast.accept(codeGenVisitor)
 
     val emitter: Emitter = when (platform.platform) {
-        Platform.Windows -> WindowsEmitter(codeGenVisitor.instructions, IntelSyntax())
-        Platform.MacOS -> MacOSEmitter(codeGenVisitor.instructions, IntelSyntax())
-        Platform.Linux -> LinuxEmitter(codeGenVisitor.instructions, ATTSyntax())
+        Platform.Windows -> WindowsEmitter(codeGenVisitor.instructions, codeGenVisitor.dataFields, IntelSyntax())
+        Platform.MacOS -> MacOSEmitter(codeGenVisitor.instructions, codeGenVisitor.dataFields, IntelSyntax())
+        Platform.Linux -> LinuxEmitter(codeGenVisitor.instructions, codeGenVisitor.dataFields, ATTSyntax())
     }
     val code = emitter.emit()
     if (ErrorLogger.hasErrors()) {

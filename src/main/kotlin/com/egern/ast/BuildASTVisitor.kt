@@ -8,9 +8,81 @@ import java.lang.Exception
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
-        val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(ReturnStmt(IntExpr(0, isVoid = true)))  // Implicit "return 0"
-        return Program(children, lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine)
+        // Add implicit "return 0" as last statement
+        return Program(
+            ctx.stmt().map { it.accept(this) } + ReturnStmt(IntExpr(0, isVoid = true)),
+            ctx.funcDecl().map { it.accept(this) as FuncDecl },
+            ctx.classDecl().map { it.accept(this) as ClassDecl },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
+        val classId = ctx.CLASSNAME(0).text
+        val hasSuperclass = ctx.CLASSNAME(1) != null
+        return ClassDecl(
+            classId,
+            if (ctx.paramList() != null) ctx.paramList().ID().mapIndexed { index, it ->
+                it.text to getType(ctx.paramList().typeDecl()[index])
+            } else emptyList(),
+            if (hasSuperclass) ctx.CLASSNAME(1).text else "Base",
+            if (ctx.argList() != null) ctx.argList().expr().map { it.accept(this) as Expr } else emptyList(),
+            ctx.classBody().fieldDecl().map { it.accept(this) as FieldDecl },
+            ctx.classBody().methodDecl().map { visitMethodDecl(it, classId) as FuncDecl },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    private fun visitMethodDecl(ctx: MainParser.MethodDeclContext, classId: String): ASTNode {
+        return visitFuncDecl(ctx.funcDecl(), classId)
+    }
+
+    override fun visitObjectInstantiation(ctx: MainParser.ObjectInstantiationContext): ASTNode {
+        return ObjectInstantiation(
+            ctx.CLASSNAME().text,
+            ctx.argList().expr().map { it.accept(this) as Expr },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitMethodCall(ctx: MainParser.MethodCallContext): ASTNode {
+        val funcCall = ctx.funcCall()
+        val objectId = if (ctx.ID() != null) ctx.ID().text else "this"
+
+        // Method calls have an implicit first argument, referencing the object
+        return MethodCall(
+            objectId,
+            funcCall.ID().text,
+            listOf(ThisExpr(objectId)) + funcCall.argList().expr().map { it.accept(this) as Expr },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitFieldDecl(ctx: MainParser.FieldDeclContext): ASTNode {
+        return FieldDecl(
+            ctx.varDecl().ID().map { it.text },
+            ctx.varDecl().expr().accept(this) as Expr,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    private fun visitClassField(ctx: MainParser.ClassFieldContext, reference: Boolean): ClassField {
+        return ClassField(
+            if (ctx.ID().size > 1) ctx.ID(0).text else "this",
+            ctx.ID(if (ctx.ID().size > 1) 1 else 0).text,
+            reference = reference,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitClassField(ctx: MainParser.ClassFieldContext): ASTNode {
+        return visitClassField(ctx, reference = false)
     }
 
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {
@@ -22,6 +94,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.varDecl() != null -> ctx.varDecl().accept(this)
             ctx.opAssign() != null -> ctx.opAssign().accept(this)
             ctx.whileLoop() != null -> ctx.whileLoop().accept(this)
+            ctx.funcCall() != null -> ctx.funcCall().accept(this)
+            ctx.methodCall() != null -> ctx.methodCall().accept(this)
             else -> throw Exception("Invalid Statement Type!")
         }
     }
@@ -47,10 +121,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return when {
             ctx.PRIMITIVE() != null -> getPrimitiveType(ctx.PRIMITIVE())
             ctx.VOID() != null -> VOID
-            ctx.arrayType() != null -> {
-                val (depth, innerType) = getArrayType(ctx.arrayType())
-                return ARRAY(depth, innerType)
-            }
+            ctx.arrayType() != null -> getArrayType(ctx.arrayType())
+            ctx.CLASSNAME() != null -> CLASS(ctx.CLASSNAME().text)
             else -> throw Exception("Cannot find type")
         }
     }
@@ -59,30 +131,41 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ExprType.primitives()[primitive.symbol.text] ?: error("Primitive type not found")
     }
 
-    private fun getArrayType(ctx: MainParser.ArrayTypeContext): Pair<Int, ExprType> {
+    private fun getArrayType(ctx: MainParser.ArrayTypeContext): ExprType {
         var depth = 1
         var element = ctx
         while (element.PRIMITIVE() == null) {
             element = element.arrayType()
             depth++
         }
-        return Pair(depth, getPrimitiveType(element.PRIMITIVE()))
+        return ARRAY(depth, getPrimitiveType(element.PRIMITIVE()))
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
+        return visitFuncDecl(ctx, null)
+    }
+
+    private fun visitFuncDecl(ctx: MainParser.FuncDeclContext, classId: String?): ASTNode {
         val returnType = getType(ctx.typeDecl())
-        val children = (ctx.funcBody().children?.map { it.accept(this) } ?: emptyList()).toMutableList()
+        val stmts = ctx.funcBody().stmt().map { it.accept(this) }.toMutableList()
 
         // Always add implicit return for void functions
         if (returnType == VOID) {
-            children.add(ReturnStmt(IntExpr(0, isVoid = true)))
+            stmts.add(ReturnStmt(IntExpr(0, isVoid = true)))
         }
+
+        val paramList = mutableListOf<Pair<String, ExprType>>()
+        if (classId != null) paramList.add("this" to CLASS(classId))  // Add implicit object reference to method calls
+        paramList.addAll(ctx.paramList().ID().mapIndexed { index, it ->
+            it.text to getType(ctx.paramList().typeDecl()[index])
+        })
 
         return FuncDecl(
             ctx.ID().text,
-            ctx.paramList().ID().mapIndexed { index, it -> it.text to getType(ctx.paramList().typeDecl()[index]) },
+            paramList,
             returnType,
-            children,
+            stmts,
+            ctx.funcBody().funcDecl().map { it.accept(this) as FuncDecl },
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -119,15 +202,19 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitVarAssign(ctx: MainParser.VarAssignContext): ASTNode {
         val ids = mutableListOf<String>()
         val indexExprs = mutableListOf<ArrayIndexExpr>()
+        val classFields = mutableListOf<ClassField>()
         ctx.assignable().forEach {
             when {
                 it.idExpr() != null -> ids.add(it.idExpr().text)
                 it.arrayIndexExpr() != null -> indexExprs.add(visitArrayIndexExprReference(it.arrayIndexExpr()))
+                it.classField() != null -> classFields.add(
+                    visitClassField(it.classField(), reference = true)
+                )
             }
         }
 
         return VarAssign(
-            ids, indexExprs,
+            ids, indexExprs, classFields,
             ctx.expr().accept(this) as Expr,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
@@ -137,6 +224,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitOpAssign(ctx: MainParser.OpAssignContext): ASTNode {
         val ids = mutableListOf<IdExpr>()
         val arrayIndexExprs = mutableListOf<ArrayIndexExpr>()
+        val classFields = mutableListOf<ClassField>()
         when {
             ctx.assignable().idExpr() != null -> ids.add(
                 IdExpr(ctx.assignable().idExpr().ID().text, lineNumber = ctx.start.line, charPosition = -1)
@@ -144,13 +232,21 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.assignable().arrayIndexExpr() != null -> arrayIndexExprs.add(
                 visitArrayIndexExprReference(ctx.assignable().arrayIndexExpr())
             )
+            ctx.assignable().classField() != null -> classFields.add(
+                visitClassField(ctx.assignable().classField(), reference = true)
+            )
         }
 
         return VarAssign(
             ids.map { it.id },
             arrayIndexExprs,
+            classFields,
             ArithExpr(
-                (if (ids.isNotEmpty()) ids[0] else ctx.assignable().arrayIndexExpr().accept(this)) as Expr,
+                (when {
+                    ids.isNotEmpty() -> ids[0]
+                    arrayIndexExprs.isNotEmpty() -> ctx.assignable().arrayIndexExpr().accept(this)
+                    else -> ctx.assignable().classField().accept(this)
+                }) as Expr,
                 ctx.expr().accept(this) as Expr,
                 ArithOp.fromString(ctx.op.text[0].toString())!!,
                 lineNumber = ctx.start.line,
@@ -164,7 +260,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitIfElse(ctx: MainParser.IfElseContext): ASTNode {
         return IfElse(
             ctx.expr().accept(this) as Expr, ctx.block(0).accept(this) as Block,
-            if (ctx.ifElse() != null) (ctx.ifElse().accept(this) as IfElse) else (ctx.block(1)?.accept(this) as? Block),
+            if (ctx.ifElse() != null)
+                (ctx.ifElse().accept(this) as IfElse)
+            else (ctx.block(1)?.accept(this) as? Block),
             lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
         )
     }
@@ -179,7 +277,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitBlock(ctx: MainParser.BlockContext): ASTNode {
         return Block(
-            ctx.children?.map { it.accept(this) } ?: emptyList(),
+            ctx.stmt().map { it.accept(this) },
             lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
         )
     }
@@ -210,6 +308,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                 lineNumber = ctx.start.line,
                 charPosition = ctx.start.charPositionInLine
             )
+            ctx.classField() != null -> visitClassField(ctx.classField())
+            ctx.methodCall() != null -> visitMethodCall(ctx.methodCall())
+            ctx.objectInstantiation() != null -> visitObjectInstantiation(ctx.objectInstantiation())
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
                     IntExpr(-1, lineNumber = ctx.start.line, charPosition = -1),

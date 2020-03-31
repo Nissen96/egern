@@ -22,13 +22,15 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
         }
     }
 
-    fun lookup(id: String, checkDeclared: Boolean = false): Symbol? {
+    fun lookupCurrentScope(id: String, checkDeclared: Boolean = false): Symbol? {
         // For each symbol type, lookup a corresponding id in this scope
         val checkKeys = SymbolType.values().map { Pair(id, it) }
-        val foundSymbol = checkKeys.asSequence().map { lookupType(it, checkDeclared) }.firstOrNull { it != null }
+        return checkKeys.asSequence().map { lookupType(it, checkDeclared) }.firstOrNull { it != null }
+    }
 
+    fun lookup(id: String, checkDeclared: Boolean = false): Symbol? {
         // If none was found, check parent scope
-        return foundSymbol ?: parent?.lookup(id, checkDeclared)
+        return lookupCurrentScope(id, checkDeclared) ?: parent?.lookup(id, checkDeclared)
     }
 
     private fun lookupType(key: Pair<String, SymbolType>, checkDeclared: Boolean = false): Symbol? {

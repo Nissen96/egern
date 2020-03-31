@@ -1,11 +1,13 @@
-package com.egern.codegen
+package com.egern.labels
 
+import com.egern.ast.ClassDecl
 import com.egern.ast.FuncDecl
 import com.egern.ast.IfElse
 import com.egern.ast.WhileLoop
+import com.egern.labels.LabelGenerator
 import com.egern.visitor.Visitor
 
-class PreCodeGenerationVisitor : Visitor {
+class LabelGenerationVisitor : Visitor {
     override fun preVisit(funcDecl: FuncDecl) {
         funcDecl.startLabel = LabelGenerator.nextLabel(funcDecl.id)
         funcDecl.endLabel = funcDecl.startLabel + "_end"
@@ -19,5 +21,9 @@ class PreCodeGenerationVisitor : Visitor {
     override fun preVisit(whileLoop: WhileLoop) {
         whileLoop.startLabel = LabelGenerator.nextLabel("while_start")
         whileLoop.endLabel = LabelGenerator.nextLabel("while_end")
+    }
+
+    override fun preVisit(classDecl: ClassDecl) {
+        classDecl.endLabel = LabelGenerator.nextLabel(classDecl.id + "_end")
     }
 }

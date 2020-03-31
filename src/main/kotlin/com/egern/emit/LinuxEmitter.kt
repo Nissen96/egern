@@ -2,7 +2,7 @@ package com.egern.emit
 
 import com.egern.codegen.*
 
-class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
+class LinuxEmitter(instructions: List<Instruction>, private val dataFields: List<String>, syntax: SyntaxManager) :
     Emitter(instructions, AsmStringBuilder("#"), syntax) {
 
     override fun emitProgramPrologue() {
@@ -13,9 +13,22 @@ class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
             .addLine("format_newline:")
             .addLine(".string \"\\n\"", comment = "Empty format string for C printf")
             .newline()
+        emitDataSection()
+        builder
             .addLine(".text")
             .addLine(".globl", "main")
             .newline()
+    }
+
+    override fun emitDataSection() {
+        builder
+            .addLine(".bss")
+            .addLine(".lcomm $HEAP_POINTER, 8")
+            .addLine(".lcomm $VTABLE_POINTER, 8")
+        dataFields.forEach {
+            builder.addLine(".lcomm $it, 8")
+        }
+        builder.newline()
     }
 
     override fun emitProgramEpilogue() {
@@ -24,6 +37,10 @@ class LinuxEmitter(instructions: List<Instruction>, syntax: SyntaxManager) :
 
     override fun emitRequestProgramHeap() {
         builder.addLine("call malloc")
+    }
+
+    override fun emitFreeProgramHeap() {
+        builder.addLine("call free")
     }
 
     override fun emitPrint(isEmpty: Boolean) {
