@@ -13,9 +13,10 @@ class VarAssign(
     Statement(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        indexExprs.map { it.accept(visitor) }
-        classFields.map { it.accept(visitor) }
-        visitor.midVisit(this)
+        (indexExprs + classFields).forEach {
+            it.accept(visitor)
+            visitor.midVisit(this)
+        }
         expr.accept(visitor)
         visitor.postVisit(this)
     }

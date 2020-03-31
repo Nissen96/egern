@@ -16,7 +16,11 @@ class ClassDecl(
 
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        fieldDecls.forEach { it.accept(visitor) }
+        fieldDecls.forEach {
+            visitor.preStmtVisit()
+            it.accept(visitor)
+            visitor.postStmtVisit()
+        }
         visitor.midVisit(this)
         methods.forEach { it.accept(visitor) }
         visitor.postVisit(this)

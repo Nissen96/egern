@@ -22,7 +22,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     override fun postVisit(funcDecl: FuncDecl) {
         currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
         functionStack.pop()
-        if (!funcDecl.children.any { it is ReturnStmt }) {
+        if (!funcDecl.stmts.any { it is ReturnStmt }) {
             ErrorLogger.log(funcDecl, "No return statement found in function declaration")
         }
     }

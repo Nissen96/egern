@@ -1,18 +1,20 @@
 grammar Main;
 
-prog:	( classDecl | stmt | funcDecl | funcCall ';'? | methodCall ';'? )* ;
-stmt:   varDecl
-    |   varAssign
-    |   opAssign
+prog:	( stmt | funcDecl | classDecl )* ;
+stmt:   varDecl ';'?
+    |   varAssign ';'?
+    |   opAssign ';'?
     |   ifElse
-    |   returnStmt
-    |   printStmt
+    |   returnStmt ';'?
+    |   printStmt ';'?
     |   whileLoop
+    |   funcCall ';'?
+    |   methodCall ';'?
     ;
 
-returnStmt: 'return' expr? ';'? ;
+returnStmt: 'return' expr? ;
 funcDecl:   'func' ID '(' paramList ')' ':' typeDecl '{' funcBody '}'  ;
-funcBody:   ( stmt | funcDecl | funcCall ';'? | methodCall ';'? )* ;
+funcBody:   ( stmt | funcDecl )* ;
 funcCall:   ID '(' argList ')' ;
 
 paramList:  (ID ':' typeDecl ',')* (ID ':' typeDecl)? ;
@@ -23,15 +25,15 @@ assignable: idExpr
           | classField
           ;
 
-varDecl: 'var' (ID '=')+ expr ';'? ;
-varAssign: (assignable '=')+ expr ';'?;
-opAssign: assignable op=('+=' | '-=' | '*=' | '/=' | '%=' ) expr ';'?;
+varDecl: 'var' (ID '=')+ expr ;
+varAssign: (assignable '=')+ expr ;
+opAssign: assignable op=('+=' | '-=' | '*=' | '/=' | '%=' ) expr ;
 
 ifElse: 'if' '(' expr ')' block ('else' (block | ifElse))? ;
 
 whileLoop: 'while' '(' expr ')' block ;
 
-block:  '{' ( stmt | funcCall ';'? | methodCall ';'? )* '}' ;
+block:  '{' stmt* '}' ;
 
 classDecl: 'class' CLASSNAME ('(' paramList ')')? (':' CLASSNAME ('(' argList ')')?)? '{' classBody '}' ;
 classBody: (methodDecl | fieldDecl)* ;
@@ -74,7 +76,7 @@ lenExpr: 'len' '(' expr ')';
 typeDecl: VOID | PRIMITIVE | arrayType | CLASSNAME ;
 arrayType: '[' (arrayType | PRIMITIVE) ']';
 
-printStmt: 'print' '(' expr? ')' ';'?;
+printStmt: 'print' '(' expr? ')' ;
 
 NEWLINE  :'\r'? '\n' -> skip;
 WS       : (' '|'\t') -> skip;

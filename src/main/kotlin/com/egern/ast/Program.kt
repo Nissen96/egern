@@ -2,32 +2,24 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class Program(val children: List<ASTNode>, lineNumber: Int, charPosition: Int) : ASTNode(lineNumber, charPosition) {
+class Program(
+    val stmts: List<ASTNode>,
+    val funcDecls: List<FuncDecl>,
+    val classDecls: List<ClassDecl>,
+    lineNumber: Int,
+    charPosition: Int
+) : ASTNode(lineNumber, charPosition) {
     var variableCount: Int = 0
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        children.forEach {
-            when (it) {
-                is ClassDecl -> it.accept(visitor)
-                is Statement -> it.accept(visitor)
-                is FuncCall -> {
-                    visitor.preFuncCallVisit(this)
-                    it.accept(visitor)
-                    visitor.postFuncCallVisit(this)
-                }
-                is MethodCall -> {
-                    visitor.preFuncCallVisit(this)
-                    it.accept(visitor)
-                    visitor.postFuncCallVisit(this)
-                }
-            }
+        classDecls.forEach { it.accept(visitor) }
+        stmts.forEach {
+            visitor.preStmtVisit()
+            it.accept(visitor)
+            visitor.postStmtVisit()
         }
         visitor.midVisit(this)
-        children.forEach {
-            when (it) {
-                is FuncDecl -> it.accept(visitor)
-            }
-        }
+        funcDecls.forEach { it.accept(visitor) }
         visitor.postVisit(this)
     }
 }

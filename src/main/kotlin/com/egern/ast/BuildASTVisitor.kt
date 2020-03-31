@@ -8,9 +8,14 @@ import java.lang.Exception
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
-        val children = (ctx.children?.map { it.accept(this) } ?: emptyList()).toMutableList()
-        children.add(ReturnStmt(IntExpr(0, isVoid = true)))  // Implicit "return 0"
-        return Program(children, lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine)
+        // Add implicit "return 0" as last statement
+        return Program(
+            ctx.stmt().map { it.accept(this) } + ReturnStmt(IntExpr(0, isVoid = true)),
+            ctx.funcDecl().map { it.accept(this) as FuncDecl },
+            ctx.classDecl().map { it.accept(this) as ClassDecl },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
     }
 
     override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
@@ -89,6 +94,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.varDecl() != null -> ctx.varDecl().accept(this)
             ctx.opAssign() != null -> ctx.opAssign().accept(this)
             ctx.whileLoop() != null -> ctx.whileLoop().accept(this)
+            ctx.funcCall() != null -> ctx.funcCall().accept(this)
+            ctx.methodCall() != null -> ctx.methodCall().accept(this)
             else -> throw Exception("Invalid Statement Type!")
         }
     }
@@ -140,11 +147,11 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     private fun visitFuncDecl(ctx: MainParser.FuncDeclContext, classId: String?): ASTNode {
         val returnType = getType(ctx.typeDecl())
-        val children = (ctx.funcBody().children?.map { it.accept(this) } ?: emptyList()).toMutableList()
+        val stmts = ctx.funcBody().stmt().map { it.accept(this) }.toMutableList()
 
         // Always add implicit return for void functions
         if (returnType == VOID) {
-            children.add(ReturnStmt(IntExpr(0, isVoid = true)))
+            stmts.add(ReturnStmt(IntExpr(0, isVoid = true)))
         }
 
         val paramList = mutableListOf<Pair<String, ExprType>>()
@@ -157,8 +164,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.ID().text,
             paramList,
             returnType,
-            children,
-            classId,
+            stmts,
+            ctx.funcBody().funcDecl().map { it.accept(this) as FuncDecl },
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -270,7 +277,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitBlock(ctx: MainParser.BlockContext): ASTNode {
         return Block(
-            ctx.children?.map { it.accept(this) } ?: emptyList(),
+            ctx.stmt().map { it.accept(this) },
             lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
         )
     }
