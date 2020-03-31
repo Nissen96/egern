@@ -12,9 +12,9 @@ class ArrayIndexExpr(
     Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        for (index in indices.reversed()) {
+        indices.reversed().forEach {
             visitor.preMidVisit(this)
-            index.accept(visitor)
+            it.accept(visitor)
             visitor.postMidVisit(this)
         }
         visitor.postVisit(this)

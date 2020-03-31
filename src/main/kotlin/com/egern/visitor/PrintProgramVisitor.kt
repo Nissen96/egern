@@ -2,6 +2,7 @@ package com.egern.visitor
 
 import com.egern.ast.*
 import com.egern.types.*
+import com.egern.util.forEach
 
 class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     private var level = 0
@@ -88,13 +89,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
             print("(${classDecl.constructor.joinToString(", ") { "${it.first}: ${getType(it.second)}" }})")
         }
         print(": ${classDecl.superclass}(")
-        if (!classDecl.superclassArgs.isNullOrEmpty()) {
-            classDecl.superclassArgs.dropLast(1).map {
-                it.accept(this)
-                print(", ")
-            }
-            classDecl.superclassArgs.last().accept(this)
-        }
+        classDecl.superclassArgs?.forEach({ it.accept(this) }, { print(", ") })
         println(") {")
         level++
     }
