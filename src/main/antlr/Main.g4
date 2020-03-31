@@ -71,3 +71,10 @@ BOOLEAN  : 'true' | 'false' ;
 VOID     : 'void' ;
 PRIMITIVE: 'int' | 'boolean' ;
 ID       : [A-Za-z_]+[A-Za-z_0-9]* ;
+COMMENT
+    :   '/**' .*? '**/' -> skip
+    ;
+
+LINE_COMMENT
+    :   '//' ~[\r\n]* -> skip
+    ;
