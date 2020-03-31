@@ -42,6 +42,7 @@ fun main(args: Array<String>) {
     if (doPrint) {
         val printProgramVisitor = PrintProgramVisitor()
         ast.accept(printProgramVisitor)
+        println()
     }
 
     val symbolVisitor = SymbolVisitor()
@@ -56,6 +57,7 @@ fun main(args: Array<String>) {
     if (doPrint) {
         val printVisitor = PrintSymbolTableVisitor()
         ast.accept(printVisitor)
+        println()
     }
 
     val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable, classVisitor.classDefinitions)

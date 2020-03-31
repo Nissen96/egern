@@ -16,22 +16,9 @@ class ClassDecl(
 
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        /*if (superclassArgs.isNotEmpty()) {
-            superclassArgs.dropLast(1).map {
-                it.accept(visitor)
-                visitor.midSuperclassArgVisit(this)
-            }
-            superclassArgs.last().accept(visitor)
-        }
-        visitor.preMidVisit(this)
-         */
-        fieldDecls.forEach {
-            it.accept(visitor)
-        }
-        visitor.postMidVisit(this)
-        methods.forEach {
-            it.accept(visitor)
-        }
+        fieldDecls.forEach { it.accept(visitor) }
+        visitor.midVisit(this)
+        methods.forEach { it.accept(visitor) }
         visitor.postVisit(this)
     }
 }

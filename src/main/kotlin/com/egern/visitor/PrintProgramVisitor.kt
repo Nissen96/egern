@@ -88,13 +88,13 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
             print("(${classDecl.constructor.joinToString(", ") { "${it.first}: ${getType(it.second)}" }})")
         }
         print(": ${classDecl.superclass}(")
-    }
-
-    override fun midSuperclassArgVisit(classDecl: ClassDecl) {
-        print(", ")
-    }
-
-    override fun preMidVisit(classDecl: ClassDecl) {
+        if (!classDecl.superclassArgs.isNullOrEmpty()) {
+            classDecl.superclassArgs.dropLast(1).map {
+                it.accept(this)
+                print(", ")
+            }
+            classDecl.superclassArgs.last().accept(this)
+        }
         println(") {")
         level++
     }
@@ -150,7 +150,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
 
     override fun postVisit(funcDecl: FuncDecl) {
         level--
-        printIndented("}\n\n")
+        printIndented("}\n")
     }
 
     override fun visit(idExpr: IdExpr) {

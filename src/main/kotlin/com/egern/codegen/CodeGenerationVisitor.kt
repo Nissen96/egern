@@ -732,7 +732,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         symbolTable = classDefinitions.find { classDecl.id == it.className }!!.symbolTable
     }
 
-    override fun postMidVisit(classDecl: ClassDecl) {
+    override fun midVisit(classDecl: ClassDecl) {
         add(
             Instruction(
                 InstructionType.JMP,
@@ -929,8 +929,6 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         val classDefinition = classDefinitions.find { classId == it.className }!!
         val fieldOffset = classDefinition.getFieldOffset(classField.fieldId)
         val objectPointer = getIdLocation(classField.objectId)
-        //println(classField.fieldId)
-        //println(fieldOffset + 1)
 
         add(
             Instruction(

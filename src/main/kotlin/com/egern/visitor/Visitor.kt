@@ -27,9 +27,7 @@ interface Visitor {
     fun postVisit(booleanOpExpr: BooleanOpExpr) {}
 
     fun preVisit(classDecl: ClassDecl) {}
-    fun midSuperclassArgVisit(classDecl: ClassDecl) {}
-    fun preMidVisit(classDecl: ClassDecl) {}
-    fun postMidVisit(classDecl: ClassDecl) {}
+    fun midVisit(classDecl: ClassDecl) {}
     fun postVisit(classDecl: ClassDecl) {}
 
     fun visit(classField: ClassField) {}
