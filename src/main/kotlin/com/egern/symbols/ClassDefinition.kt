@@ -15,7 +15,6 @@ class ClassDefinition(
     val superclassArgs: List<Expr>? = null
 ) {
     var vTableOffset: Int = -1
-    var numFields: Int = 0
     lateinit var symbolTable: SymbolTable
 
     fun getMethods(): List<FuncDecl> {
@@ -30,16 +29,32 @@ class ClassDefinition(
         return classDecl.fieldDecls
     }
 
-    fun getFields(): List<FieldDecl> {
-        return (superclass?.getFields() ?: emptyList()) + getLocalFields()
+    fun getNumLocalFields(): Int {
+        return classDecl.fieldDecls.size + classDecl.constructor.size
+    }
+
+    fun getNumFields(): Int {
+        return getNumLocalFields() + (superclass?.getNumFields() ?: 0)
     }
 
     fun getNumConstructorArgsPerClass(): List<Int> {
-        return listOf(classDecl.constructor.size) + (superclass?.getNumConstructorArgsPerClass() ?: emptyList())
+        return (superclass?.getNumConstructorArgsPerClass() ?: emptyList()) + listOf(classDecl.constructor.size)
     }
 
-    fun lookup(id: String): Symbol? {
+    fun getLocalFieldsPerClass(): List<List<FieldDecl>> {
+        return (superclass?.getLocalFieldsPerClass() ?: emptyList()) + listOf(classDecl.fieldDecls)
+    }
+
+    fun getFieldOffset(fieldId: String): Int {
+        val (classWithField, fieldSymbol) = lookup(fieldId)!!
+        val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
+
+        return (classWithField.superclass?.getNumFields() ?: 0) + fieldOffset
+    }
+
+    fun lookup(id: String): Pair<ClassDefinition, Symbol>? {
         // Find symbol recursively in class hierarchy
-        return symbolTable.lookupCurrentScope(id) ?: superclass?.lookup(id)
+        val symbol = symbolTable.lookupCurrentScope(id) ?: return superclass?.lookup(id)
+        return Pair(this, symbol)
     }
 }

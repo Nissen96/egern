@@ -112,6 +112,5 @@ class SymbolVisitor : Visitor {
     override fun postVisit(classDecl: ClassDecl) {
         isInsideClass = false
         returnToParentScope()
-        classDefinitions.last().numFields = varCountStack.pop()!!
     }
 }

@@ -754,7 +754,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
-        val totalFields = classDefinition.getFields().size
+        val totalFields = classDefinition.getNumFields()
 
         add(
             Instruction(
@@ -813,10 +813,11 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
         // Move all constructor args to object
         val numArgs = classDefinition.getNumConstructorArgsPerClass()
-        var currentClass: ClassDefinition? = classDefinition
-        var argOffset = 0
-        numArgs.forEach { argSize ->
-            repeat(argSize) { index ->
+        val fieldsPerClass = classDefinition.getLocalFieldsPerClass()
+        var heapOffset = 0
+        repeat(numArgs.size) { classNum ->
+            val numConstructorArgs = numArgs[classNum]
+            repeat(numConstructorArgs) { index ->
                 add(
                     Instruction(
                         InstructionType.POP,
@@ -828,16 +829,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                     Instruction(
                         InstructionType.MOV,
                         InstructionArg(Register(OpReg1), Direct),
-                        InstructionArg(ReturnValue, IndirectRelative(-(argOffset + argSize - index))),
-                        comment = "Save value at object's constructor field ${argOffset + index + 1}"
+                        InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + numConstructorArgs - index))),
+                        comment = "Save value at object's constructor field ${heapOffset + index + 1}"
                     )
                 )
             }
 
+            heapOffset += numConstructorArgs
 
             // Move local class fields to object
-            var fieldOffset = argSize + 1
-            val localFields = currentClass!!.getLocalFields()
+            val localFields = fieldsPerClass[classNum]
+            var fieldOffset = 0
             localFields.forEach { fieldDecl ->
                 fieldDecl.ids.forEach { _ ->
                     add(
@@ -852,16 +854,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                         Instruction(
                             InstructionType.MOV,
                             InstructionArg(Register(OpReg1), Direct),
-                            InstructionArg(ReturnValue, IndirectRelative(-(fieldOffset + argOffset))),
+                            InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + fieldOffset + 1))),
                             comment = "Save value at object's constructor field ${fieldOffset + 1}"
                         )
                     )
                     fieldOffset++
                 }
             }
-            currentClass = currentClass?.superclass
 
-            argOffset += argSize + localFields.size
+            heapOffset += fieldOffset
         }
 
         add(
@@ -926,9 +927,10 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     override fun visit(classField: ClassField) {
         val classId = getObjectClass(classField.objectId)
         val classDefinition = classDefinitions.find { classId == it.className }!!
-        val fieldSymbol = classDefinition.lookup(classField.fieldId)!!
-        val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
+        val fieldOffset = classDefinition.getFieldOffset(classField.fieldId)
         val objectPointer = getIdLocation(classField.objectId)
+        //println(classField.fieldId)
+        //println(fieldOffset + 1)
 
         add(
             Instruction(
@@ -1097,7 +1099,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
       
     override fun postVisit(varAssign: VarAssign) {
-        variableAssignment(varAssign.ids, varAssign.indexExprs)
+        variableAssignment(varAssign.ids, varAssign.indexExprs, varAssign.classFields)
     }
 
     private fun variableAssignment(
