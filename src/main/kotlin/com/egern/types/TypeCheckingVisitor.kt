@@ -54,7 +54,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     private fun getVariableType(id: String): ExprType {
-        val symbol = lookupSymbol(id, listOf(SymbolType.Variable, SymbolType.Parameter))
+        val symbol = lookupSymbol(id, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field))
         return when (symbol.type) {
             SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
             SymbolType.Parameter -> symbol.info["type"] as ExprType
@@ -140,7 +140,8 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
 
     override fun preVisit(varAssign: VarAssign) {
         // Check variable ids
-        val allIds = varAssign.ids + varAssign.indexExprs.map { it.id } + varAssign.classFields.map { it.fieldId }
+        // TODO check types on varAssign classFields
+        val allIds = varAssign.ids + varAssign.indexExprs.map { it.id }
         allIds.forEach { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field)) }
 
         val exprType = deriveType(varAssign.expr)
