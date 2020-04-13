@@ -1,0 +1,21 @@
+class Person(age: int, legs: int) {
+    func getAge(): int {
+        return this.age
+    }
+}
+
+class Student(failedClasses: int, age: int): Person(age - 8, 2) {
+    func getStudentAge(): int {
+        return this.age
+    }
+}
+
+class Superstudent(awesomePoints: int, age: int): Student(3, age + 2) {}
+
+var bob = Superstudent(5, 92)
+print(bob.getAge())
+print(bob.legs)
+print(bob.failedClasses)
+print(bob.getStudentAge())
+print(bob.awesomePoints)
+print(bob.age)

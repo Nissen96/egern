@@ -1,0 +1,14 @@
+class Person(age: int, legs: int) {
+    var isMale = true
+}
+
+/*
+class Student(failedClasses: int, age: int): Person(age, 2) {
+    var yearsStudied = 8
+}
+*/
+
+var bob = Person(12,  2)
+print(bob.legs)
+bob.legs = 4
+print(bob.legs)
