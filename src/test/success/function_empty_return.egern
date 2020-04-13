@@ -1,4 +1,4 @@
-func emptyReturn(b: int): void {
+func emptyReturn(b: int) {
     var a = 4
     print(a + b)
     return

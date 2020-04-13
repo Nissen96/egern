@@ -1,4 +1,4 @@
-func square(n: boolean): void {
+func square(n: boolean) {
     n = 4
 }
 

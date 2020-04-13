@@ -28,7 +28,7 @@ whileLoop: 'while' '(' expr ')' block ;
 funcCall:   ID '(' argList ')' ;
 argList:    (expr ',')* expr? ;
 
-funcDecl:   'func' ID '(' paramList ')' ':' typeDecl '{' funcBody '}'  ;
+funcDecl:   'func' ID '(' paramList ')' (':' typeDecl)? '{' funcBody '}' ;
 paramList:  (ID ':' typeDecl ',')* (ID ':' typeDecl)? ;
 funcBody:   ( stmt | funcDecl )* ;
 

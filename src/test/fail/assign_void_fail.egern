@@ -1,4 +1,4 @@
-func empty(): void {
+func empty() {
     return
 }
 var a = empty()
