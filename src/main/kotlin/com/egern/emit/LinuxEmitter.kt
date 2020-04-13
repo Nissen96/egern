@@ -26,9 +26,8 @@ class LinuxEmitter(
     }
 
     override fun emitDataSection() {
-        builder.addLine(".data")
         staticStrings.forEach {
-            builder.addLine("${it.key}: .asciz \" ${it.value} \"")
+            builder.addLine("${it.key}: .asciz \"${it.value}\"")
         }
         builder.newline()
         builder
