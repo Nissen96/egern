@@ -34,7 +34,7 @@ class TypeCheckingVisitor(
             checkMethodDecl(funcDecl)
         }
     }
-    
+
     private fun checkMethodDecl(methodDecl: FuncDecl) {
         // Check modifiers for the method itself
         val methodOverrides = Modifier.OVERRIDE in methodDecl.modifiers

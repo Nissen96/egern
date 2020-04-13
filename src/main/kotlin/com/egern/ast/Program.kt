@@ -4,7 +4,7 @@ import com.egern.visitor.Visitor
 
 class Program(
     val stmts: List<ASTNode>,
-    val funcDecls: List<FuncDecl>,
+    var funcDecls: List<FuncDecl>,
     val classDecls: List<ClassDecl>,
     val interfaceDecls: List<InterfaceDecl>,
     lineNumber: Int,

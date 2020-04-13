@@ -37,11 +37,11 @@ class WeedingVisitor : Visitor {
                 is ReturnStmt -> return true  // Return immediately if return is found
                 is IfElse -> if (  // Check recursively both the if- and else-part has return
                     stmt.elseBlock != null &&
-                    allBranchesReturn(stmt.ifBlock.children.filterIsInstance<Statement>()) &&  // if-part
+                    allBranchesReturn(stmt.ifBlock.stmts.filterIsInstance<Statement>()) &&  // if-part
                     allBranchesReturn(
                         // Handle if-else as a singular list of the if-else statement (simplest)
                         if (stmt.elseBlock is IfElse) listOf(stmt.elseBlock)
-                        else (stmt.elseBlock as Block).children.filterIsInstance<Statement>()  // else-part
+                        else (stmt.elseBlock as Block).stmts.filterIsInstance<Statement>()  // else-part
                     )
                 ) return true
             }
@@ -56,7 +56,7 @@ class WeedingVisitor : Visitor {
         funcDecls.forEach {
             functionTree = FunctionNode(it, functionTree)
             functionTree.parent?.children?.add(functionTree)
-            buildFunctionTree(it.children.filterIsInstance<FuncDecl>())
+            buildFunctionTree(it.funcDecls)
             functionTree = functionTree.parent!!
         }
     }
@@ -71,11 +71,9 @@ class WeedingVisitor : Visitor {
         val usedFunctions = functionTree.children.filter { functionIsUsed(it) }
 
         if (node is Program) {
-            val nonFunctions = node.children.filterNot { it is FuncDecl }
-            node.children = nonFunctions + usedFunctions.map { it.funcDecl!! } as List<ASTNode>
+            node.funcDecls = usedFunctions.map { it.funcDecl!! }
         } else if (node is FuncDecl) {
-            val nonFunctions = node.children.filterNot { it is FuncDecl }
-            node.children = nonFunctions + usedFunctions.map { it.funcDecl!! } as List<ASTNode>
+            node.funcDecls = usedFunctions.map { it.funcDecl!! }
         }
 
         usedFunctions.forEach {
@@ -96,7 +94,7 @@ class WeedingVisitor : Visitor {
     }
 
     override fun preVisit(program: Program) {
-        buildFunctionTree(program.children.filterIsInstance<FuncDecl>())
+        buildFunctionTree(program.funcDecls)
     }
 
     override fun postVisit(program: Program) {
@@ -105,7 +103,7 @@ class WeedingVisitor : Visitor {
 
     override fun preVisit(funcDecl: FuncDecl) {
         functionTree = functionTree.children.find { it.funcDecl == funcDecl }!!
-        if (!allBranchesReturn(funcDecl.children.filterIsInstance<Statement>())) {
+        if (!allBranchesReturn(funcDecl.stmts.filterIsInstance<Statement>())) {
             ErrorLogger.log(funcDecl, "Function must always return a value")
         }
     }
