@@ -11,6 +11,7 @@ abstract class Visitor {
         return when (type) {
             INT -> "int"
             BOOLEAN -> "boolean"
+            STRING -> "string"
             VOID -> "void"
             is ARRAY -> "[".repeat(type.depth) + typeString(type.innerType) + "]".repeat(type.depth)
             is CLASS -> type.className
@@ -36,10 +37,12 @@ abstract class Visitor {
 
     // General visits
     open fun preStmtVisit() {}
+
     open fun postStmtVisit() {}
 
     // AST node visits
     open fun midVisit(arithExpr: ArithExpr) {}
+
     open fun postVisit(arithExpr: ArithExpr) {}
 
     open fun preVisit(arrayExpr: ArrayExpr) {}
@@ -114,8 +117,10 @@ abstract class Visitor {
     open fun preVisit(returnStmt: ReturnStmt) {}
     open fun postVisit(returnStmt: ReturnStmt) {}
 
+    open fun visit(stringExpr: StringExpr) {}
+
     open fun visit(thisExpr: ThisExpr) {}
-  
+
     open fun preVisit(varAssign: VarAssign) {}
     open fun midVisit(varAssign: VarAssign) {}
     open fun postVisit(varAssign: VarAssign) {}

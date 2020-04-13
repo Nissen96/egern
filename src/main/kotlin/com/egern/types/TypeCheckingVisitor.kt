@@ -60,6 +60,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             // Handle implicit returns of nothing (int=0)
             is IntExpr -> if (expr.isVoid) VOID else INT
             is BooleanExpr -> BOOLEAN
+            is StringExpr -> STRING
             is BooleanOpExpr -> BOOLEAN
             is CompExpr -> BOOLEAN
             is ArithExpr -> INT

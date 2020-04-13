@@ -15,6 +15,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     Visitor() {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
+    val staticStrings = mutableMapOf<String, String>()
     private val functionStack = stackOf<FuncDecl>()
     private var currentClassDefinition: ClassDefinition? = null
 
@@ -338,6 +339,19 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 InstructionType.PUSH,
                 InstructionArg(ImmediateValue(intExpr.value.toString()), Direct),
                 comment = "Push static integer value"
+            )
+        )
+    }
+
+    override fun visit(stringExpr: StringExpr) {
+        val label = DataFieldGenerator.nextLabel("string")
+        staticStrings[label] = stringExpr.value
+        stringExpr.dataLabel = label
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Memory(stringExpr.dataLabel), Direct),
+                comment = "Push static string value"
             )
         )
     }
@@ -1083,7 +1097,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
     }
-      
+
     override fun postVisit(varAssign: VarAssign) {
         variableAssignment(varAssign.ids, varAssign.indexExprs, varAssign.classFields)
     }

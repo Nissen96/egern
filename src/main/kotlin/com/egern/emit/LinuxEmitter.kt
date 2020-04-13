@@ -2,7 +2,12 @@ package com.egern.emit
 
 import com.egern.codegen.*
 
-class LinuxEmitter(instructions: List<Instruction>, private val dataFields: List<String>, syntax: SyntaxManager) :
+class LinuxEmitter(
+    instructions: List<Instruction>,
+    private val dataFields: List<String>,
+    private val staticStrings: Map<String, String>,
+    syntax: SyntaxManager
+) :
     Emitter(instructions, AsmStringBuilder("#"), syntax) {
 
     override fun emitProgramPrologue() {
@@ -27,6 +32,9 @@ class LinuxEmitter(instructions: List<Instruction>, private val dataFields: List
             .addLine(".lcomm $VTABLE_POINTER, 8")
         dataFields.forEach {
             builder.addLine(".lcomm $it, 8")
+        }
+        staticStrings.forEach {
+            builder.addLine("${it.key}: .asciz \" ${it.value} \"")
         }
         builder.newline()
     }

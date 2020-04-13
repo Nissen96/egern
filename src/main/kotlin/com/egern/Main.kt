@@ -71,7 +71,12 @@ fun main(args: Array<String>) {
     val emitter: Emitter = when (platform.platform) {
         Platform.Windows -> WindowsEmitter(codeGenVisitor.instructions, codeGenVisitor.dataFields, IntelSyntax())
         Platform.MacOS -> MacOSEmitter(codeGenVisitor.instructions, codeGenVisitor.dataFields, IntelSyntax())
-        Platform.Linux -> LinuxEmitter(codeGenVisitor.instructions, codeGenVisitor.dataFields, ATTSyntax())
+        Platform.Linux -> LinuxEmitter(
+            codeGenVisitor.instructions,
+            codeGenVisitor.dataFields,
+            codeGenVisitor.staticStrings,
+            ATTSyntax()
+        )
     }
     val code = emitter.emit()
     if (ErrorLogger.hasErrors()) {

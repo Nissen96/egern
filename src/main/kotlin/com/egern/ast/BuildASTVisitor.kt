@@ -294,6 +294,11 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                 lineNumber = ctx.start.line,
                 charPosition = ctx.start.charPositionInLine
             )
+            ctx.stringExpr() != null -> StringExpr(
+                ctx.stringExpr().STRING().text,
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
+            )
             ctx.idExpr() != null -> IdExpr(
                 ctx.idExpr().ID().text,
                 lineNumber = ctx.start.line,
