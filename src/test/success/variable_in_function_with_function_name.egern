@@ -1,6 +1,6 @@
 func abc(a: int, b: int, c: int): int {
-    var abc = 2;
-    return a + b + c - abc;
+    var abc = 2
+    return a + b + c - abc
 }
 
-print(abc(1, 2, 3));
+print(abc(1, 2, 3))

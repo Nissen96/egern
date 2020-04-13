@@ -1,13 +1,13 @@
 func test(a: int, b: int): int {
     if (a > 5 && b > 1) {
-        return 1;
+        return 1
     } else {
-        return 0;
+        return 0
     }
-    return -1;
+    return -1
 }
 
-print(test(6, 2));
-print(test(6, 1));
-print(test(5, 2));
-print(test(5, 1));
+print(test(6, 2))
+print(test(6, 1))
+print(test(5, 2))
+print(test(5, 1))

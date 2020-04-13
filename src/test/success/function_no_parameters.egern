@@ -1,5 +1,5 @@
 func noParams(): int {
-    var a = 4;
-    return a;
+    var a = 4
+    return a
 }
-print(noParams());
+print(noParams())

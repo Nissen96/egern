@@ -14,6 +14,24 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     Visitor {
     private val functionStack = stackOf<FuncDecl>()
 
+    private fun typeString(type: ExprType): String {
+        return when (type) {
+            INT -> "int"
+            BOOLEAN -> "boolean"
+            VOID -> "void"
+            is ARRAY -> "[".repeat(type.depth) + typeString(type.innerType) + "]".repeat(type.depth)
+            is CLASS -> type.className
+        }
+    }
+
+    override fun preVisit(block: Block) {
+        currentTable = block.symbolTable
+    }
+
+    override fun postVisit(block: Block) {
+        currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
+    }
+
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable = funcDecl.symbolTable
         functionStack.push(funcDecl)
@@ -36,7 +54,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     private fun getVariableType(id: String): ExprType {
-        val symbol = currentTable.lookup(id)!!
+        val symbol = lookupSymbol(id, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field))
         return when (symbol.type) {
             SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
             SymbolType.Parameter -> symbol.info["type"] as ExprType
@@ -63,9 +81,9 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             is ArrayIndexExpr -> {
                 val array = getVariableType(expr.id) as ARRAY
                 if (array.depth - expr.indices.size > 0) {
-                    ARRAY(array.depth - expr.indices.size, array.innerExpr)
+                    ARRAY(array.depth - expr.indices.size, array.innerType)
                 } else {
-                    array.innerExpr
+                    array.innerType
                 }
             }
             is ObjectInstantiation -> CLASS(expr.classId)
@@ -83,68 +101,96 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             expr = if (expr.entries.isNotEmpty()) expr.entries[0] else IntExpr(0, isVoid = true)
         }
 
-        var innerExpr = deriveType(expr)
-        if (innerExpr is ARRAY) {
-            depth += innerExpr.depth
-            innerExpr = innerExpr.innerExpr
+        var innerType = deriveType(expr)
+        if (innerType is ARRAY) {
+            depth += innerType.depth
+            innerType = innerType.innerType
         }
 
-        return ARRAY(depth, innerExpr)
+        return ARRAY(depth, innerType)
     }
 
-    private fun isMatchingType(expr1: Expr, expr2: Expr?): Boolean {
-        return if (expr2 != null) (deriveType(expr1) == deriveType(expr2)) else true
-    }
-
-    override fun preVisit(funcCall: FuncCall) {
+    override fun postVisit(funcCall: FuncCall) {
         val sym = lookupSymbol(funcCall.id, listOf(SymbolType.Function))
-        val params = (sym.info["funcDecl"] as FuncDecl).params
+        val funcDecl = sym.info["funcDecl"] as? FuncDecl
+        if (funcDecl == null) {
+            ErrorLogger.log(funcCall, "Invalid function call")
+            return
+        }
+
         val nArgs = funcCall.args.size
-        val nParams = params.size
+        val nParams = funcDecl.params.size
         if (nArgs != nParams) {
             ErrorLogger.log(
                 funcCall,
                 "Wrong number of arguments to function ${funcCall.id} - $nArgs passed, $nParams expected"
             )
         }
-        funcCall.args.forEachIndexed { index, arg ->
+        funcCall.args.take(nParams).forEachIndexed { index, arg ->
             val argType = deriveType(arg)
-            val paramType = params[index].second
+            val paramType = funcDecl.params[index].second
             if (argType != paramType) {
-                ErrorLogger.log(arg, "Argument $index is of type $argType but $paramType was expected")
+                ErrorLogger.log(
+                    arg,
+                    "Argument ${index + 1} is of type ${typeString(argType)} but ${typeString(paramType)} was expected"
+                )
             }
         }
     }
 
     override fun preVisit(varAssign: VarAssign) {
-        varAssign.ids.map { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field)) }
-        val type = deriveType(varAssign.expr)
-        if (type == VOID) {
-            ErrorLogger.log(varAssign, "Assigning to void is not valid.")
+        // Check variable ids
+        // TODO check types on varAssign classFields
+        val allIds = varAssign.ids + varAssign.indexExprs.map { it.id }
+        allIds.forEach { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field)) }
+
+        val exprType = deriveType(varAssign.expr)
+        if (exprType == VOID) {
+            ErrorLogger.log(varAssign, "Assigning void is invalid")
         }
-        for (id in varAssign.ids) {
-            if (type != getVariableType(id)) {
-                ErrorLogger.log(varAssign, "Assignment to $type is invalid.")
+
+        // Expression type must match declared variable
+        varAssign.ids.forEach {
+            val varType = getVariableType(it)
+            if (varType != exprType) {
+                ErrorLogger.log(
+                    varAssign,
+                    "Assigning expression of type ${typeString(exprType)} " +
+                            "to variable of type ${typeString(varType)} is invalid"
+                )
+            }
+        }
+
+        // Expression type must match type of element at array index
+        varAssign.indexExprs.forEach {
+            val elementType = deriveType(it)
+            if (elementType != exprType) {
+                ErrorLogger.log(
+                    varAssign,
+                    "Assigning expression of type ${typeString(exprType)} " +
+                            "to array element of type ${typeString(elementType)} is invalid"
+                )
             }
         }
     }
 
-    override fun preVisit(varDecl: VarDecl) {
+    override fun postVisit(varDecl: VarDecl) {
         val type = deriveType(varDecl.expr)
         if (type == VOID) {
-            ErrorLogger.log(varDecl, "Declaring a variable of type void is not valid.")
+            ErrorLogger.log(varDecl, "Declaring a variable of type void is invalid")
         }
     }
 
-    override fun preVisit(printStmt: PrintStmt) {
+    override fun postVisit(printStmt: PrintStmt) {
         if (printStmt.expr != null && deriveType(printStmt.expr) == VOID) {
-            ErrorLogger.log(printStmt.expr, "Printing void is not valid.")
+            ErrorLogger.log(printStmt.expr, "Printing void is invalid")
         }
     }
 
-    override fun preVisit(lenExpr: LenExpr) {
-        if (deriveType(lenExpr.expr) !is ARRAY) {
-            ErrorLogger.log(lenExpr.expr, "Len function is only defined for arrays")
+    override fun postVisit(lenExpr: LenExpr) {
+        val exprType = deriveType(lenExpr.expr)
+        if (exprType !is ARRAY) {
+            ErrorLogger.log(lenExpr.expr, "Len function is undefined for type ${typeString(exprType)}")
         }
     }
 
@@ -157,34 +203,68 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             val returnType = functionStack.peek()!!.returnType
             val exprType = deriveType(returnStmt.expr)
             if (exprType != returnType) {
-                ErrorLogger.log(returnStmt, "Invalid return type")
+                ErrorLogger.log(
+                    returnStmt,
+                    "Invalid return type: ${typeString(returnType)} - expected: ${typeString(exprType)}"
+                )
             }
         }
     }
 
     override fun postVisit(booleanOpExpr: BooleanOpExpr) {
-        if (!isMatchingType(booleanOpExpr, booleanOpExpr.lhs) || !isMatchingType(booleanOpExpr, booleanOpExpr.rhs)) {
-            ErrorLogger.log(booleanOpExpr, "Type mismatch on boolean operator")
+        val exprType = deriveType(booleanOpExpr)
+        val lhsType = deriveType(booleanOpExpr.lhs)
+        val rhsType = booleanOpExpr.rhs?.let { deriveType(it) }
+
+        if (lhsType != exprType) {
+            ErrorLogger.log(
+                booleanOpExpr,
+                "Type mismatch on boolean operator${if (rhsType != null) " - LHS" else ""}: ${typeString(lhsType)}"
+            )
+        }
+        if (rhsType != null && rhsType != exprType) {
+            ErrorLogger.log(booleanOpExpr, "Type mismatch on boolean operator - RHS: ${typeString(rhsType)}")
         }
     }
 
     override fun postVisit(arithExpr: ArithExpr) {
-        if (!isMatchingType(arithExpr, arithExpr.lhs) || !isMatchingType(arithExpr, arithExpr.rhs)) {
-            ErrorLogger.log(arithExpr, "Type mismatch on arithmetic operator")
+        val exprType = deriveType(arithExpr)
+        val lhsType = deriveType(arithExpr.lhs)
+        val rhsType = deriveType(arithExpr.rhs)
+
+        if (lhsType != exprType) {
+            ErrorLogger.log(arithExpr, "Type mismatch on arithmetic operator - LHS: ${typeString(lhsType)}")
+        }
+        if (rhsType != exprType) {
+            ErrorLogger.log(arithExpr, "Type mismatch on arithmetic operator - RHS: ${typeString(rhsType)}")
         }
     }
 
     override fun postVisit(compExpr: CompExpr) {
-        val type = deriveType(compExpr.lhs)
-        if (compExpr.op !in CompOp.validOperators(type)) {
-            ErrorLogger.log(compExpr, "${compExpr.op.value} operation not defined on type $type")
+        val lhsType = deriveType(compExpr.lhs)
+        if (compExpr.op !in CompOp.validOperators(lhsType)) {
+            ErrorLogger.log(compExpr.lhs, "${compExpr.op.value} operation not defined on type ${typeString(lhsType)}")
         }
-        if (!isMatchingType(compExpr.lhs, compExpr.rhs)) {
-            ErrorLogger.log(compExpr, "Type mismatch on comparative expr operator")
+
+        val rhsType = deriveType(compExpr.rhs)
+        if (compExpr.op !in CompOp.validOperators(rhsType)) {
+            ErrorLogger.log(compExpr.rhs, "${compExpr.op.value} operation not defined on type ${typeString(rhsType)}")
+        }
+
+        if (lhsType != rhsType) {
+            ErrorLogger.log(
+                compExpr,
+                "Type mismatch on comparative operator - LHS: ${typeString(lhsType)}, RHS: ${typeString(rhsType)}"
+            )
         }
     }
 
     override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
+        val arrayType = getVariableType(arrayIndexExpr.id) as ARRAY
+        if (arrayIndexExpr.indices.size > arrayType.depth) {
+            ErrorLogger.log(arrayIndexExpr, "Indexing too deeply into array of ${arrayType.depth} dimensions")
+        }
+
         arrayIndexExpr.indices.forEach {
             if (deriveType(it) !is INT) {
                 ErrorLogger.log(it, "Index must be an integer value")
@@ -193,21 +273,30 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     override fun postVisit(arrayExpr: ArrayExpr) {
-        val type = deriveType(arrayExpr) as ARRAY
+        val arrayType = deriveType(arrayExpr) as ARRAY
 
-        if (type.depth > 1) {
-            arrayExpr.entries.forEach {
-                val entryType = deriveType(it) as ARRAY
-                if (entryType.depth != type.depth - 1 ||
-                    (entryType.innerExpr != type.innerExpr && entryType.innerExpr != VOID && type.innerExpr != VOID)
+        if (arrayType.depth > 1) {
+            arrayExpr.entries.forEachIndexed { index, element ->
+                val elementType = deriveType(element) as ARRAY
+                if (elementType.depth != arrayType.depth - 1 ||
+                    (elementType.innerType != arrayType.innerType && elementType.innerType != VOID && arrayType.innerType != VOID)
                 ) {
-                    ErrorLogger.log(it, "Type mismatch in array")
+                    ErrorLogger.log(
+                        element,
+                        "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
+                                "expected type: ${typeString(arrayType.innerType)}"
+                    )
                 }
             }
         } else {
-            arrayExpr.entries.forEach {
-                if (deriveType(it) != type.innerExpr) {
-                    ErrorLogger.log(it, "Type mismatch in array")
+            arrayExpr.entries.forEachIndexed { index, element ->
+                val elementType = deriveType(element)
+                if (elementType != arrayType.innerType) {
+                    ErrorLogger.log(
+                        element,
+                        "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
+                                "expected type: ${typeString(arrayType.innerType)}"
+                    )
                 }
             }
         }

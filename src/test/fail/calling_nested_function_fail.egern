@@ -1,13 +1,13 @@
 func outer(a: int): int {
-    var b = 3;
+    var b = 3
     func inner(a: int, b: int): int {
-        var c = 4;
-        return a - b + c;
+        var c = 4
+        return a - b + c
     }
 
-    var d = inner(b, a);
-    return d;
+    var d = inner(b, a)
+    return d
 }
 
-print(outer(4));
-print(inner(3, 5));
+print(outer(4))
+print(inner(3, 5))

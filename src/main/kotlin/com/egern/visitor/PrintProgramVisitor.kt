@@ -16,7 +16,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
             INT -> "int"
             BOOLEAN -> "boolean"
             VOID -> "void"
-            is ARRAY -> "[".repeat(type.depth) + getType(type.innerExpr) + "]".repeat(type.depth)
+            is ARRAY -> "[".repeat(type.depth) + getType(type.innerType) + "]".repeat(type.depth)
             is CLASS -> type.className
         }
     }

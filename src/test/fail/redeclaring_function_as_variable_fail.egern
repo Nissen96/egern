@@ -1,7 +1,7 @@
 func abc(a: int, b: int, c: int): int {
-    print(a);
-    var x = b;
-    return c;
+    print(a)
+    var x = b
+    return c
 }
 
-var abc = 3;
+var abc = 3

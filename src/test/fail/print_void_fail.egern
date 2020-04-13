@@ -1,2 +1,2 @@
 func empty(): void { }
-print(empty());
+print(empty())

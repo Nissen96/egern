@@ -1,5 +1,5 @@
 func square(arg: int): boolean {
-    return arg * arg;
+    return arg * arg
 }
 
-print(square(4));
+print(square(4))

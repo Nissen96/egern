@@ -1,0 +1,9 @@
+print(true && [3, 4])
+print([1, 2] && false)
+print([1, 2] && [3, 4])
+
+print(false || [3, 2])
+print([5, 6] || true)
+print([5, 6] || [3, 2])
+
+print(![8, 9])

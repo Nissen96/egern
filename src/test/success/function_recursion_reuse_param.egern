@@ -1,10 +1,10 @@
 func test1(a: int): int {
-    test2(a);
-    return a;
+    test2(a)
+    return a
 }
 
 func test2(a: int): int {
-    return a;
+    return a
 }
 
-print(test1(3));
+print(test1(3))

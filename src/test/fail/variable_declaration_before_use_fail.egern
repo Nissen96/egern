@@ -1,0 +1,9 @@
+func square(n: int): int {
+    return n * n
+}
+
+var n
+var result
+n = 3
+result = square(n)
+print(result)

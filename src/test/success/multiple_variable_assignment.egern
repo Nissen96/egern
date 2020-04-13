@@ -1,10 +1,10 @@
-var a = 4;
-var b = 3;
-var c = b;
-print(a);
-print(b);
-print(c);
-a = b = c = 2;
-print(a);
-print(b);
-print(c);
+var a = 4
+var b = 3
+var c = b
+print(a)
+print(b)
+print(c)
+a = b = c = 2
+print(a)
+print(b)
+print(c)

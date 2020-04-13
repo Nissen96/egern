@@ -1,24 +1,23 @@
-var a = 3;
-print(a);
+var a = 3
+print(a)
 if (a < 5) {
-    print(1);
+    print(1)
     if (a < 4) {
-        print(11);
+        print(11)
         if (a == 3) {
-            print(111);
+            print(111)
         } else {
-            print(110);
+            print(110)
         }
     } else {
-        print(10);
+        print(10)
     }
 } else {
-    print(0);
+    print(0)
     if (a > 5) {
-        print(01);
+        print(01)
     } else {
-        print(00);
+        print(00)
     }
 }
-print(a);
-
+print(a)

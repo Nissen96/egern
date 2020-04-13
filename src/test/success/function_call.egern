@@ -1,5 +1,5 @@
 func square(arg: int): int {
-    return arg * arg;
+    return arg * arg
 }
 
-print(square(4));
+print(square(4))

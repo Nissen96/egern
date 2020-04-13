@@ -1,6 +1,6 @@
-var a = 3;
-print(a);
+var a = 3
+print(a)
 if (a == 3) {
-    print(1);
+    print(1)
 }
-print(a);
+print(a)

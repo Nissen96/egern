@@ -1,4 +1,4 @@
 func empty(): void {
-    return;
+    return
 }
-var a = empty();
+var a = empty()

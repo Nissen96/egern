@@ -1,5 +1,5 @@
 func square(n: boolean): void {
-    n = 4;
+    n = 4
 }
 
-square(true);
+square(true)

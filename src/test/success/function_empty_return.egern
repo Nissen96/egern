@@ -1,6 +1,6 @@
 func emptyReturn(b: int): void {
-    var a = 4;
-    print(a + b);
-    return;
+    var a = 4
+    print(a + b)
+    return
 }
-emptyReturn(5);
+emptyReturn(5)

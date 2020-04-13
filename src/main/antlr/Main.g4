@@ -86,10 +86,7 @@ VOID     : 'void' ;
 PRIMITIVE: 'int' | 'boolean' ;
 ID       : [a-z_]+[A-Za-z_0-9]* ;
 CLASSNAME: [A-Z]+[A-Za-z_0-9]* ;
-COMMENT
-    :   '/*' .*? '*/' -> skip
-    ;
+COMMENT  : '/*' .*? '*/' -> skip ;
+LINE_COMMENT: '//' ~[\r\n]* -> skip ;
 
-LINE_COMMENT
-    :   '//' ~[\r\n]* -> skip
-    ;
+ERROR    : . ;

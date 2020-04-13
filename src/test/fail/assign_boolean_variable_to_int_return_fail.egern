@@ -1,8 +1,8 @@
 func square(n: int): int {
-    return n * n;
+    return n * n
 }
 
-var a = true;
-print(a);
-a = square(4);
-print(a);
+var a = true
+print(a)
+a = square(4)
+print(a)

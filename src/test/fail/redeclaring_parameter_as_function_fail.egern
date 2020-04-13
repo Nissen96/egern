@@ -1,8 +1,8 @@
 func hello(test: int): void {
-    print(test);
+    print(test)
     func test(a: int): int {
-        return a * a;
+        return a * a
     }
-    print(test(4));
+    print(test(4))
 }
-print(hello(3));
+print(hello(3))

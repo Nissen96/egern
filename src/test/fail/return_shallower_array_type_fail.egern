@@ -1,0 +1,5 @@
+func getFirst(arg: [[int]]): [[int]] {
+    return arg[0]
+}
+
+print(getFirst([[1, 2, 3]]))

@@ -1,6 +1,6 @@
 func hello(): void {
-    return;
+    return
 }
 
-hello = 3;
-print(hello);
+hello = 3
+print(hello)
