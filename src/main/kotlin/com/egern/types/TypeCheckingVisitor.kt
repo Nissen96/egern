@@ -77,10 +77,28 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
                 }
             }
             is ObjectInstantiation -> CLASS(expr.classId)
-            is MethodCall -> INT //TODO() // VTABLE LOOKUP
-            is ClassField -> INT //TODO()
+            is MethodCall -> deriveMethodCallType(expr)
+            is ClassField -> deriveClassFieldType(expr)
             is CastExpr -> expr.type
             else -> throw Exception("Can't derive type for expr!")
+        }
+    }
+
+    private fun deriveMethodCallType(methodCall: MethodCall): ExprType {
+        val objectClass = getObjectClass(methodCall.objectId, currentTable)
+        val classDefinition = classDefinitions.find { it.className == objectClass }!!
+        val methods = classDefinition.getMethods()
+        return methods.find { it.id == methodCall.methodId }!!.returnType
+    }
+
+    private fun deriveClassFieldType(classField: ClassField): ExprType {
+        val objectClass = getObjectClass(classField.objectId, currentTable)
+        val classDefinition = classDefinitions.find { it.className == objectClass }!!
+        val field = classDefinition.lookup(classField.fieldId)!!
+        return if (field.second.info.containsKey("expr")) {
+            deriveType(field.second.info["expr"] as Expr)
+        } else {
+            field.second.info["type"] as ExprType
         }
     }
 
