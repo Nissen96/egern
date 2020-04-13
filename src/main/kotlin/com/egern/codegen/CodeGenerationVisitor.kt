@@ -6,10 +6,8 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
-import com.egern.types.CLASS
 import com.egern.util.*
 import com.egern.visitor.Visitor
-import org.omg.CORBA.Object
 import kotlin.math.max
 import kotlin.math.min
 

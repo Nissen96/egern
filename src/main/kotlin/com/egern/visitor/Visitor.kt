@@ -60,7 +60,6 @@ abstract class Visitor {
     open fun midVisit(booleanOpExpr: BooleanOpExpr) {}
     open fun postVisit(booleanOpExpr: BooleanOpExpr) {}
 
-    open fun preVisit(castExpr: CastExpr) {}
     open fun postVisit(castExpr: CastExpr) {}
 
     open fun preVisit(classDecl: ClassDecl) {}

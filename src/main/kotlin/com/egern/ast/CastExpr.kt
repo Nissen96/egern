@@ -11,7 +11,6 @@ class CastExpr(
 ) :
     Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
-        visitor.preVisit(this)
         expr.accept(visitor)
         visitor.postVisit(this)
     }
