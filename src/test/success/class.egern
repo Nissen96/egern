@@ -1,0 +1,71 @@
+class Person(age: int, legs: int) {
+    var isMale = true
+
+    func getAge(): int {
+        return age
+    }
+
+    func setAge(n: int): void {
+        age = n
+    }
+}
+
+class Student(failedClasses: int, age: int): Person(age, 2) {
+    var yearsStudied = 8
+
+    func isFailureAndDisappointmentToFamily(): boolean {
+        return yearsStudied > 6 || failedClasses > 5
+    }
+}
+
+class Superstudent(awesomePoints: int, age: int): Student(3, age) {
+    var yearsStudied = 4
+    var isSuper = true
+
+    func studyTooLong(): void {
+        yearsStudied = 7
+        isSuper = false
+    }
+}
+
+var bob = Superstudent(10,  92)
+print(bob.age)
+print(bob.failedClasses)
+print(bob.legs)
+print(bob.isSuper)
+print(bob.isMale)
+print(bob.yearsStudied)
+print()
+
+bob.studyTooLong()
+print(bob.yearsStudied)
+print(bob.isSuper)
+print(bob.isFailureAndDisappointmentToFamily())
+print(bob.getAge())
+bob.setAge(4)
+print(bob.age)
+print(bob.getAge())
+bob.age = 9
+print(bob.age)
+print(bob.getAge())
+print()
+
+var alice = Student(29, 87)
+print(alice.failedClasses)
+print(alice.age)
+print(alice.isMale)
+alice.isMale = false
+print(alice.isMale)
+print(alice.legs)
+alice.legs = 5
+print(alice.legs)
+print()
+
+print(alice.isFailureAndDisappointmentToFamily())
+print(alice.getAge())
+alice.setAge(4)
+print(alice.age)
+print(alice.getAge())
+alice.age = 9
+print(alice.age)
+print(alice.getAge())
