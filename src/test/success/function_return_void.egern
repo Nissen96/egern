@@ -1,0 +1,4 @@
+func noReturn(a: int): void {
+    print(a)
+}
+noReturn(2)

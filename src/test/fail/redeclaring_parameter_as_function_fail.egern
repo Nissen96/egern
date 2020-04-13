@@ -1,4 +1,4 @@
-func hello(test: int): void {
+func hello(test: int) {
     print(test)
     func test(a: int): int {
         return a * a

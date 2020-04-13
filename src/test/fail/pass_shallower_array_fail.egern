@@ -1,4 +1,4 @@
-func printElements(arr: [[int]]): void {
+func printElements(arr: [[int]]) {
     var length = len(arr)
     var i = 0
     while (i < length) {

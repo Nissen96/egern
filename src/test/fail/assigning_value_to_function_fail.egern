@@ -1,4 +1,4 @@
-func hello(): void {
+func hello() {
     return
 }
 

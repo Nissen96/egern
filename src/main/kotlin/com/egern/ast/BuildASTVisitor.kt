@@ -146,7 +146,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     private fun visitFuncDecl(ctx: MainParser.FuncDeclContext, classId: String?): ASTNode {
-        val returnType = getType(ctx.typeDecl())
+        val returnType = if (ctx.typeDecl() != null) getType(ctx.typeDecl()) else VOID
         val stmts = ctx.funcBody().stmt().map { it.accept(this) }.toMutableList()
 
         // Always add implicit return for void functions

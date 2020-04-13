@@ -1,6 +1,6 @@
-func f(): void {
-  func g(): void {
-    func h(): void {
+func f() {
+  func g() {
+    func h() {
       a = 0
       print(a)
     }
