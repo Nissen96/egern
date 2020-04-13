@@ -11,18 +11,8 @@ import com.egern.visitor.Visitor
 import java.lang.Exception
 
 class TypeCheckingVisitor(private var currentTable: SymbolTable, private val classDefinitions: List<ClassDefinition>) :
-    Visitor {
+    Visitor() {
     private val functionStack = stackOf<FuncDecl>()
-
-    private fun typeString(type: ExprType): String {
-        return when (type) {
-            INT -> "int"
-            BOOLEAN -> "boolean"
-            VOID -> "void"
-            is ARRAY -> "[".repeat(type.depth) + typeString(type.innerType) + "]".repeat(type.depth)
-            is CLASS -> type.className
-        }
-    }
 
     override fun preVisit(block: Block) {
         currentTable = block.symbolTable
@@ -89,6 +79,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             is ObjectInstantiation -> CLASS(expr.classId)
             is MethodCall -> INT //TODO() // VTABLE LOOKUP
             is ClassField -> INT //TODO()
+            is CastExpr -> expr.type
             else -> throw Exception("Can't derive type for expr!")
         }
     }

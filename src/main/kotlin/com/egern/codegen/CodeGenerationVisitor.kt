@@ -9,11 +9,12 @@ import com.egern.symbols.SymbolType
 import com.egern.types.CLASS
 import com.egern.util.*
 import com.egern.visitor.Visitor
+import org.omg.CORBA.Object
 import kotlin.math.max
 import kotlin.math.min
 
 class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val classDefinitions: List<ClassDefinition>) :
-    Visitor {
+    Visitor() {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
     private val functionStack = stackOf<FuncDecl>()

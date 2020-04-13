@@ -4,7 +4,7 @@ import com.egern.ast.*
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolType
 
-class PrintSymbolTableVisitor : Visitor {
+class PrintSymbolTableVisitor : Visitor() {
     override fun preVisit(program: Program) {
         println("Main Scope - local variables: ${program.variableCount}")
     }

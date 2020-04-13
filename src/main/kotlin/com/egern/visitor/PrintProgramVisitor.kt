@@ -4,21 +4,11 @@ import com.egern.ast.*
 import com.egern.types.*
 import com.egern.util.forEach
 
-class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
+class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
     private var level = 0
 
     private fun printIndented(text: Any = "") {
         print(" ".repeat(indentation * level) + "$text")
-    }
-
-    private fun getType(type: ExprType): String {
-        return when (type) {
-            INT -> "int"
-            BOOLEAN -> "boolean"
-            VOID -> "void"
-            is ARRAY -> "[".repeat(type.depth) + getType(type.innerType) + "]".repeat(type.depth)
-            is CLASS -> type.className
-        }
     }
 
     override fun preStmtVisit() {
@@ -83,10 +73,14 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
         }
     }
 
+    override fun postVisit(castExpr: CastExpr) {
+        print(" as ${typeString(castExpr.type)}")
+    }
+
     override fun preVisit(classDecl: ClassDecl) {
         printIndented("class ${classDecl.id}")
         if (classDecl.constructor.isNotEmpty()) {
-            print("(${classDecl.constructor.joinToString(", ") { "${it.first}: ${getType(it.second)}" }})")
+            print("(${classDecl.constructor.joinToString(", ") { "${it.first}: ${typeString(it.second)}" }})")
         }
         print(": ${classDecl.superclass}(")
         classDecl.superclassArgs?.forEach({ it.accept(this) }, { print(", ") })
@@ -127,8 +121,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor {
     override fun preVisit(funcDecl: FuncDecl) {
         println()
         printIndented("func ${funcDecl.id}(")
-        print(funcDecl.params.joinToString(", ") { "${it.first}: ${getType(it.second)}" }) // Params
-        println("): ${getType(funcDecl.returnType)} {")
+        print(funcDecl.params.joinToString(", ") { "${it.first}: ${typeString(it.second)}" }) // Params
+        println("): ${typeString(funcDecl.returnType)} {")
         level++
     }
 
