@@ -350,7 +350,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Memory(stringExpr.dataLabel), Direct),
+                InstructionArg(ImmediateValue(stringExpr.dataLabel), Direct),
                 comment = "Push static string value"
             )
         )

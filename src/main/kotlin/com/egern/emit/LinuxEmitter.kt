@@ -15,6 +15,8 @@ class LinuxEmitter(
             .addLine(".data")
             .addLine("format_int:")
             .addLine(".string \"%d\\n\"", comment = "Integer format string for C printf")
+            .addLine("format_string:")
+            .addLine(".string \"%s\\n\"", comment = "String format string for C printf")
             .addLine("format_newline:")
             .addLine(".string \"\\n\"", comment = "Empty format string for C printf")
             .newline()
