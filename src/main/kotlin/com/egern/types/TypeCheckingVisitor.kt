@@ -77,8 +77,8 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
                 }
             }
             is ObjectInstantiation -> CLASS(expr.classId)
-            is MethodCall -> INT //TODO() // VTABLE LOOKUP
-            is ClassField -> INT //TODO()
+            is MethodCall -> TODO() // VTABLE LOOKUP
+            is ClassField -> TODO()
             is CastExpr -> expr.type
             else -> throw Exception("Can't derive type for expr!")
         }
