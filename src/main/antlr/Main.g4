@@ -12,31 +12,30 @@ stmt:   varDecl ';'?
     |   methodCall ';'?
     ;
 
-returnStmt: 'return' expr? ;
-funcDecl:   'func' ID '(' paramList ')' ':' typeDecl '{' funcBody '}'  ;
-funcBody:   ( stmt | funcDecl )* ;
-funcCall:   ID '(' argList ')' ;
-
-paramList:  (ID ':' typeDecl ',')* (ID ':' typeDecl)? ;
-argList:    (expr ',')* expr? ;
-
+varDecl: 'var' (ID '=')+ expr ;
+varAssign: (assignable '=')+ expr ;
+opAssign: assignable op=('+=' | '-=' | '*=' | '/=' | '%=' ) expr ;
 assignable: idExpr
           | arrayIndexExpr
           | classField
           ;
 
-varDecl: 'var' (ID '=')+ expr ;
-varAssign: (assignable '=')+ expr ;
-opAssign: assignable op=('+=' | '-=' | '*=' | '/=' | '%=' ) expr ;
-
 ifElse: 'if' '(' expr ')' block ('else' (block | ifElse))? ;
+returnStmt: 'return' expr? ;
+printStmt: 'print' '(' expr? ')' ;
 
 whileLoop: 'while' '(' expr ')' block ;
+funcCall:   ID '(' argList ')' ;
+argList:    (expr ',')* expr? ;
+
+funcDecl:   'func' ID '(' paramList ')' ':' typeDecl '{' funcBody '}'  ;
+paramList:  (ID ':' typeDecl ',')* (ID ':' typeDecl)? ;
+funcBody:   ( stmt | funcDecl )* ;
 
 block:  '{' stmt* '}' ;
 
 classDecl: 'class' CLASSNAME ('(' paramList ')')? (':' CLASSNAME ('(' argList ')')?)? '{' classBody '}' ;
-classBody: (methodDecl | fieldDecl)* ;
+classBody: ( methodDecl | fieldDecl )* ;
 
 methodDecl: funcDecl ;
 fieldDecl: varDecl ;
@@ -64,6 +63,7 @@ expr: funcCall
     | arrayExpr
     | parenExpr
     | lenExpr
+    | expr 'as' typeDecl
     ;
 
 idExpr: ID ;
@@ -75,8 +75,6 @@ lenExpr: 'len' '(' expr ')';
 
 typeDecl: VOID | PRIMITIVE | arrayType | CLASSNAME ;
 arrayType: '[' (arrayType | PRIMITIVE) ']';
-
-printStmt: 'print' '(' expr? ')' ;
 
 NEWLINE  :'\r'? '\n' -> skip;
 WS       : (' '|'\t') -> skip;

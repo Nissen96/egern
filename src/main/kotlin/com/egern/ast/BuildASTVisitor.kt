@@ -24,7 +24,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ClassDecl(
             classId,
             if (ctx.paramList() != null) ctx.paramList().ID().mapIndexed { index, it ->
-                it.text to getType(ctx.paramList().typeDecl()[index])
+                it.text to getType(ctx.paramList().typeDecl(index))
             } else emptyList(),
             if (hasSuperclass) ctx.CLASSNAME(1).text else "Base",
             if (ctx.argList() != null) ctx.argList().expr().map { it.accept(this) as Expr } else emptyList(),
@@ -157,7 +157,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         val paramList = mutableListOf<Pair<String, ExprType>>()
         if (classId != null) paramList.add("this" to CLASS(classId))  // Add implicit object reference to method calls
         paramList.addAll(ctx.paramList().ID().mapIndexed { index, it ->
-            it.text to getType(ctx.paramList().typeDecl()[index])
+            it.text to getType(ctx.paramList().typeDecl(index))
         })
 
         return FuncDecl(
@@ -311,16 +311,17 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.classField() != null -> visitClassField(ctx.classField())
             ctx.methodCall() != null -> visitMethodCall(ctx.methodCall())
             ctx.objectInstantiation() != null -> visitObjectInstantiation(ctx.objectInstantiation())
+            ctx.typeDecl() != null -> visitCastExpr(ctx.expr(0), ctx.typeDecl())
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
                     IntExpr(-1, lineNumber = ctx.start.line, charPosition = -1),
-                    ctx.expr()[0].accept(this) as Expr,
+                    ctx.expr(0).accept(this) as Expr,
                     ArithOp.TIMES,
                     lineNumber = ctx.start.line,
                     charPosition = ctx.start.charPositionInLine
                 )
                 BooleanOp.NOT.value -> BooleanOpExpr(
-                    ctx.expr()[0].accept(this) as Expr,
+                    ctx.expr(0).accept(this) as Expr,
                     op = BooleanOp.NOT,
                     lineNumber = ctx.start.line,
                     charPosition = ctx.start.charPositionInLine
@@ -365,6 +366,15 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             exprs[1].accept(this) as Expr,
             BooleanOp.fromString(op)!!,
             exprs[0].start.line, exprs[0].start.charPositionInLine
+        )
+    }
+
+    private fun visitCastExpr(expr: MainParser.ExprContext, type: MainParser.TypeDeclContext): ASTNode {
+        return CastExpr(
+            expr.accept(this) as Expr,
+            getType(type),
+            lineNumber = expr.start.line,
+            charPosition = expr.start.charPositionInLine
         )
     }
 

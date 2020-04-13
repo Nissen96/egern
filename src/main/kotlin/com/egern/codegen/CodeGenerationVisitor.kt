@@ -886,7 +886,11 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             while (instance is IdExpr) {
                 instance = symbolTable.lookup(instance.id)!!.info["expr"]
             }
-            (instance as ObjectInstantiation).classId
+            return when (instance) {
+                is ObjectInstantiation -> instance.classId
+                is CastExpr -> (instance.type as CLASS).className
+                else -> throw Error("Invalid instance type")
+            }
         } else {
             (symbol.info["type"] as CLASS).className
         }
