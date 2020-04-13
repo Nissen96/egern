@@ -55,20 +55,6 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
         }
     }
 
-    // TODO: CREATE SHARED METHOD
-    private fun getObjectClass(objectId: String): String {
-        val symbol = currentTable.lookup(objectId)!!
-        return if (symbol.type == SymbolType.Variable) {
-            var instance = currentTable.lookup(objectId)!!.info["expr"]
-            while (instance is IdExpr) {
-                instance = currentTable.lookup(instance.id)!!.info["expr"]
-            }
-            (instance as ObjectInstantiation).classId
-        } else {
-            (symbol.info["type"] as CLASS).className
-        }
-    }
-
     private fun deriveType(expr: Expr): ExprType {
         return when (expr) {
             // Handle implicit returns of nothing (int=0)
@@ -99,14 +85,14 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     private fun deriveMethodCallType(methodCall: MethodCall): ExprType {
-        val objectClass = getObjectClass(methodCall.objectId);
+        val objectClass = getObjectClass(methodCall.objectId, currentTable)
         val classDefinition = classDefinitions.find { it.className == objectClass }!!
         val methods = classDefinition.getMethods();
         return methods.find { it.id == methodCall.methodId }!!.returnType;
     }
 
     private fun deriveClassFieldType(classField: ClassField): ExprType {
-        val objectClass = getObjectClass(classField.objectId)
+        val objectClass = getObjectClass(classField.objectId, currentTable)
         val classDefinition = classDefinitions.find { it.className == objectClass }!!
         val field = classDefinition.lookup(classField.fieldId)!!
         return if (field.second.info.containsKey("expr")) {
