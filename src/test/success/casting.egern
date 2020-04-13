@@ -1,0 +1,31 @@
+class Person(age: int) {
+    var legs = 2
+
+    func getAge(): int {
+        return this.age
+    }
+
+    func getLegs(): int {
+        return this.legs
+    }
+}
+
+class Student(age: int): Person(age + 1) {
+    var legs = 4
+    func getAge(): int {
+        return age + 5
+    }
+}
+
+var bob = Student(267)
+print(bob.legs)
+print(bob.getLegs())
+print(bob.age)
+print(bob.getAge())
+print()
+
+var bob2 = bob as Person
+print(bob2.legs)
+print(bob2.getLegs())
+print(bob2.age)
+print(bob2.getAge())
