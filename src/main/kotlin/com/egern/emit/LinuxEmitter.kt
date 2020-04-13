@@ -26,15 +26,17 @@ class LinuxEmitter(
     }
 
     override fun emitDataSection() {
+        builder.addLine(".data")
+        staticStrings.forEach {
+            builder.addLine("${it.key}: .asciz \" ${it.value} \"")
+        }
+        builder.newline()
         builder
             .addLine(".bss")
             .addLine(".lcomm $HEAP_POINTER, 8")
             .addLine(".lcomm $VTABLE_POINTER, 8")
         dataFields.forEach {
             builder.addLine(".lcomm $it, 8")
-        }
-        staticStrings.forEach {
-            builder.addLine("${it.key}: .asciz \" ${it.value} \"")
         }
         builder.newline()
     }
