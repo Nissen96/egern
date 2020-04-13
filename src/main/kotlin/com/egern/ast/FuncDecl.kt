@@ -3,6 +3,7 @@ package com.egern.ast
 import com.egern.symbols.SymbolTable
 import com.egern.types.ExprType
 import com.egern.visitor.Visitor
+import java.util.*
 
 class FuncDecl(
     val id: String,
@@ -10,6 +11,7 @@ class FuncDecl(
     val returnType: ExprType,
     val stmts: List<ASTNode>,
     val funcDecls: List<FuncDecl>,
+    val keywords: EnumSet<Keyword>,
     lineNumber: Int, charPosition: Int
 ) :
     ASTNode(lineNumber, charPosition) {

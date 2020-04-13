@@ -37,8 +37,8 @@ block:  '{' stmt* '}' ;
 classDecl: 'class' CLASSNAME ('(' paramList ')')? (':' CLASSNAME ('(' argList ')')?)? '{' classBody '}' ;
 classBody: ( methodDecl | fieldDecl )* ;
 
-methodDecl: funcDecl ;
-fieldDecl: varDecl ;
+methodDecl: KEYWORD* funcDecl ;
+fieldDecl: KEYWORD* varDecl ;
 methodCall: (ID | 'this') '.' funcCall ;
 classField: (ID | 'this') '.' ID ;
 objectInstantiation: CLASSNAME '(' argList ')' ;
@@ -78,10 +78,11 @@ arrayType: '[' (arrayType | PRIMITIVE) ']';
 
 NEWLINE  :'\r'? '\n' -> skip;
 WS       : (' '|'\t') -> skip;
-INT      : [0-9]+ ;
+KEYWORD  : 'override' ;
 BOOLEAN  : 'true' | 'false' ;
 VOID     : 'void' ;
 PRIMITIVE: 'int' | 'boolean' ;
+INT      : [0-9]+ ;
 ID       : [a-z_]+[A-Za-z_0-9]* ;
 CLASSNAME: [A-Z]+[A-Za-z_0-9]* ;
 COMMENT  : '/*' .*? '*/' -> skip ;
