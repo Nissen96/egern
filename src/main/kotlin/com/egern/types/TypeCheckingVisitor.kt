@@ -108,7 +108,12 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     private fun deriveClassFieldType(classField: ClassField): ExprType {
         val objectClass = getObjectClass(classField.objectId)
         val classDefinition = classDefinitions.find { it.className == objectClass }!!
-        return deriveType(classDefinition.lookup(classField.fieldId)!!.second.info["expr"] as Expr);
+        val field = classDefinition.lookup(classField.fieldId)!!
+        return if (field.second.info.containsKey("expr")) {
+            deriveType(field.second.info["expr"] as Expr);
+        } else {
+            field.second.info["type"] as ExprType
+        }
     }
 
     private fun deriveArrayType(arrayExpr: ArrayExpr): ExprType {
