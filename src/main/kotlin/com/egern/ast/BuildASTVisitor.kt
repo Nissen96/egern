@@ -4,6 +4,7 @@ import MainBaseVisitor
 import com.egern.types.*
 import org.antlr.v4.runtime.tree.TerminalNode
 import java.lang.Exception
+import java.util.*
 
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
@@ -36,7 +37,13 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     private fun visitMethodDecl(ctx: MainParser.MethodDeclContext, classId: String): ASTNode {
-        return visitFuncDecl(ctx.funcDecl(), classId)
+        val keywords: EnumSet<Keyword> = EnumSet.noneOf(Keyword::class.java)
+        keywords.addAll(ctx.KEYWORD().map { Keyword.fromString(it.text)!! })
+        return visitFuncDecl(
+            ctx.funcDecl(),
+            classId,
+            keywords
+        )
     }
 
     override fun visitObjectInstantiation(ctx: MainParser.ObjectInstantiationContext): ASTNode {
@@ -66,6 +73,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return FieldDecl(
             ctx.varDecl().ID().map { it.text },
             ctx.varDecl().expr().accept(this) as Expr,
+            EnumSet.copyOf(ctx.KEYWORD().map { Keyword.fromString(it.text)!! }),
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -142,10 +150,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
-        return visitFuncDecl(ctx, null)
+        return visitFuncDecl(ctx)
     }
 
-    private fun visitFuncDecl(ctx: MainParser.FuncDeclContext, classId: String?): ASTNode {
+    private fun visitFuncDecl(
+        ctx: MainParser.FuncDeclContext,
+        classId: String? = null,
+        keywords: EnumSet<Keyword> = EnumSet.noneOf(Keyword::class.java)
+    ): ASTNode {
         val returnType = if (ctx.typeDecl() != null) getType(ctx.typeDecl()) else VOID
         val stmts = ctx.funcBody().stmt().map { it.accept(this) }.toMutableList()
 
@@ -166,6 +178,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             returnType,
             stmts,
             ctx.funcBody().funcDecl().map { it.accept(this) as FuncDecl },
+            keywords,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
