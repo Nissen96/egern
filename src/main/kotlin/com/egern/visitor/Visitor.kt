@@ -1,6 +1,8 @@
 package com.egern.visitor
 
 import com.egern.ast.*
+import com.egern.symbols.SymbolTable
+import com.egern.symbols.SymbolType
 import com.egern.types.*
 
 abstract class Visitor {
@@ -12,6 +14,23 @@ abstract class Visitor {
             VOID -> "void"
             is ARRAY -> "[".repeat(type.depth) + typeString(type.innerType) + "]".repeat(type.depth)
             is CLASS -> type.className
+        }
+    }
+
+    fun getObjectClass(objectId: String, symbolTable: SymbolTable): String {
+        val symbol = symbolTable.lookup(objectId)!!
+        return if (symbol.type == SymbolType.Variable) {
+            var instance = symbolTable.lookup(objectId)!!.info["expr"]
+            while (instance is IdExpr) {
+                instance = symbolTable.lookup(instance.id)!!.info["expr"]
+            }
+            return when (instance) {
+                is ObjectInstantiation -> instance.classId
+                is CastExpr -> (instance.type as CLASS).className
+                else -> throw Error("Invalid instance type")
+            }
+        } else {
+            (symbol.info["type"] as CLASS).className
         }
     }
 
