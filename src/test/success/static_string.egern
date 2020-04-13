@@ -1,3 +1,0 @@
-var test = "testing"
-
-print(test)

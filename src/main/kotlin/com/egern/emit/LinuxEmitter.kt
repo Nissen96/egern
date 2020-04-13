@@ -54,15 +54,20 @@ class LinuxEmitter(
         builder.addLine("call free")
     }
 
-    override fun emitPrint(isEmpty: Boolean) {
+    override fun emitPrint(value: Int) {
+        val type = when (value) {
+            0 -> "newline"
+            2 -> "string"
+            else -> "int"
+        }
         builder
             .newline()
             .addLine("# PRINTING USING PRINTF")
             .addLine(
-                "movq", "\$format_${if (isEmpty) "newline" else "int"}", "%rdi",
+                "movq", "\$format_$type", "%rdi",
                 "Pass 1st argument in %rdi"
             )
-        if (!isEmpty) {
+        if (value != 0) {
             builder.addLine(
                 "movq", "${8 * CALLER_SAVE_REGISTERS.size}(%rsp)", "%rsi",
                 "Pass 2nd argument in %rsi"

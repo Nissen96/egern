@@ -958,12 +958,18 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun postVisit(printStmt: PrintStmt) {
+        // TODO: Clean up
+        val type = when {
+            printStmt.expr == null -> 0
+            printStmt.expr is StringExpr -> 2
+            else -> 1
+        }
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.Print,
-                MetaOperationArg(if (printStmt.expr != null) 1 else 0)
+                MetaOperationArg(type)
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))

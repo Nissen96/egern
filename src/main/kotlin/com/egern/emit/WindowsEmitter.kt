@@ -40,7 +40,7 @@ class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, 
         builder.addLine("call free")
     }
 
-    override fun emitPrint(isEmpty: Boolean) {
+    override fun emitPrint(value: Int) {
         // TODO: handle print empty
         builder
             .newline()
