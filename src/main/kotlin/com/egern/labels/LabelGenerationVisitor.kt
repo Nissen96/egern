@@ -7,7 +7,7 @@ import com.egern.ast.WhileLoop
 import com.egern.labels.LabelGenerator
 import com.egern.visitor.Visitor
 
-class LabelGenerationVisitor : Visitor {
+class LabelGenerationVisitor : Visitor() {
     override fun preVisit(funcDecl: FuncDecl) {
         funcDecl.startLabel = LabelGenerator.nextLabel(funcDecl.id)
         funcDecl.endLabel = funcDecl.startLabel + "_end"

@@ -4,7 +4,7 @@ import com.egern.ast.*
 import com.egern.util.*
 import com.egern.visitor.Visitor
 
-class SymbolVisitor : Visitor {
+class SymbolVisitor : Visitor() {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
     var currentTable = SymbolTable(0, null)
