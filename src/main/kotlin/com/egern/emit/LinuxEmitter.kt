@@ -57,11 +57,11 @@ class LinuxEmitter(
     }
 
     override fun emitPrint(value: Int) {
-        val enumType = ExprTypeEnum.fromInt(value)
-        val type = when (enumType) {
+        val type = when (val enumType = ExprTypeEnum.fromInt(value)) {
             ExprTypeEnum.VOID -> "newline"
             ExprTypeEnum.STRING -> "string"
             ExprTypeEnum.INT -> "int"
+            ExprTypeEnum.BOOLEAN -> "int"
             else -> throw Exception("Printing $enumType is invalid")
         }
         builder
