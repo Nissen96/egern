@@ -43,80 +43,8 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
         return sym
     }
 
-    private fun getVariableType(id: String): ExprType {
-        val symbol = lookupSymbol(id, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field))
-        return when (symbol.type) {
-            SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr)
-            SymbolType.Parameter -> symbol.info["type"] as ExprType
-
-            // Get type directly for constructor parameters, derive if local field
-            SymbolType.Field -> symbol.info["type"] as? ExprType ?: deriveType(symbol.info["expr"] as Expr)
-            else -> throw Exception("Can't derive type for IdExpr")
-        }
-    }
-
     private fun deriveType(expr: Expr): ExprType {
-        return when (expr) {
-            // Handle implicit returns of nothing (int=0)
-            is IntExpr -> if (expr.isVoid) VOID else INT
-            is BooleanExpr -> BOOLEAN
-            is BooleanOpExpr -> BOOLEAN
-            is CompExpr -> BOOLEAN
-            is ArithExpr -> INT
-            is IdExpr -> getVariableType(expr.id)
-            is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
-            is ParenExpr -> deriveType(expr.expr)
-            is LenExpr -> INT
-            is ArrayExpr -> deriveArrayType(expr)
-            is ArrayIndexExpr -> {
-                val array = getVariableType(expr.id) as ARRAY
-                if (array.depth - expr.indices.size > 0) {
-                    ARRAY(array.depth - expr.indices.size, array.innerType)
-                } else {
-                    array.innerType
-                }
-            }
-            is ObjectInstantiation -> CLASS(expr.classId)
-            is MethodCall -> deriveMethodCallType(expr)
-            is ClassField -> deriveClassFieldType(expr)
-            is CastExpr -> expr.type
-            else -> throw Exception("Can't derive type for expr!")
-        }
-    }
-
-    private fun deriveMethodCallType(methodCall: MethodCall): ExprType {
-        val objectClass = getObjectClass(methodCall.objectId, currentTable)
-        val classDefinition = classDefinitions.find { it.className == objectClass }!!
-        val methods = classDefinition.getMethods()
-        return methods.find { it.id == methodCall.methodId }!!.returnType
-    }
-
-    private fun deriveClassFieldType(classField: ClassField): ExprType {
-        val objectClass = getObjectClass(classField.objectId, currentTable)
-        val classDefinition = classDefinitions.find { it.className == objectClass }!!
-        val field = classDefinition.lookup(classField.fieldId)!!
-        return if (field.second.info.containsKey("expr")) {
-            deriveType(field.second.info["expr"] as Expr)
-        } else {
-            field.second.info["type"] as ExprType
-        }
-    }
-
-    private fun deriveArrayType(arrayExpr: ArrayExpr): ExprType {
-        var depth = 0
-        var expr: Expr = arrayExpr
-        while (expr is ArrayExpr) {
-            depth++
-            expr = if (expr.entries.isNotEmpty()) expr.entries[0] else IntExpr(0, isVoid = true)
-        }
-
-        var innerType = deriveType(expr)
-        if (innerType is ARRAY) {
-            depth += innerType.depth
-            innerType = innerType.innerType
-        }
-
-        return ARRAY(depth, innerType)
+        return deriveType(expr, currentTable, classDefinitions);
     }
 
     override fun postVisit(funcCall: FuncCall) {
@@ -160,7 +88,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
 
         // Expression type must match declared variable
         varAssign.ids.forEach {
-            val varType = getVariableType(it)
+            val varType = getVariableType(it, currentTable, classDefinitions)
             if (varType != exprType) {
                 ErrorLogger.log(
                     varAssign,
@@ -269,7 +197,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
-        val arrayType = getVariableType(arrayIndexExpr.id) as ARRAY
+        val arrayType = getVariableType(arrayIndexExpr.id, currentTable, classDefinitions) as ARRAY
         if (arrayIndexExpr.indices.size > arrayType.depth) {
             ErrorLogger.log(arrayIndexExpr, "Indexing too deeply into array of ${arrayType.depth} dimensions")
         }

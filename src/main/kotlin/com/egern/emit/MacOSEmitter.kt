@@ -40,7 +40,7 @@ class MacOSEmitter(instructions: List<Instruction>, private val dataFields: List
 
     private var printfCounter = 0
 
-    override fun emitPrint(isEmpty: Boolean) {
+    override fun emitPrint(value: Int) {
         // TODO: double check alignment (MacOS requires 16 byte)
         // TODO: handle print empty
         builder

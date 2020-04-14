@@ -60,6 +60,7 @@ expr: funcCall
     | booleanExpr
     | idExpr
     | intExpr
+    | stringExpr
     | arrayExpr
     | parenExpr
     | lenExpr
@@ -69,6 +70,7 @@ expr: funcCall
 idExpr: ID ;
 intExpr: INT ;
 booleanExpr: BOOLEAN ;
+stringExpr: STRING ;
 parenExpr: '(' expr ')';
 arrayExpr: '[' (expr ',')* expr? ']';
 lenExpr: 'len' '(' expr ')';
@@ -81,10 +83,11 @@ WS       : (' '|'\t') -> skip;
 INT      : [0-9]+ ;
 BOOLEAN  : 'true' | 'false' ;
 VOID     : 'void' ;
-PRIMITIVE: 'int' | 'boolean' ;
+PRIMITIVE: 'int' | 'boolean' | 'string' ;
 ID       : [a-z_]+[A-Za-z_0-9]* ;
 CLASSNAME: [A-Z]+[A-Za-z_0-9]* ;
 COMMENT  : '/*' .*? '*/' -> skip ;
 LINE_COMMENT: '//' ~[\r\n]* -> skip ;
+STRING   : '"' ~["\\]* '"' { setText(getText().substring(1, getText().length() - 1)); } ;
 
 ERROR    : . ;

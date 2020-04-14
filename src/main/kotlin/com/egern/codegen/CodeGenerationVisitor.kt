@@ -6,6 +6,7 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
+import com.egern.types.ExprTypeEnum
 import com.egern.util.*
 import com.egern.visitor.Visitor
 import kotlin.math.max
@@ -15,6 +16,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     Visitor() {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
+    val staticStrings = mutableMapOf<String, String>()
     private val functionStack = stackOf<FuncDecl>()
     private var currentClassDefinition: ClassDefinition? = null
 
@@ -338,6 +340,19 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 InstructionType.PUSH,
                 InstructionArg(ImmediateValue(intExpr.value.toString()), Direct),
                 comment = "Push static integer value"
+            )
+        )
+    }
+
+    override fun visit(stringExpr: StringExpr) {
+        val label = DataFieldGenerator.nextLabel("string")
+        staticStrings[label] = stringExpr.value
+        stringExpr.dataLabel = label
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue(stringExpr.dataLabel), Direct),
+                comment = "Push static string value"
             )
         )
     }
@@ -944,12 +959,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun postVisit(printStmt: PrintStmt) {
+        val type = if (printStmt.expr != null) deriveType(
+            printStmt.expr,
+            symbolTable,
+            classDefinitions
+        ).type else ExprTypeEnum.VOID
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.Print,
-                MetaOperationArg(if (printStmt.expr != null) 1 else 0)
+                MetaOperationArg(type.ordinal)
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
@@ -1083,7 +1103,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
     }
-      
+
     override fun postVisit(varAssign: VarAssign) {
         variableAssignment(varAssign.ids, varAssign.indexExprs, varAssign.classFields)
     }

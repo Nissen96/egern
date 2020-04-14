@@ -1,8 +1,15 @@
 package com.egern.emit
 
 import com.egern.codegen.*
+import com.egern.types.ExprTypeEnum
+import java.lang.Exception
 
-class LinuxEmitter(instructions: List<Instruction>, private val dataFields: List<String>, syntax: SyntaxManager) :
+class LinuxEmitter(
+    instructions: List<Instruction>,
+    private val dataFields: List<String>,
+    private val staticStrings: Map<String, String>,
+    syntax: SyntaxManager
+) :
     Emitter(instructions, AsmStringBuilder("#"), syntax) {
 
     override fun emitProgramPrologue() {
@@ -10,6 +17,8 @@ class LinuxEmitter(instructions: List<Instruction>, private val dataFields: List
             .addLine(".data")
             .addLine("format_int:")
             .addLine(".string \"%d\\n\"", comment = "Integer format string for C printf")
+            .addLine("format_string:")
+            .addLine(".string \"%s\\n\"", comment = "String format string for C printf")
             .addLine("format_newline:")
             .addLine(".string \"\\n\"", comment = "Empty format string for C printf")
             .newline()
@@ -21,6 +30,10 @@ class LinuxEmitter(instructions: List<Instruction>, private val dataFields: List
     }
 
     override fun emitDataSection() {
+        staticStrings.forEach {
+            builder.addLine("${it.key}: .asciz \"${it.value}\"")
+        }
+        builder.newline()
         builder
             .addLine(".bss")
             .addLine(".lcomm $HEAP_POINTER, 8")
@@ -43,15 +56,23 @@ class LinuxEmitter(instructions: List<Instruction>, private val dataFields: List
         builder.addLine("call free")
     }
 
-    override fun emitPrint(isEmpty: Boolean) {
+    override fun emitPrint(value: Int) {
+        val enumType = ExprTypeEnum.fromInt(value)
+        val type = when (enumType) {
+            ExprTypeEnum.VOID -> "newline"
+            ExprTypeEnum.STRING -> "string"
+            ExprTypeEnum.INT -> "int"
+            ExprTypeEnum.BOOLEAN -> "int"
+            else -> throw Exception("Printing $enumType is invalid")
+        }
         builder
             .newline()
             .addLine("# PRINTING USING PRINTF")
             .addLine(
-                "movq", "\$format_${if (isEmpty) "newline" else "int"}", "%rdi",
+                "movq", "\$format_$type", "%rdi",
                 "Pass 1st argument in %rdi"
             )
-        if (!isEmpty) {
+        if (enumType != ExprTypeEnum.VOID) {
             builder.addLine(
                 "movq", "${8 * CALLER_SAVE_REGISTERS.size}(%rsp)", "%rsi",
                 "Pass 2nd argument in %rsi"
