@@ -37,12 +37,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     private fun visitMethodDecl(ctx: MainParser.MethodDeclContext, classId: String): ASTNode {
-        val keywords: EnumSet<Keyword> = EnumSet.noneOf(Keyword::class.java)
-        keywords.addAll(ctx.KEYWORD().map { Keyword.fromString(it.text)!! })
+        val modifiers: EnumSet<Modifier> = EnumSet.noneOf(Modifier::class.java)
+        modifiers.addAll(ctx.MODIFIER().map { Modifier.fromString(it.text)!! })
         return visitFuncDecl(
             ctx.funcDecl(),
             classId,
-            keywords
+            modifiers
         )
     }
 
@@ -70,10 +70,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFieldDecl(ctx: MainParser.FieldDeclContext): ASTNode {
+        val modifiers: EnumSet<Modifier> = EnumSet.noneOf(Modifier::class.java)
+        modifiers.addAll(ctx.MODIFIER().map { Modifier.fromString(it.text)!! })
         return FieldDecl(
             ctx.varDecl().ID().map { it.text },
             ctx.varDecl().expr().accept(this) as Expr,
-            EnumSet.copyOf(ctx.KEYWORD().map { Keyword.fromString(it.text)!! }),
+            modifiers,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -156,7 +158,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     private fun visitFuncDecl(
         ctx: MainParser.FuncDeclContext,
         classId: String? = null,
-        keywords: EnumSet<Keyword> = EnumSet.noneOf(Keyword::class.java)
+        modifiers: EnumSet<Modifier> = EnumSet.noneOf(Modifier::class.java)
     ): ASTNode {
         val returnType = if (ctx.typeDecl() != null) getType(ctx.typeDecl()) else VOID
         val stmts = ctx.funcBody().stmt().map { it.accept(this) }.toMutableList()
@@ -178,7 +180,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             returnType,
             stmts,
             ctx.funcBody().funcDecl().map { it.accept(this) as FuncDecl },
-            keywords,
+            modifiers,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )

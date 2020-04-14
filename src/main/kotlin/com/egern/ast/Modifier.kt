@@ -1,10 +1,10 @@
 package com.egern.ast
 
-enum class Keyword(val keyword: String) {
+enum class Modifier(val modifier: String) {
     OVERRIDE("override");
 
     companion object {
-        private val map = values().associateBy(Keyword::keyword)
+        private val map = values().associateBy(Modifier::modifier)
         fun fromString(type: String) = map[type]
     }
 }

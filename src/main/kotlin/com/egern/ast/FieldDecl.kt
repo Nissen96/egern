@@ -7,7 +7,7 @@ import java.util.*
 class FieldDecl(
     val ids: List<String>,
     val expr: Expr,
-    val keywords: EnumSet<Keyword>,
+    val modifiers: EnumSet<Modifier>,
     lineNumber: Int,
     charPosition: Int
 ) :

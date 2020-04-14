@@ -1,4 +1,5 @@
 class Dog() {
+    var legs = 2
     func bark() {
         print(42)
     }
@@ -6,6 +7,7 @@ class Dog() {
 
 
 class Labrador(): Dog() {
+    override var legs = 4
     override func bark() {
         print(53)
     }
@@ -13,12 +15,16 @@ class Labrador(): Dog() {
 
 var buller = Dog()
 var ibrahim = Labrador()
+print(buller.legs)
 buller.bark()
+print(ibrahim.legs)
 ibrahim.bark()
 
 var jens = ibrahim as Dog
+print(jens.legs)
 jens.bark()
 
 var brutus = Dog()
 brutus = ibrahim as Dog
+print(brutus.legs)
 brutus.bark()
