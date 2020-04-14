@@ -11,7 +11,7 @@ class FuncDecl(
     val returnType: ExprType,
     val stmts: List<ASTNode>,
     val funcDecls: List<FuncDecl>,
-    val keywords: EnumSet<Keyword>,
+    val modifiers: EnumSet<Modifier>,
     lineNumber: Int, charPosition: Int
 ) :
     ASTNode(lineNumber, charPosition) {
