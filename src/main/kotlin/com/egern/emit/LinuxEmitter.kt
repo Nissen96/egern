@@ -1,6 +1,8 @@
 package com.egern.emit
 
 import com.egern.codegen.*
+import com.egern.types.ExprTypeEnum
+import java.lang.Exception
 
 class LinuxEmitter(
     instructions: List<Instruction>,
@@ -55,10 +57,12 @@ class LinuxEmitter(
     }
 
     override fun emitPrint(value: Int) {
-        val type = when (value) {
-            0 -> "newline"
-            2 -> "string"
-            else -> "int"
+        val enumType = ExprTypeEnum.fromInt(value)
+        val type = when (enumType) {
+            ExprTypeEnum.VOID -> "newline"
+            ExprTypeEnum.STRING -> "string"
+            ExprTypeEnum.INT -> "int"
+            else -> throw Exception("Printing $enumType is invalid")
         }
         builder
             .newline()

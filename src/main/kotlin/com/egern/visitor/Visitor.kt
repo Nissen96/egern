@@ -1,9 +1,13 @@
 package com.egern.visitor
 
 import com.egern.ast.*
+import com.egern.error.ErrorLogger
+import com.egern.symbols.ClassDefinition
+import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.types.*
+import java.lang.Exception
 
 abstract class Visitor {
     // Utility functions
@@ -33,6 +37,112 @@ abstract class Visitor {
         } else {
             (symbol.info["type"] as CLASS).className
         }
+    }
+
+    // Type functions
+    fun getVariableType(id: String, symbolTable: SymbolTable, classDefinitions: List<ClassDefinition>): ExprType {
+        val symbol = lookupSymbol(id, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field), symbolTable)
+        return when (symbol.type) {
+            SymbolType.Variable -> deriveType(symbol.info["expr"] as Expr, symbolTable, classDefinitions)
+            SymbolType.Parameter -> symbol.info["type"] as ExprType
+
+            // Get type directly for constructor parameters, derive if local field
+            SymbolType.Field -> symbol.info["type"] as? ExprType ?: deriveType(
+                symbol.info["expr"] as Expr,
+                symbolTable,
+                classDefinitions
+            )
+            else -> throw Exception("Can't derive type for IdExpr")
+        }
+    }
+
+    private fun lookupSymbol(id: String, validTypes: List<SymbolType>, currentTable: SymbolTable): Symbol {
+        val sym = currentTable.lookup(id) ?: throw Exception("Symbol '$id' not defined")
+        if (sym.type !in validTypes) {
+            ErrorLogger.log(Exception("Symbol '$id' should be one of types $validTypes but is not"))
+        }
+        return sym
+    }
+
+    fun deriveType(
+        expr: Expr,
+        currentTable: SymbolTable,
+        classDefinitions: List<ClassDefinition>
+    ): ExprType {
+        return when (expr) {
+            // Handle implicit returns of nothing (int=0)
+            is IntExpr -> if (expr.isVoid) VOID else INT
+            is BooleanExpr -> BOOLEAN
+            is StringExpr -> STRING
+            is BooleanOpExpr -> BOOLEAN
+            is CompExpr -> BOOLEAN
+            is ArithExpr -> INT
+            is IdExpr -> getVariableType(expr.id, currentTable, classDefinitions)
+            is FuncCall -> (currentTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
+            is ParenExpr -> deriveType(expr.expr, currentTable, classDefinitions)
+            is LenExpr -> INT
+            is ArrayExpr -> deriveArrayType(expr, currentTable, classDefinitions)
+            is ArrayIndexExpr -> {
+                val array = getVariableType(expr.id, currentTable, classDefinitions) as ARRAY
+                if (array.depth - expr.indices.size > 0) {
+                    ARRAY(array.depth - expr.indices.size, array.innerType)
+                } else {
+                    array.innerType
+                }
+            }
+            is ObjectInstantiation -> CLASS(expr.classId)
+            is MethodCall -> deriveMethodCallType(expr, currentTable, classDefinitions)
+            is ClassField -> deriveClassFieldType(expr, currentTable, classDefinitions)
+            is CastExpr -> expr.type
+            else -> throw Exception("Can't derive type for expr!")
+        }
+    }
+
+    private fun deriveMethodCallType(
+        methodCall: MethodCall,
+        currentTable: SymbolTable,
+        classDefinitions: List<ClassDefinition>
+    ): ExprType {
+        val objectClass = getObjectClass(methodCall.objectId, currentTable)
+        val classDefinition = classDefinitions.find { it.className == objectClass }!!
+        val methods = classDefinition.getMethods()
+        return methods.find { it.id == methodCall.methodId }!!.returnType
+    }
+
+    private fun deriveClassFieldType(
+        classField: ClassField,
+        currentTable: SymbolTable,
+        classDefinitions: List<ClassDefinition>
+    ): ExprType {
+        val objectClass = getObjectClass(classField.objectId, currentTable)
+        val classDefinition = classDefinitions.find { it.className == objectClass }!!
+        val field = classDefinition.lookup(classField.fieldId)!!
+        return if (field.second.info.containsKey("expr")) {
+            deriveType(field.second.info["expr"] as Expr, currentTable, classDefinitions)
+        } else {
+            field.second.info["type"] as ExprType
+        }
+    }
+
+    private fun deriveArrayType(
+        arrayExpr: ArrayExpr,
+        currentTable: SymbolTable,
+        classDefinitions: List<ClassDefinition>
+    ): ExprType {
+        var depth = 0
+        var expr: Expr = arrayExpr
+        while (expr is ArrayExpr) {
+            depth++
+            expr = if (expr.entries.isNotEmpty()) expr.entries[0] else IntExpr(0, isVoid = true)
+        }
+
+        var innerType = deriveType(expr, currentTable, classDefinitions)
+        if (innerType is ARRAY) {
+            depth += innerType.depth
+            innerType = innerType.innerType
+        }
+
+        return ARRAY(depth, innerType)
     }
 
     // General visits

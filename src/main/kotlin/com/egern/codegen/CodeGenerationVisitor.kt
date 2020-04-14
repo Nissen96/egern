@@ -6,6 +6,7 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
+import com.egern.types.ExprTypeEnum
 import com.egern.util.*
 import com.egern.visitor.Visitor
 import kotlin.math.max
@@ -958,18 +959,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun postVisit(printStmt: PrintStmt) {
-        // TODO: Clean up
-        val type = when {
-            printStmt.expr == null -> 0
-            printStmt.expr is StringExpr -> 2
-            else -> 1
-        }
+        val type = if (printStmt.expr != null) deriveType(
+            printStmt.expr,
+            symbolTable,
+            classDefinitions
+        ).type else ExprTypeEnum.VOID
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.Print,
-                MetaOperationArg(type)
+                MetaOperationArg(type.ordinal)
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))

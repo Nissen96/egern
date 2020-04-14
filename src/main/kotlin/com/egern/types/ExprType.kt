@@ -6,7 +6,11 @@ enum class ExprTypeEnum {
     VOID,
     ARRAY,
     CLASS,
-    STRING
+    STRING;
+
+    companion object {
+        fun fromInt(value: Int) = values().first { it.ordinal == value }
+    }
 }
 
 
