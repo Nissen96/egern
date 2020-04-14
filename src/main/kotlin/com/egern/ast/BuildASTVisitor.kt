@@ -295,7 +295,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                 charPosition = ctx.start.charPositionInLine
             )
             ctx.stringExpr() != null -> StringExpr(
-                ctx.stringExpr().STRING().text.replace("\"", ""),
+                ctx.stringExpr().STRING().text,
                 lineNumber = ctx.start.line,
                 charPosition = ctx.start.charPositionInLine
             )
