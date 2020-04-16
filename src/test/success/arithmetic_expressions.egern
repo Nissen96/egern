@@ -1,10 +1,15 @@
-print(2 + 3)
-print(3 - 2)
-print(3 * 4)
-print(4 / 2)
-print(13 % 5)
+var a = 2
+var b = 3
+var c = 4
+var d = 5
 
-print(2 + 3 * 5)
-print(7 - 4 - 2)
-print(8 / 4 * 2)
-print(9 - 6 / 3)
+print(a + b)
+print(b - a)
+print(b * c)
+print(c / a)
+print(13 % d)
+
+print(a + b * d)
+print(7 - c - a)
+print(8 / c * a)
+print(9 - 6 / b)
