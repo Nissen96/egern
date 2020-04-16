@@ -534,7 +534,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
             BooleanOp.fromString(op)!!,
-            exprs[0].start.line, exprs[0].start.charPositionInLine
+            lineNumber = exprs[0].start.line,
+            charPosition = exprs[0].start.charPositionInLine
         )
     }
 
