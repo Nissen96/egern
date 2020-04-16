@@ -27,6 +27,7 @@ class WeedingVisitor : Visitor() {
 
     private var functionTree = FunctionNode(null, null)  // Function hierarchy with caller info
     private val confirmedCalled: MutableSet<FunctionNode> = mutableSetOf(functionTree)  // Memoize called functions
+    private var isInClass = false
 
     private fun allBranchesReturn(stmts: List<Statement>): Boolean {
         /**
@@ -101,7 +102,16 @@ class WeedingVisitor : Visitor() {
         sweepUnusedFunctions(program)
     }
 
+    override fun preVisit(classDecl: ClassDecl) {
+        isInClass = true
+    }
+
+    override fun postVisit(classDecl: ClassDecl) {
+        isInClass = false
+    }
+
     override fun preVisit(funcDecl: FuncDecl) {
+        if (isInClass) return  // Handle methods?
         functionTree = functionTree.children.find { it.funcDecl == funcDecl }!!
         if (!allBranchesReturn(funcDecl.stmts.filterIsInstance<Statement>())) {
             ErrorLogger.log(funcDecl, "Function must always return a value")
@@ -109,7 +119,7 @@ class WeedingVisitor : Visitor() {
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
-        functionTree = functionTree.parent!!
+        if (!isInClass) functionTree = functionTree.parent!!
     }
 
     override fun postVisit(funcCall: FuncCall) {
