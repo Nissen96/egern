@@ -4,7 +4,7 @@ import com.egern.ast.*
 import com.egern.error.ErrorLogger
 import com.egern.visitor.Visitor
 
-class WeedingVisitor : Visitor {
+class WeedingVisitor : Visitor() {
     data class FunctionNode(
         val funcDecl: FuncDecl?,
         val parent: FunctionNode?,
