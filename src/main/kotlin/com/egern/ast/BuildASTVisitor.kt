@@ -152,7 +152,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitFuncDecl(ctx: MainParser.FuncDeclContext): ASTNode {
-        return visitFuncDecl(ctx)
+        return visitFuncDecl(ctx, null)
     }
 
     private fun visitFuncDecl(

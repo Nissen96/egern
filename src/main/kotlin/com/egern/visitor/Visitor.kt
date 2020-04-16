@@ -22,7 +22,7 @@ abstract class Visitor {
         }
     }
 
-    fun getObjectClass(objectId: String, symbolTable: SymbolTable): String {
+    fun getObjectClass(objectId: String, symbolTable: SymbolTable, classDefinitions: List<ClassDefinition>): CLASS {
         val symbol = symbolTable.lookup(objectId)!!
         return if (symbol.type == SymbolType.Variable) {
             var instance = symbolTable.lookup(objectId)!!.info["expr"]
@@ -30,12 +30,12 @@ abstract class Visitor {
                 instance = symbolTable.lookup(instance.id)!!.info["expr"]
             }
             return when (instance) {
-                is ObjectInstantiation -> instance.classId
-                is CastExpr -> (instance.type as CLASS).className
+                is ObjectInstantiation -> CLASS(instance.classId)
+                is CastExpr -> CLASS((deriveType(instance.expr, symbolTable, classDefinitions) as CLASS).className, (instance.type as CLASS).className)
                 else -> throw Error("Invalid instance type")
             }
         } else {
-            (symbol.info["type"] as CLASS).className
+            symbol.info["type"] as CLASS
         }
     }
 
@@ -103,9 +103,9 @@ abstract class Visitor {
         currentTable: SymbolTable,
         classDefinitions: List<ClassDefinition>
     ): ExprType {
-        val objectClass = getObjectClass(methodCall.objectId, currentTable)
-        val classDefinition = classDefinitions.find { it.className == objectClass }!!
-        val methods = classDefinition.getMethods()
+        val objectClass = getObjectClass(methodCall.objectId, currentTable, classDefinitions)
+        val classDefinition = classDefinitions.find { it.className == objectClass.className }!!
+        val methods = classDefinition.getMethods(objectClass.castTo ?: objectClass.className)
         return methods.find { it.id == methodCall.methodId }!!.returnType
     }
 
@@ -114,9 +114,9 @@ abstract class Visitor {
         currentTable: SymbolTable,
         classDefinitions: List<ClassDefinition>
     ): ExprType {
-        val objectClass = getObjectClass(classField.objectId, currentTable)
-        val classDefinition = classDefinitions.find { it.className == objectClass }!!
-        val field = classDefinition.lookup(classField.fieldId)!!
+        val objectClass = getObjectClass(classField.objectId, currentTable, classDefinitions)
+        val classDefinition = classDefinitions.find { it.className == objectClass.className }!!
+        val field = classDefinition.lookup(classField.fieldId, objectClass.castTo ?: objectClass.className)!!
         return if (field.second.info.containsKey("expr")) {
             deriveType(field.second.info["expr"] as Expr, currentTable, classDefinitions)
         } else {
@@ -147,12 +147,10 @@ abstract class Visitor {
 
     // General visits
     open fun preStmtVisit() {}
-
     open fun postStmtVisit() {}
 
     // AST node visits
     open fun midVisit(arithExpr: ArithExpr) {}
-
     open fun postVisit(arithExpr: ArithExpr) {}
 
     open fun preVisit(arrayExpr: ArrayExpr) {}

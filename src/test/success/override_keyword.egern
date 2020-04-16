@@ -1,15 +1,21 @@
 class Dog() {
     var legs = 2
+    var friends = 3
     func bark() {
-        print(42)
+        print("woof")
     }
 }
 
 
 class Labrador(): Dog() {
     override var legs = 4
+    var age = 3
     override func bark() {
-        print(53)
+        print("brøl")
+    }
+
+    func getLegs(): int {
+        return legs
     }
 }
 
@@ -22,9 +28,14 @@ ibrahim.bark()
 
 var jens = ibrahim as Dog
 print(jens.legs)
+//print(jens.age)
+print(jens.friends)
 jens.bark()
 
 var brutus = Dog()
 brutus = ibrahim as Dog
 print(brutus.legs)
+print(brutus.friends)
+//print(brutus.age)
+//print(brutus.getAge())
 brutus.bark()

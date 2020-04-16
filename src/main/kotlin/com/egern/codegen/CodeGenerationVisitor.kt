@@ -894,12 +894,14 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     override fun postVisit(methodCall: MethodCall) {
         // VTable lookup
-        val classId = getObjectClass(methodCall.objectId, symbolTable)
-        val classDefinition = classDefinitions.find { classId == it.className }!!
+        val objectClass = getObjectClass(methodCall.objectId, symbolTable, classDefinitions)
+        val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
         val vTablePointer = classDefinition.vTableOffset
 
         // Find latest override of method
-        val methodOffset = classDefinition.getMethods().indexOfLast { it.id == methodCall.methodId }
+        val methodOffset = classDefinition.getMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
+            it.id == methodCall.methodId
+        }
         val numArgs = methodCall.args.size
 
         passFunctionArgs(numArgs)
@@ -928,9 +930,9 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun visit(classField: ClassField) {
-        val classId = getObjectClass(classField.objectId, symbolTable)
-        val classDefinition = classDefinitions.find { classId == it.className }!!
-        val fieldOffset = classDefinition.getFieldOffset(classField.fieldId)
+        val objectClass = getObjectClass(classField.objectId, symbolTable, classDefinitions)
+        val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
+        val fieldOffset = classDefinition.getFieldOffset(classField.fieldId, objectClass.castTo)
         val objectPointer = getIdLocation(classField.objectId)
 
         add(

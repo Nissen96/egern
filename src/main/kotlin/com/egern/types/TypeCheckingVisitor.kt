@@ -246,4 +246,17 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     override fun postVisit(classDecl: ClassDecl) {
         currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
     }
+
+    override fun postVisit(castExpr: CastExpr) {
+        val castTo = (castExpr.type as CLASS).className
+        val castFrom = (deriveType(castExpr.expr) as CLASS).className
+        var classDefinition = classDefinitions.find { castFrom == it.className }
+        while (classDefinition != null) {
+            if (castTo == classDefinition.className) {
+                return
+            }
+            classDefinition = classDefinition.superclass
+        }
+        ErrorLogger.log(castExpr,"Invalid cast!")
+    }
 }

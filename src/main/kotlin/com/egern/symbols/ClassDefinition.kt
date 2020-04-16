@@ -1,12 +1,7 @@
 package com.egern.symbols
 
-import com.egern.ast.ClassDecl
-import com.egern.ast.Expr
-import com.egern.ast.FieldDecl
-import com.egern.ast.FuncDecl
-import com.egern.error.ErrorLogger
+import com.egern.ast.*
 import com.egern.types.ExprType
-import java.lang.Exception
 
 class ClassDefinition(
     val className: String,
@@ -45,16 +40,29 @@ class ClassDefinition(
         return (superclass?.getLocalFieldsPerClass() ?: emptyList()) + listOf(classDecl.fieldDecls)
     }
 
-    fun getFieldOffset(fieldId: String): Int {
-        val (classWithField, fieldSymbol) = lookup(fieldId)!!
+    fun getFieldOffset(fieldId: String, actualClass: String? = null): Int {
+        val (classWithField, fieldSymbol) = lookup(fieldId, actualClass ?: className)!!
         val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
 
         return (classWithField.superclass?.getNumFields() ?: 0) + fieldOffset
     }
 
-    fun lookup(id: String): Pair<ClassDefinition, Symbol>? {
+    fun lookup(id: String, actualClass: String, actualClassReached: Boolean = false): Pair<ClassDefinition, Symbol>? {
         // Find symbol recursively in class hierarchy
-        val symbol = symbolTable.lookupCurrentScope(id) ?: return superclass?.lookup(id)
-        return Pair(this, symbol)
+        val classReached = actualClass == className || actualClassReached
+        val symbol = symbolTable.lookupCurrentScope(id) ?: return superclass?.lookup(id, actualClass, classReached)
+        val field = getLocalFields().find { symbol.id in it.ids }
+        if (classReached || (field != null && Modifier.OVERRIDE in field.modifiers)) {
+            return Pair(this, symbol)
+        }
+
+        return superclass?.lookup(id, actualClass, classReached)
+    }
+
+    fun getMethods(actualClass: String, actualClassReached: Boolean = false): List<FuncDecl> {
+        var relevantMethods = classDecl.methods
+        val classReached = actualClass == className || actualClassReached
+        if (!classReached) relevantMethods = relevantMethods.filter { Modifier.OVERRIDE in it.modifiers }
+        return (superclass?.getMethods(actualClass, classReached) ?: emptyList()) + relevantMethods
     }
 }

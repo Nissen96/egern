@@ -22,6 +22,10 @@ class SymbolVisitor : Visitor() {
         currentTable = SymbolTable(currentScopeLevel, currentTable)
     }
 
+    override fun preVisit(program: Program) {
+        baseClass.symbolTable = currentTable
+    }
+
     override fun postVisit(program: Program) {
         program.variableCount = varCountStack.pop()!!
     }
@@ -36,7 +40,14 @@ class SymbolVisitor : Visitor() {
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
-        currentTable.insert(Symbol(funcDecl.id, SymbolType.Function, currentScopeLevel, mapOf("funcDecl" to funcDecl)))
+        currentTable.insert(
+            Symbol(
+                funcDecl.id,
+                SymbolType.Function,
+                currentScopeLevel,
+                mutableMapOf("funcDecl" to funcDecl)
+            )
+        )
         currentScopeLevel++
         createNewScope()
         for ((paramOffset, param) in funcDecl.params.withIndex()) {
@@ -45,7 +56,7 @@ class SymbolVisitor : Visitor() {
                     param.first,
                     SymbolType.Parameter,
                     currentScopeLevel,
-                    mapOf("paramOffset" to paramOffset, "type" to param.second)
+                    mutableMapOf("paramOffset" to paramOffset, "type" to param.second)
                 )
             )
         }
@@ -60,10 +71,10 @@ class SymbolVisitor : Visitor() {
     }
 
     override fun preVisit(varDecl: VarDecl) {
-        for (id in varDecl.ids) {
+        varDecl.ids.forEach { id ->
             currentTable.insert(
                 Symbol(
-                    id, SymbolType.Variable, currentScopeLevel, mapOf(
+                    id, SymbolType.Variable, currentScopeLevel, mutableMapOf(
                         "variableOffset" to varCountStack.peek(),
                         "expr" to varDecl.expr
                     )
@@ -74,11 +85,17 @@ class SymbolVisitor : Visitor() {
         varDecl.symbolTable = currentTable
     }
 
+    override fun preVisit(varAssign: VarAssign) {
+        varAssign.ids.forEach {
+            currentTable.lookup(it)?.info?.set("expr", varAssign.expr)
+        }
+    }
+
     override fun preVisit(fieldDecl: FieldDecl) {
         for (id in fieldDecl.ids) {
             currentTable.insert(
                 Symbol(
-                    id, SymbolType.Field, currentScopeLevel, mapOf(
+                    id, SymbolType.Field, currentScopeLevel, mutableMapOf(
                         "fieldOffset" to varCountStack.peek(),
                         "expr" to fieldDecl.expr
                     )
@@ -97,7 +114,7 @@ class SymbolVisitor : Visitor() {
                     field.first,
                     SymbolType.Field,
                     currentScopeLevel,
-                    mapOf("fieldOffset" to index, "type" to field.second)
+                    mutableMapOf("fieldOffset" to index, "type" to field.second)
                 )
             )
         }
