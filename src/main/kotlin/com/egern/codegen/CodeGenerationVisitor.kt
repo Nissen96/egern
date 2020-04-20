@@ -6,6 +6,7 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
+import com.egern.types.ExprType
 import com.egern.types.ExprTypeEnum
 import com.egern.util.*
 import com.egern.visitor.Visitor
@@ -980,13 +981,17 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
-        add(
-            Instruction(
-                InstructionType.ADD, InstructionArg(ImmediateValue("8"), Direct),
-                InstructionArg(RSP, Direct),
-                comment = "Remove pushed expression"
+
+        // Only remove expression if not empty
+        if (type != ExprTypeEnum.VOID) {
+            add(
+                Instruction(
+                    InstructionType.ADD, InstructionArg(ImmediateValue("8"), Direct),
+                    InstructionArg(RSP, Direct),
+                    comment = "Remove pushed expression"
+                )
             )
-        )
+        }
     }
 
     override fun postVisit(returnStmt: ReturnStmt) {
