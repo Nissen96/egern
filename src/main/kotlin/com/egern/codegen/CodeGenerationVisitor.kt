@@ -1017,6 +1017,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         if (type == ExprTypeEnum.BOOLEAN) {
             add(Instruction(InstructionType.POP, InstructionArg(Register(OpReg1), Direct)))
             val trueLabel = LabelGenerator.nextLabel("print_true")
+            val endLabel = LabelGenerator.nextLabel("print_end")
             add(
                 Instruction(
                     InstructionType.MOV,
@@ -1049,6 +1050,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
             add(
                 Instruction(
+                    InstructionType.JMP,
+                    InstructionArg(Memory(endLabel), Direct)
+                )
+            )
+
+            add(
+                Instruction(
                     InstructionType.LABEL,
                     InstructionArg(Memory(trueLabel), Direct)
                 )
@@ -1059,6 +1067,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                     InstructionType.PUSH,
                     InstructionArg(ImmediateValue("boolean_true"), Direct),
                     comment = "Push static string value"
+                )
+            )
+
+            add(
+                Instruction(
+                    InstructionType.LABEL,
+                    InstructionArg(Memory(endLabel), Direct)
                 )
             )
         }
