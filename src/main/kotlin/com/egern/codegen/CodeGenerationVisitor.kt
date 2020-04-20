@@ -1013,11 +1013,19 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             symbolTable,
             classDefinitions
         ).type else ExprTypeEnum.VOID
+
         // Special case for booleans, we want to print 'true' or 'false'
         if (type == ExprTypeEnum.BOOLEAN) {
-            add(Instruction(InstructionType.POP, InstructionArg(Register(OpReg1), Direct)))
             val trueLabel = LabelGenerator.nextLabel("print_true")
             val endLabel = LabelGenerator.nextLabel("print_end")
+
+            add(
+                Instruction(
+                    InstructionType.POP,
+                    InstructionArg(Register(OpReg1), Direct),
+                    comment = "Pop expression (comparison result) into register"
+                )
+            )
             add(
                 Instruction(
                     InstructionType.MOV,
@@ -1030,13 +1038,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 Instruction(
                     InstructionType.CMP,
                     InstructionArg(Register(OpReg1), Direct),
-                    InstructionArg(Register(OpReg2), Direct)
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Check if comparison result was true"
                 )
             )
             add(
                 Instruction(
                     InstructionType.JE,
-                    InstructionArg(Memory(trueLabel), Direct)
+                    InstructionArg(Memory(trueLabel), Direct),
+                    comment = "If true, jump to position where true is pushed"
                 )
             )
 
@@ -1044,14 +1054,15 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 Instruction(
                     InstructionType.PUSH,
                     InstructionArg(ImmediateValue("boolean_false"), Direct),
-                    comment = "Push static string value"
+                    comment = "Push static string value 'false'"
                 )
             )
 
             add(
                 Instruction(
                     InstructionType.JMP,
-                    InstructionArg(Memory(endLabel), Direct)
+                    InstructionArg(Memory(endLabel), Direct),
+                    comment = "Skip past true section"
                 )
             )
 
@@ -1066,7 +1077,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 Instruction(
                     InstructionType.PUSH,
                     InstructionArg(ImmediateValue("boolean_true"), Direct),
-                    comment = "Push static string value"
+                    comment = "Push static string value 'true'"
                 )
             )
 
@@ -1077,6 +1088,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 )
             )
         }
+
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(
             Instruction(
