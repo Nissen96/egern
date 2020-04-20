@@ -107,6 +107,14 @@ class SymbolVisitor : Visitor() {
     }
 
     override fun preVisit(classDecl: ClassDecl) {
+        currentTable.insert(
+            Symbol(
+                classDecl.id,
+                SymbolType.Class,
+                currentScopeLevel,
+                mutableMapOf("classDecl" to classDecl)
+            )
+        )
         createNewScope()
         for ((index, field) in classDecl.constructor.withIndex()) {
             currentTable.insert(

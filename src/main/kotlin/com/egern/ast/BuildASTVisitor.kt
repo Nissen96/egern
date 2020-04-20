@@ -46,29 +46,6 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
-    override fun visitObjectInstantiation(ctx: MainParser.ObjectInstantiationContext): ASTNode {
-        return ObjectInstantiation(
-            ctx.CLASSNAME().text,
-            ctx.argList().expr().map { it.accept(this) as Expr },
-            lineNumber = ctx.start.line,
-            charPosition = ctx.start.charPositionInLine
-        )
-    }
-
-    override fun visitMethodCall(ctx: MainParser.MethodCallContext): ASTNode {
-        val funcCall = ctx.funcCall()
-        val objectId = if (ctx.ID() != null) ctx.ID().text else "this"
-
-        // Method calls have an implicit first argument, referencing the object
-        return MethodCall(
-            objectId,
-            funcCall.ID().text,
-            listOf(ThisExpr(objectId)) + funcCall.argList().expr().map { it.accept(this) as Expr },
-            lineNumber = ctx.start.line,
-            charPosition = ctx.start.charPositionInLine
-        )
-    }
-
     override fun visitFieldDecl(ctx: MainParser.FieldDeclContext): ASTNode {
         val modifiers: EnumSet<Modifier> = EnumSet.noneOf(Modifier::class.java)
         modifiers.addAll(ctx.MODIFIER().map { Modifier.fromString(it.text)!! })
@@ -81,18 +58,64 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
-    private fun visitClassField(ctx: MainParser.ClassFieldContext, reference: Boolean): ClassField {
-        return ClassField(
-            if (ctx.ID().size > 1) ctx.ID(0).text else "this",
-            ctx.ID(if (ctx.ID().size > 1) 1 else 0).text,
-            reference = reference,
-            lineNumber = ctx.start.line,
-            charPosition = ctx.start.charPositionInLine
-        )
+    override fun visitMethodCall(ctx: MainParser.MethodCallContext): ASTNode {
+        val objectId = when {
+            ctx.ID() != null -> ctx.ID().text
+            ctx.CLASSNAME() != null -> ctx.CLASSNAME().text
+            else -> "this"
+        }
+
+        val methodId = ctx.funcCall().ID().text
+        val methodArgs = ctx.funcCall().argList().expr().map { it.accept(this) as Expr }
+
+        return if (ctx.CLASSNAME() != null) {
+            StaticMethodCall(
+                objectId, methodId, methodArgs,
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
+            )
+        } else {
+            MethodCall(
+                objectId,
+                methodId,
+                listOf(ThisExpr(objectId)) + methodArgs, // Implicit first argument, referencing the object
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
+            )
+        }
     }
 
     override fun visitClassField(ctx: MainParser.ClassFieldContext): ASTNode {
         return visitClassField(ctx, reference = false)
+    }
+
+    private fun visitClassField(ctx: MainParser.ClassFieldContext, reference: Boolean): ClassField {
+        return if (ctx.CLASSNAME() != null) {
+            StaticClassField(
+                ctx.CLASSNAME().text,
+                ctx.ID(if (ctx.ID().size > 1) 1 else 0).text,
+                reference = reference,
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
+            )
+        } else {
+            ClassField(
+                if (ctx.ID().size > 1) ctx.ID(0).text else "this",
+                ctx.ID(if (ctx.ID().size > 1) 1 else 0).text,
+                reference = reference,
+                lineNumber = ctx.start.line,
+                charPosition = ctx.start.charPositionInLine
+            )
+        }
+    }
+
+    override fun visitObjectInstantiation(ctx: MainParser.ObjectInstantiationContext): ASTNode {
+        return ObjectInstantiation(
+            ctx.CLASSNAME().text,
+            ctx.argList().expr().map { it.accept(this) as Expr },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
     }
 
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {

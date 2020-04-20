@@ -1,7 +1,8 @@
 package com.egern.ast
 
 enum class Modifier(val modifier: String) {
-    OVERRIDE("override");
+    OVERRIDE("override"),
+    STATIC("static");
 
     companion object {
         private val map = values().associateBy(Modifier::modifier)

@@ -2,10 +2,10 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class ClassField(
+open class ClassField(
     val objectId: String,
-    val fieldId: String,
-    val reference: Boolean,
+    open val fieldId: String,
+    open val reference: Boolean,
     lineNumber: Int,
     charPosition: Int
 ) : Expr(lineNumber, charPosition) {

@@ -23,22 +23,24 @@ abstract class Visitor {
     }
 
     fun getObjectClass(objectId: String, symbolTable: SymbolTable, classDefinitions: List<ClassDefinition>): CLASS {
-        val symbol = symbolTable.lookup(objectId)!!
-        return if (symbol.type == SymbolType.Variable) {
-            var instance = symbolTable.lookup(objectId)!!.info["expr"]
-            while (instance is IdExpr) {
-                instance = symbolTable.lookup(instance.id)!!.info["expr"]
+        val symbol = lookupSymbol(objectId, listOf(SymbolType.Variable, SymbolType.Parameter), symbolTable)
+        return when (symbol.type) {
+            SymbolType.Variable -> {
+                var instance = symbolTable.lookup(objectId)!!.info["expr"]
+                while (instance is IdExpr) {
+                    instance = symbolTable.lookup(instance.id)!!.info["expr"]
+                }
+                return when (instance) {
+                    is ObjectInstantiation -> CLASS(instance.classId)
+                    is CastExpr -> CLASS(
+                        (deriveType(instance.expr, symbolTable, classDefinitions) as CLASS).className,
+                        (instance.type as CLASS).className
+                    )
+                    else -> throw Error("Invalid instance type")
+                }
             }
-            return when (instance) {
-                is ObjectInstantiation -> CLASS(instance.classId)
-                is CastExpr -> CLASS(
-                    (deriveType(instance.expr, symbolTable, classDefinitions) as CLASS).className,
-                    (instance.type as CLASS).className
-                )
-                else -> throw Error("Invalid instance type")
-            }
-        } else {
-            symbol.info["type"] as CLASS
+            SymbolType.Parameter -> symbol.info["type"] as CLASS
+            else -> throw Exception("Id does not match a class")
         }
     }
 
@@ -106,9 +108,13 @@ abstract class Visitor {
         currentTable: SymbolTable,
         classDefinitions: List<ClassDefinition>
     ): ExprType {
-        val objectClass = getObjectClass(methodCall.objectId, currentTable, classDefinitions)
-        val classDefinition = classDefinitions.find { it.className == objectClass.className }!!
-        val methods = classDefinition.getMethods(objectClass.castTo ?: objectClass.className)
+        val callerClass = if (methodCall is StaticMethodCall) CLASS(methodCall.classId) else getObjectClass(
+            methodCall.objectId,
+            currentTable,
+            classDefinitions
+        )
+        val classDefinition = classDefinitions.find { it.className == callerClass.className }!!
+        val methods = classDefinition.getMethods(callerClass.castTo ?: callerClass.className)
         return methods.find { it.id == methodCall.methodId }!!.returnType
     }
 
@@ -117,9 +123,14 @@ abstract class Visitor {
         currentTable: SymbolTable,
         classDefinitions: List<ClassDefinition>
     ): ExprType {
-        val objectClass = getObjectClass(classField.objectId, currentTable, classDefinitions)
-        val classDefinition = classDefinitions.find { it.className == objectClass.className }!!
-        val field = classDefinition.lookup(classField.fieldId, objectClass.castTo ?: objectClass.className)!!
+        val callerClass = if (classField is StaticClassField) CLASS(classField.classId) else getObjectClass(
+            classField.objectId,
+            currentTable,
+            classDefinitions
+        )
+
+        val classDefinition = classDefinitions.find { it.className == callerClass.className }!!
+        val field = classDefinition.lookup(classField.fieldId, callerClass.castTo ?: callerClass.className)!!
         return if (field.second.info.containsKey("expr")) {
             deriveType(field.second.info["expr"] as Expr, currentTable, classDefinitions)
         } else {
@@ -227,6 +238,12 @@ abstract class Visitor {
 
     open fun preVisit(returnStmt: ReturnStmt) {}
     open fun postVisit(returnStmt: ReturnStmt) {}
+
+    open fun visit(staticClassField: StaticClassField) {}
+
+    open fun preVisit(staticMethodCall: StaticMethodCall) {}
+    open fun midVisit(staticMethodCall: StaticMethodCall) {}
+    open fun postVisit(staticMethodCall: StaticMethodCall) {}
 
     open fun visit(stringExpr: StringExpr) {}
 

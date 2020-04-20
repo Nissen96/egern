@@ -39,8 +39,8 @@ classBody: ( methodDecl | fieldDecl )* ;
 
 methodDecl: MODIFIER* funcDecl ;
 fieldDecl: MODIFIER* varDecl ;
-methodCall: (ID | 'this') '.' funcCall ;
-classField: (ID | 'this') '.' ID ;
+methodCall: (CLASSNAME | ID | 'this') '.' funcCall ;
+classField: (CLASSNAME | ID | 'this') '.' ID ;
 objectInstantiation: CLASSNAME '(' argList ')' ;
 
 arrayIndexExpr: idExpr ('[' expr ']')+ ;
@@ -80,7 +80,7 @@ arrayType: '[' (arrayType | PRIMITIVE) ']';
 
 NEWLINE  :'\r'? '\n' -> skip;
 WS       : (' '|'\t') -> skip;
-MODIFIER  : 'override' ;
+MODIFIER  : 'override' | 'static' ;
 BOOLEAN  : 'true' | 'false' ;
 VOID     : 'void' ;
 PRIMITIVE: 'int' | 'boolean' | 'string' ;

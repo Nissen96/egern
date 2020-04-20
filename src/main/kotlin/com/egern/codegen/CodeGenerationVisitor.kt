@@ -961,6 +961,53 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         )
     }
 
+    override fun visit(staticClassField: StaticClassField) {
+        val classDefinition = classDefinitions.find { staticClassField.classId == it.className }!!
+        val fieldDecl = classDefinition.getLocalFields().find { staticClassField.fieldId in it.ids }!!
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Memory(fieldDecl.staticDataField), if (staticClassField.reference) Direct else Indirect),
+                comment = "Push field ${if (staticClassField.reference) "reference" else "value"} to stack"
+            )
+        )
+    }
+
+    override fun preVisit(staticMethodCall: StaticMethodCall) {
+        add(Instruction(InstructionType.META, MetaOperation.CallerSave))
+    }
+
+    override fun postVisit(staticMethodCall: StaticMethodCall) {
+        // VTable lookup
+        val classDefinition = classDefinitions.find { staticMethodCall.classId == it.className }!!
+        val vTablePointer = classDefinition.vTableOffset
+
+        // Find latest override of method
+        val methodOffset = classDefinition.getMethods().indexOfLast {
+            it.id == staticMethodCall.methodId
+        }
+        val numArgs = staticMethodCall.args.size
+
+        passFunctionArgs(numArgs)
+
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(VTable, Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Move Vtable pointer to register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.CALL,
+                InstructionArg(Register(OpReg1), IndirectRelative(-(vTablePointer + methodOffset))),
+                comment = "Call method"
+            )
+        )
+        functionEpilogue(numArgs)
+    }
+
     override fun postVisit(printStmt: PrintStmt) {
         val type = if (printStmt.expr != null) deriveType(
             printStmt.expr,
