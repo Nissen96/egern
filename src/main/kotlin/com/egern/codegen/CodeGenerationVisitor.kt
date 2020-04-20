@@ -988,7 +988,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
             add(
                 Instruction(
-                    InstructionType.JE,
+                    InstructionType.JNE,
                     InstructionArg(Memory(falseLabel), Direct)
                 )
             )
