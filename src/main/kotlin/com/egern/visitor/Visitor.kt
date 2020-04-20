@@ -130,7 +130,7 @@ abstract class Visitor {
         )
         val classDefinition = classDefinitions.find { it.className == callerClass.className }
             ?: throw Exception("Class ${callerClass.className} not defined")
-        val field = classDefinition.lookup(classField.fieldId, callerClass.castTo ?: callerClass.className)!!
+        val field = classDefinition.lookupField(classField.fieldId, callerClass.castTo ?: callerClass.className)!!
         return if (field.second.info.containsKey("expr")) {
             deriveType(field.second.info["expr"] as Expr, currentTable, classDefinitions)
         } else {

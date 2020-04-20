@@ -6,7 +6,6 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
-import com.egern.types.ExprType
 import com.egern.types.ExprTypeEnum
 import com.egern.util.*
 import com.egern.visitor.Visitor
@@ -963,7 +962,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     override fun visit(staticClassField: StaticClassField) {
         val classDefinition = classDefinitions.find { staticClassField.classId == it.className }!!
-        val fieldDecl = classDefinition.getLocalFields().find { staticClassField.fieldId in it.ids }!!
+        val fieldDecl = classDefinition.getAllLocalFields().findLast { staticClassField.fieldId in it.ids }!!
         add(
             Instruction(
                 InstructionType.PUSH,

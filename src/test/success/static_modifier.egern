@@ -15,9 +15,7 @@ class Cake(layers: Int) {
     }
 }
 
-class Cupcake(): Cake(1) {
-    static override var tastesGood = false
-}
+class Cupcake(): Cake(1) { }
 
 print(Cake.tastesGood)
 print(Cake.isSweet())
@@ -42,3 +40,4 @@ print(cupcake.piecesLeft)
 cupcake.eatPiece()
 print(cupcake.isSweet())
 print(Cupcake.isSweet())
+

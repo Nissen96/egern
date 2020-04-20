@@ -192,7 +192,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         }
 
         val paramList = mutableListOf<Pair<String, ExprType>>()
-        if (classId != null) paramList.add("this" to CLASS(classId))  // Add implicit object reference to method calls
+
+        // Add implicit object reference to non-static method calls
+        if (classId != null && Modifier.STATIC !in modifiers) paramList.add("this" to CLASS(classId))
         paramList.addAll(ctx.paramList().ID().mapIndexed { index, it ->
             it.text to getType(ctx.paramList().typeDecl(index))
         })
@@ -204,6 +206,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             stmts,
             ctx.funcBody().funcDecl().map { it.accept(this) as FuncDecl },
             modifiers,
+            isMethod = classId != null,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -265,7 +268,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         val classFields = mutableListOf<ClassField>()
         when {
             ctx.assignable().idExpr() != null -> ids.add(
-                IdExpr(ctx.assignable().idExpr().ID().text, lineNumber = ctx.start.line, charPosition = -1)
+                IdExpr(
+                    ctx.assignable().idExpr().ID().text,
+                    lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
+                )
             )
             ctx.assignable().arrayIndexExpr() != null -> arrayIndexExprs.add(
                 visitArrayIndexExprReference(ctx.assignable().arrayIndexExpr())
