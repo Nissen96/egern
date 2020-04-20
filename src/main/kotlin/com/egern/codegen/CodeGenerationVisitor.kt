@@ -16,7 +16,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     Visitor() {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
-    val staticStrings = mutableMapOf<String, String>()
+    val staticStrings = mutableMapOf("boolean_true" to "true", "boolean_false" to "false")
     private val functionStack = stackOf<FuncDecl>()
     private var currentClassDefinition: ClassDefinition? = null
 
@@ -1013,6 +1013,55 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             symbolTable,
             classDefinitions
         ).type else ExprTypeEnum.VOID
+        // Special case for booleans, we want to print 'true' or 'false'
+        if (type == ExprTypeEnum.BOOLEAN) {
+            add(Instruction(InstructionType.POP, InstructionArg(Register(OpReg1), Direct)))
+            val falseLabel = LabelGenerator.nextLabel("print_false")
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(ImmediateValue("1"), Direct),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Move true to other register"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.CMP,
+                    InstructionArg(Register(OpReg1), Direct),
+                    InstructionArg(Register(OpReg2), Direct)
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.JE,
+                    InstructionArg(Memory(falseLabel), Direct)
+                )
+            )
+
+            add(
+                Instruction(
+                    InstructionType.PUSH,
+                    InstructionArg(ImmediateValue("boolean_true"), Direct),
+                    comment = "Push static string value"
+                )
+            )
+
+            add(
+                Instruction(
+                    InstructionType.LABEL,
+                    InstructionArg(Memory(falseLabel), Direct)
+                )
+            )
+
+            add(
+                Instruction(
+                    InstructionType.PUSH,
+                    InstructionArg(ImmediateValue("boolean_false"), Direct),
+                    comment = "Push static string value"
+                )
+            )
+        }
         add(Instruction(InstructionType.META, MetaOperation.CallerSave))
         add(
             Instruction(
