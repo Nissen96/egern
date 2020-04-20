@@ -1,6 +1,7 @@
 package com.egern.symbols
 
 import com.egern.ast.*
+import com.egern.types.CLASS
 import com.egern.types.ExprType
 
 class ClassDefinition(

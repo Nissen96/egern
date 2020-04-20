@@ -1,0 +1,44 @@
+class Cake(layers: Int) {
+    static var tastesGood = true
+    var piecesLeft = 8
+
+    func eatPiece() {
+        if (piecesLeft > 0) {
+            piecesLeft -= 1
+        } else {
+            print("The cake is a lie :(")
+        }
+    }
+
+    static func isSweet(): boolean {
+        return true
+    }
+}
+
+class Cupcake(): Cake(1) {
+    static override var tastesGood = false
+}
+
+print(Cake.tastesGood)
+print(Cake.isSweet())
+
+var cake = Cake(4)
+print(cake.tastesGood)
+print(Cake.tastesGood)
+print(cake.piecesLeft)
+cake.eatPiece()
+print(cake.piecesLeft)
+print(cake.isSweet())
+print(Cake.isSweet())
+print()
+
+var cupcake = Cupcake()
+cupcake.piecesLeft = 1
+print(cupcake.tastesGood)
+print(Cupcake.tastesGood)
+print(cupcake.piecesLeft)
+cupcake.eatPiece()
+print(cupcake.piecesLeft)
+cupcake.eatPiece()
+print(cupcake.isSweet())
+print(Cupcake.isSweet())

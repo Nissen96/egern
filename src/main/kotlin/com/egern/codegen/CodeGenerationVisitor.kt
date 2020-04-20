@@ -436,7 +436,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     private fun getConstructorArgLocation(param: String): InstructionArg? {
         // All constructor args from all superclasses are on stack - get offset in this
-        val constructor = currentClassDefinition!!.getConstructor()
+        val constructor = currentClassDefinition?.getConstructor() ?: return null
         val paramOffset = constructor.indexOfFirst { it.first == param }
 
         return InstructionArg(Register(OpReg1), IndirectRelative(-(constructor.size - paramOffset - 1)))

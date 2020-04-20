@@ -61,7 +61,7 @@ abstract class Visitor {
         }
     }
 
-    private fun lookupSymbol(id: String, validTypes: List<SymbolType>, currentTable: SymbolTable): Symbol {
+    fun lookupSymbol(id: String, validTypes: List<SymbolType>, currentTable: SymbolTable): Symbol {
         val sym = currentTable.lookup(id) ?: throw Exception("Symbol '$id' not defined")
         if (sym.type !in validTypes) {
             ErrorLogger.log(Exception("Symbol '$id' should be one of types $validTypes but is not"))
@@ -128,8 +128,8 @@ abstract class Visitor {
             currentTable,
             classDefinitions
         )
-
-        val classDefinition = classDefinitions.find { it.className == callerClass.className }!!
+        val classDefinition = classDefinitions.find { it.className == callerClass.className }
+            ?: throw Exception("Class ${callerClass.className} not defined")
         val field = classDefinition.lookup(classField.fieldId, callerClass.castTo ?: callerClass.className)!!
         return if (field.second.info.containsKey("expr")) {
             deriveType(field.second.info["expr"] as Expr, currentTable, classDefinitions)
