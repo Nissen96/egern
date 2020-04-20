@@ -167,9 +167,9 @@ class TypeCheckingVisitor(
         // No non-static fields allowed in static methods
         if (symbol.type == SymbolType.Field) {
             val method = functionStack.peek()!!
-            val fieldDecl = currentClass!!.getLocalFields().find { idExpr.id in it.ids }!!
+            val fieldDecl = currentClass!!.getLocalFields().find { idExpr.id in it.ids }
 
-            if (Modifier.STATIC in method.modifiers && Modifier.STATIC !in fieldDecl.modifiers) {
+            if (Modifier.STATIC in method.modifiers && (fieldDecl == null || Modifier.STATIC !in fieldDecl.modifiers)) {
                 ErrorLogger.log(idExpr, "Non-static field not allowed in static method")
             }
         }
