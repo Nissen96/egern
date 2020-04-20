@@ -975,6 +975,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
         )
         add(Instruction(InstructionType.META, MetaOperation.CallerRestore))
+        add(
+            Instruction(
+                InstructionType.ADD, InstructionArg(ImmediateValue("8"), Direct),
+                InstructionArg(RSP, Direct),
+                comment = "Remove pushed expression"
+            )
+        )
     }
 
     override fun postVisit(returnStmt: ReturnStmt) {
