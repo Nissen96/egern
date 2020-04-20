@@ -1016,7 +1016,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         // Special case for booleans, we want to print 'true' or 'false'
         if (type == ExprTypeEnum.BOOLEAN) {
             add(Instruction(InstructionType.POP, InstructionArg(Register(OpReg1), Direct)))
-            val falseLabel = LabelGenerator.nextLabel("print_false")
+            val trueLabel = LabelGenerator.nextLabel("print_true")
             add(
                 Instruction(
                     InstructionType.MOV,
@@ -1034,23 +1034,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
             )
             add(
                 Instruction(
-                    InstructionType.JNE,
-                    InstructionArg(Memory(falseLabel), Direct)
-                )
-            )
-
-            add(
-                Instruction(
-                    InstructionType.PUSH,
-                    InstructionArg(ImmediateValue("boolean_true"), Direct),
-                    comment = "Push static string value"
-                )
-            )
-
-            add(
-                Instruction(
-                    InstructionType.LABEL,
-                    InstructionArg(Memory(falseLabel), Direct)
+                    InstructionType.JE,
+                    InstructionArg(Memory(trueLabel), Direct)
                 )
             )
 
@@ -1058,6 +1043,21 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                 Instruction(
                     InstructionType.PUSH,
                     InstructionArg(ImmediateValue("boolean_false"), Direct),
+                    comment = "Push static string value"
+                )
+            )
+
+            add(
+                Instruction(
+                    InstructionType.LABEL,
+                    InstructionArg(Memory(trueLabel), Direct)
+                )
+            )
+
+            add(
+                Instruction(
+                    InstructionType.PUSH,
+                    InstructionArg(ImmediateValue("boolean_true"), Direct),
                     comment = "Push static string value"
                 )
             )
