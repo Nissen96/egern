@@ -22,9 +22,9 @@ abstract class Emitter(
         val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
         const val HEAP_POINTER: String = "heap_pointer"
-        const val HEAP_SIZE: Int = 256
+        const val HEAP_SIZE: Int = 1024
         const val VTABLE_POINTER: String = "vtable_pointer"
-        const val VTABLE_SIZE: Int = 256
+        const val VTABLE_SIZE: Int = 1024
     }
 
     fun emit(): String {

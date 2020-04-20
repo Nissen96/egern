@@ -11,9 +11,9 @@ class Person(age: int) {
 }
 
 class Student(age: int): Person(age + 1) {
-    var legs = 4
-    func getAge(): int {
-        return age + 5
+    override var legs = 4
+    override func getAge(): int {
+        return this.age + 5
     }
 }
 

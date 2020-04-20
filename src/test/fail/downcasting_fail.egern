@@ -1,0 +1,18 @@
+class Dog() {
+    func bark() {
+        print(42)
+    }
+}
+
+
+class Labrador(): Dog() {
+    override func bark() {
+        print(53)
+    }
+}
+
+var buller = Dog()
+
+var caesar = Labrador()
+caesar = buller as Labrador
+caesar.bark()

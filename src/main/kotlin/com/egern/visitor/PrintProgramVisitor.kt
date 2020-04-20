@@ -102,6 +102,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
     }
 
     override fun preVisit(fieldDecl: FieldDecl) {
+        fieldDecl.modifiers.forEach { print("${it.modifier} ") }
         print("var ")
         fieldDecl.ids.forEach { print("$it = ") }
     }
@@ -119,8 +120,9 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
-        println()
-        printIndented("func ${funcDecl.id}(")
+        printIndented()
+        funcDecl.modifiers.forEach { print("${it.modifier} ") }
+        print("func ${funcDecl.id}(")
         print(funcDecl.params.joinToString(", ") { "${it.first}: ${typeString(it.second)}" }) // Params
         println("): ${typeString(funcDecl.returnType)} {")
         level++
@@ -214,6 +216,10 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
     override fun preVisit(returnStmt: ReturnStmt) {
         print("return")
         if (returnStmt.expr != null) print(" ")
+    }
+
+    override fun visit(stringExpr: StringExpr) {
+        print("\"${stringExpr.value}\"")
     }
 
     override fun visit(thisExpr: ThisExpr) {
