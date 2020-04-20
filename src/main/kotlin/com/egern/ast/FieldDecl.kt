@@ -2,7 +2,7 @@ package com.egern.ast
 
 import com.egern.symbols.SymbolTable
 import com.egern.visitor.Visitor
-import java.util.*
+import java.util.EnumSet
 
 class FieldDecl(
     val ids: List<String>,

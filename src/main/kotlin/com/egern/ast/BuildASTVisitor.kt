@@ -4,7 +4,7 @@ import MainBaseVisitor
 import com.egern.types.*
 import org.antlr.v4.runtime.tree.TerminalNode
 import java.lang.Exception
-import java.util.*
+import java.util.EnumSet
 
 class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 

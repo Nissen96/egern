@@ -3,7 +3,7 @@ package com.egern.ast
 import com.egern.symbols.SymbolTable
 import com.egern.types.ExprType
 import com.egern.visitor.Visitor
-import java.util.*
+import java.util.EnumSet
 
 class FuncDecl(
     val id: String,
