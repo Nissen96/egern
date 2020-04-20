@@ -52,10 +52,9 @@ class ClassDefinition(
         val classReached = actualClass == className || actualClassReached
         val symbol = symbolTable.lookupCurrentScope(id) ?: return superclass?.lookup(id, actualClass, classReached)
         val field = getLocalFields().find { symbol.id in it.ids }
-        if (classReached || (field != null && Modifier.OVERRIDE in field.modifiers)) {
+        if (classReached || field == null || Modifier.OVERRIDE in field.modifiers) {
             return Pair(this, symbol)
         }
-
         return superclass?.lookup(id, actualClass, classReached)
     }
 

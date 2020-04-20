@@ -29,4 +29,3 @@ print(bob2.legs)
 print(bob2.getLegs())
 print(bob2.age)
 print(bob2.getAge())
-

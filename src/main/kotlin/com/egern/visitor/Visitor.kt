@@ -31,7 +31,10 @@ abstract class Visitor {
             }
             return when (instance) {
                 is ObjectInstantiation -> CLASS(instance.classId)
-                is CastExpr -> CLASS((deriveType(instance.expr, symbolTable, classDefinitions) as CLASS).className, (instance.type as CLASS).className)
+                is CastExpr -> CLASS(
+                    (deriveType(instance.expr, symbolTable, classDefinitions) as CLASS).className,
+                    (instance.type as CLASS).className
+                )
                 else -> throw Error("Invalid instance type")
             }
         } else {

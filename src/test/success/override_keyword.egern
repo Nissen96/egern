@@ -34,5 +34,5 @@ jens.bark()
 var brutus = Dog()
 brutus = ibrahim as Dog
 print(brutus.legs)
-print(brutus.friends))
+print(brutus.friends)
 brutus.bark()

@@ -19,6 +19,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     val staticStrings = mutableMapOf<String, String>()
     private val functionStack = stackOf<FuncDecl>()
     private var currentClassDefinition: ClassDefinition? = null
+    private var callerObjectId: String? = null
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
@@ -894,7 +895,10 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     override fun postVisit(methodCall: MethodCall) {
         // VTable lookup
-        val objectClass = getObjectClass(methodCall.objectId, symbolTable, classDefinitions)
+        val objectId = if (methodCall.objectId == "this" && callerObjectId != null) callerObjectId else methodCall.objectId
+        val objectClass = getObjectClass(objectId!!, symbolTable, classDefinitions)
+        if (methodCall.objectId != "this") callerObjectId = methodCall.objectId
+
         val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
         val vTablePointer = classDefinition.vTableOffset
 
@@ -930,7 +934,8 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun visit(classField: ClassField) {
-        val objectClass = getObjectClass(classField.objectId, symbolTable, classDefinitions)
+        val objectId = if (classField.objectId == "this" && callerObjectId != null) callerObjectId else classField.objectId
+        val objectClass = getObjectClass(objectId!!, symbolTable, classDefinitions)
         val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
         val fieldOffset = classDefinition.getFieldOffset(classField.fieldId, objectClass.castTo)
         val objectPointer = getIdLocation(classField.objectId)
