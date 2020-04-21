@@ -59,7 +59,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitMethodCall(ctx: MainParser.MethodCallContext): ASTNode {
-        val objectId = when {
+        val callerId = when {
             ctx.ID() != null -> ctx.ID().text
             ctx.CLASSNAME() != null -> ctx.CLASSNAME().text
             else -> "this"
@@ -70,15 +70,15 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
         return if (ctx.CLASSNAME() != null) {
             StaticMethodCall(
-                objectId, methodId, methodArgs,
+                callerId, methodId, methodArgs,
                 lineNumber = ctx.start.line,
                 charPosition = ctx.start.charPositionInLine
             )
         } else {
             MethodCall(
-                objectId,
+                callerId,
                 methodId,
-                listOf(ThisExpr(objectId)) + methodArgs, // Implicit first argument, referencing the object
+                listOf(ThisExpr(callerId)) + methodArgs, // Implicit first argument, referencing the object
                 lineNumber = ctx.start.line,
                 charPosition = ctx.start.charPositionInLine
             )
@@ -93,7 +93,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return if (ctx.CLASSNAME() != null) {
             StaticClassField(
                 ctx.CLASSNAME().text,
-                ctx.ID(if (ctx.ID().size > 1) 1 else 0).text,
+                ctx.ID(0).text,
                 reference = reference,
                 lineNumber = ctx.start.line,
                 charPosition = ctx.start.charPositionInLine
