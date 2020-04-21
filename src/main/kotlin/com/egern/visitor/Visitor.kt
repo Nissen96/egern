@@ -79,6 +79,9 @@ abstract class Visitor() {
     open fun postMidVisit(ifElse: IfElse) {}
     open fun postVisit(ifElse: IfElse) {}
 
+    open fun preVisit(interfaceDecl: InterfaceDecl) {}
+    open fun postVisit(interfaceDecl: InterfaceDecl) {}
+
     open fun visit(intExpr: IntExpr) {}
 
     open fun preVisit(lenExpr: LenExpr) {}
@@ -87,6 +90,8 @@ abstract class Visitor() {
     open fun preVisit(methodCall: MethodCall) {}
     open fun midVisit(methodCall: MethodCall) {}
     open fun postVisit(methodCall: MethodCall) {}
+
+    open fun visit(methodSignature: MethodSignature) {}
 
     open fun preVisit(objectInstantiation: ObjectInstantiation) {}
     open fun midVisit(objectInstantiation: ObjectInstantiation) {}

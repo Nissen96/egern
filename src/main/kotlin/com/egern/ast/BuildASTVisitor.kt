@@ -14,6 +14,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.stmt().map { it.accept(this) } + ReturnStmt(IntExpr(0, isVoid = true)),
             ctx.funcDecl().map { it.accept(this) as FuncDecl },
             ctx.classDecl().map { it.accept(this) as ClassDecl },
+            ctx.interfaceDecl().map { it.accept(this) as InterfaceDecl },
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -113,6 +114,27 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ObjectInstantiation(
             ctx.CLASSNAME().text,
             ctx.argList().expr().map { it.accept(this) as Expr },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitInterfaceDecl(ctx: MainParser.InterfaceDeclContext): ASTNode {
+        return InterfaceDecl(
+            ctx.CLASSNAME().text,
+            ctx.methodSignature().map { it.accept(this) as MethodSignature },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitMethodSignature(ctx: MainParser.MethodSignatureContext): ASTNode {
+        return MethodSignature(
+            ctx.ID().text,
+            ctx.paramList().ID().mapIndexed { index, it ->
+                it.text to getType(ctx.paramList().typeDecl(index))
+            },
+            if (ctx.typeDecl() != null) getType(ctx.typeDecl()) else VOID,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
