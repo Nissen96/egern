@@ -1,10 +1,5 @@
-func test(arg: boolean): int {
-    if (arg) {
-        return 1
-    } else {
-        return 0
-    }
-    return -1
+func test(arg: boolean): boolean {
+    return arg
 }
 
 print(test(true))

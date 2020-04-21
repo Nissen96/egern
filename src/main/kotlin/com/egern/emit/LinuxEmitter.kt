@@ -62,7 +62,7 @@ class LinuxEmitter(
             ExprTypeEnum.VOID -> "newline"
             ExprTypeEnum.STRING -> "string"
             ExprTypeEnum.INT -> "int"
-            ExprTypeEnum.BOOLEAN -> "int"
+            ExprTypeEnum.BOOLEAN -> "string"
             else -> throw Exception("Printing $enumType is invalid")
         }
         builder
