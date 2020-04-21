@@ -218,6 +218,22 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         if (returnStmt.expr != null) print(" ")
     }
 
+    override fun visit(classField: StaticClassField) {
+        print("${classField.classId}.${classField.fieldId}")
+    }
+
+    override fun preVisit(staticMethodCall: StaticMethodCall) {
+        print("${staticMethodCall.classId}.${staticMethodCall.methodId}(")
+    }
+
+    override fun midVisit(staticMethodCall: StaticMethodCall) {
+        print(", ")
+    }
+
+    override fun postVisit(staticMethodCall: StaticMethodCall) {
+        print(")")
+    }
+
     override fun visit(stringExpr: StringExpr) {
         print("\"${stringExpr.value}\"")
     }

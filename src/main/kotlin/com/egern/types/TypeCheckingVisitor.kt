@@ -10,9 +10,11 @@ import com.egern.util.*
 import com.egern.visitor.Visitor
 import java.lang.Exception
 
-class TypeCheckingVisitor(private var currentTable: SymbolTable, private val classDefinitions: List<ClassDefinition>) :
-    Visitor() {
+class TypeCheckingVisitor(
+    private var currentTable: SymbolTable, private val classDefinitions: List<ClassDefinition>
+) : Visitor() {
     private val functionStack = stackOf<FuncDecl>()
+    private var currentClass: ClassDefinition? = null
 
     override fun preVisit(block: Block) {
         currentTable = block.symbolTable
@@ -25,6 +27,11 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     override fun preVisit(funcDecl: FuncDecl) {
         currentTable = funcDecl.symbolTable
         functionStack.push(funcDecl)
+
+        // Handle methods
+        if (funcDecl.isMethod) {
+            checkMethodDecl(funcDecl)
+        }
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
@@ -32,6 +39,29 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
         functionStack.pop()
         if (!funcDecl.stmts.any { it is ReturnStmt }) {
             ErrorLogger.log(funcDecl, "No return statement found in function declaration")
+        }
+    }
+
+    fun checkMethodDecl(methodDecl: FuncDecl) {
+        // Check modifiers for the method itself
+        val methodOverrides = Modifier.OVERRIDE in methodDecl.modifiers
+        if (methodOverrides && Modifier.STATIC in methodDecl.modifiers) {
+            ErrorLogger.log(methodDecl, "Static methods cannot be overridden")
+        }
+
+        // Check if method overrides any static methods or overrides without the override modifier
+        val foundMethod = currentClass!!.superclass!!.lookupMethod(methodDecl.id) ?: return
+        val (className, superMethod) = foundMethod
+        if (Modifier.STATIC in superMethod.modifiers) {
+            ErrorLogger.log(
+                methodDecl,
+                "Override in class ${currentClass!!.className} of static method ${methodDecl.id} from class $className"
+            )
+        } else if (!methodOverrides) {
+            ErrorLogger.log(
+                methodDecl,
+                "Override in class ${currentClass!!.className} of field ${methodDecl.id} from class $className without override modifier"
+            )
         }
     }
 
@@ -44,7 +74,7 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     private fun deriveType(expr: Expr): ExprType {
-        return deriveType(expr, currentTable, classDefinitions);
+        return deriveType(expr, currentTable, classDefinitions)
     }
 
     override fun postVisit(funcCall: FuncCall) {
@@ -132,7 +162,17 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     override fun visit(idExpr: IdExpr) {
-        lookupSymbol(idExpr.id, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field))
+        val symbol = lookupSymbol(idExpr.id, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field))
+
+        // No non-static fields allowed in static methods
+        if (symbol.type == SymbolType.Field) {
+            val method = functionStack.peek()!!
+            val fieldDecl = currentClass!!.getLocalFields().find { idExpr.id in it.ids }
+
+            if (Modifier.STATIC in method.modifiers && (fieldDecl == null || Modifier.STATIC !in fieldDecl.modifiers)) {
+                ErrorLogger.log(idExpr, "Non-static field not allowed in static method")
+            }
+        }
     }
 
     override fun postVisit(returnStmt: ReturnStmt) {
@@ -240,11 +280,47 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
     }
 
     override fun preVisit(classDecl: ClassDecl) {
-        currentTable = classDefinitions.find { classDecl.id == it.className }!!.symbolTable
+        currentClass = classDefinitions.find { classDecl.id == it.className }!!
+        currentTable = currentClass!!.symbolTable
     }
 
     override fun postVisit(classDecl: ClassDecl) {
         currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
+    }
+
+    override fun postVisit(fieldDecl: FieldDecl) {
+        // Check modifiers for the field itself
+        val fieldOverrides = Modifier.OVERRIDE in fieldDecl.modifiers
+        if (fieldOverrides && Modifier.STATIC in fieldDecl.modifiers) {
+            ErrorLogger.log(fieldDecl, "Static fields cannot be overridden")
+        }
+
+        // For each field id, check if it overrides any static field or constructor param
+        // or overrides a field without the override modifier
+        fieldDecl.ids.forEach {
+            val foundField = currentClass!!.superclass!!.lookupField(it)
+            if (foundField != null) {
+                val (className, superField) = foundField
+                if (superField != null) {
+                    if (Modifier.STATIC in superField.modifiers) {
+                        ErrorLogger.log(
+                            fieldDecl,
+                            "Override in class ${currentClass!!.className} of static field $it from class $className"
+                        )
+                    } else if (!fieldOverrides) {
+                        ErrorLogger.log(
+                            fieldDecl,
+                            "Override in class ${currentClass!!.className} of field $it from class $className without override modifier"
+                        )
+                    }
+                } else if (!fieldOverrides) {
+                    ErrorLogger.log(
+                        fieldDecl,
+                        "Constructor parameter $it from class $className cannot be overridden"
+                    )
+                }
+            }
+        }
     }
 
     override fun postVisit(castExpr: CastExpr) {
@@ -257,6 +333,6 @@ class TypeCheckingVisitor(private var currentTable: SymbolTable, private val cla
             }
             classDefinition = classDefinition.superclass
         }
-        ErrorLogger.log(castExpr,"Invalid cast!")
+        ErrorLogger.log(castExpr, "Invalid cast!")
     }
 }

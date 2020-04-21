@@ -12,6 +12,7 @@ class FuncDecl(
     val stmts: List<ASTNode>,
     val funcDecls: List<FuncDecl>,
     val modifiers: EnumSet<Modifier>,
+    val isMethod: Boolean,
     lineNumber: Int, charPosition: Int
 ) :
     ASTNode(lineNumber, charPosition) {

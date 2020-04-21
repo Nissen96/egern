@@ -19,7 +19,7 @@ class Student(failedClasses: int, age: int): Person(age, 2) {
 }
 
 class Superstudent(awesomePoints: int, age: int): Student(3, age) {
-    var yearsStudied = 4
+    override var yearsStudied = 4
     var isSuper = true
 
     func studyTooLong() {
