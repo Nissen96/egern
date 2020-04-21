@@ -131,9 +131,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitMethodSignature(ctx: MainParser.MethodSignatureContext): ASTNode {
         return MethodSignature(
             ctx.ID().text,
-            ctx.paramList().ID().mapIndexed { index, it ->
-                it.text to getType(ctx.paramList().typeDecl(index))
-            },
+            ctx.signatureParams().typeDecl().map { getType(it) },
             if (ctx.typeDecl() != null) getType(ctx.typeDecl()) else VOID,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
