@@ -648,7 +648,6 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     // Indexes into array, result is in OpReg2
     private fun indexIntoArray(arrayIndexExpr: ArrayIndexExpr) {
-        //val idLocation = getIdLocation(arrayIndexExpr.id)
         add(
             Instruction(
                 InstructionType.POP,
