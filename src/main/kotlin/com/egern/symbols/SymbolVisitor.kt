@@ -11,12 +11,13 @@ class SymbolVisitor : SymbolAwareVisitor(symbolTable = SymbolTable(0, null), cla
         "Base",
         ClassDecl("Base", emptyList(), null, null, emptyList(), emptyList())
     )
+    val interfaces = mutableListOf<InterfaceDecl>()
 
     // Add base class to class definitions
     init {
         classDefinitions.add(baseClass)
     }
-
+    
     private fun returnToParentScope() {
         symbolTable = symbolTable.parent!!
     }
@@ -137,5 +138,9 @@ class SymbolVisitor : SymbolAwareVisitor(symbolTable = SymbolTable(0, null), cla
 
     override fun postVisit(classDecl: ClassDecl) {
         returnToParentScope()
+    }
+
+    override fun preVisit(interfaceDecl: InterfaceDecl) {
+        interfaces.add(interfaceDecl)
     }
 }

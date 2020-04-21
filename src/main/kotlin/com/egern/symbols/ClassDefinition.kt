@@ -7,7 +7,8 @@ class ClassDefinition(
     val className: String,
     val classDecl: ClassDecl,
     var superclass: ClassDefinition? = null,
-    val superclassArgs: List<Expr>? = null
+    val superclassArgs: List<Expr>? = null,
+    var interfaceDecl: InterfaceDecl? = null
 ) {
     var vTableOffset: Int = -1
     lateinit var symbolTable: SymbolTable
