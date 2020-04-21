@@ -88,7 +88,7 @@ abstract class Visitor {
             is LenExpr -> INT
             is ArrayExpr -> deriveArrayType(expr, currentTable, classDefinitions)
             is ArrayIndexExpr -> {
-                val array = getVariableType(expr.id, currentTable, classDefinitions) as ARRAY
+                val array = deriveType(expr.id, currentTable, classDefinitions) as ARRAY
                 if (array.depth - expr.indices.size > 0) {
                     ARRAY(array.depth - expr.indices.size, array.innerType)
                 } else {

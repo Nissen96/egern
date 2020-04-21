@@ -3,7 +3,7 @@ package com.egern.ast
 import com.egern.visitor.Visitor
 
 class ArrayIndexExpr(
-    val id: String,
+    val id: Expr,
     val indices: List<Expr>,
     val reference: Boolean = false,
     lineNumber: Int,
@@ -17,6 +17,7 @@ class ArrayIndexExpr(
             it.accept(visitor)
             visitor.postMidVisit(this)
         }
+        id.accept(visitor)
         visitor.postVisit(this)
     }
 }

@@ -648,11 +648,9 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     // Indexes into array, result is in OpReg2
     private fun indexIntoArray(arrayIndexExpr: ArrayIndexExpr) {
-        val idLocation = getIdLocation(arrayIndexExpr.id)
         add(
             Instruction(
-                InstructionType.MOV,
-                idLocation,
+                InstructionType.POP,
                 InstructionArg(Register(OpReg2), Direct),
                 comment = "Move array pointer to data register"
             )

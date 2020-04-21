@@ -230,11 +230,18 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
-    private fun visitArrayIndexExprReference(ctx: MainParser.ArrayIndexExprContext): ArrayIndexExpr {
+    private fun visitArrayIndexExpr(ctx: MainParser.ArrayIndexExprContext, reference: Boolean): ArrayIndexExpr {
+        val expr = when {
+            ctx.indexable().idExpr() != null -> visitIdExpr(ctx.indexable().idExpr())
+            ctx.indexable().classField() != null -> visitClassField(ctx.indexable().classField())
+            ctx.indexable().funcCall() != null -> visitFuncCall(ctx.indexable().funcCall())
+            ctx.indexable().methodCall() != null -> visitMethodCall(ctx.indexable().methodCall())
+            else -> throw Exception("No expr found")
+        }
         return ArrayIndexExpr(
-            ctx.idExpr().text,
+            expr as Expr,
             ctx.expr().map { visitExpr(it) as Expr },
-            reference = true,
+            reference = reference,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -247,7 +254,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         ctx.assignable().forEach {
             when {
                 it.idExpr() != null -> ids.add(it.idExpr().text)
-                it.arrayIndexExpr() != null -> indexExprs.add(visitArrayIndexExprReference(it.arrayIndexExpr()))
+                it.arrayIndexExpr() != null -> indexExprs.add(
+                    visitArrayIndexExpr(
+                        it.arrayIndexExpr(),
+                        reference = true
+                    )
+                )
                 it.classField() != null -> classFields.add(
                     visitClassField(it.classField(), reference = true)
                 )
@@ -268,13 +280,10 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         val classFields = mutableListOf<ClassField>()
         when {
             ctx.assignable().idExpr() != null -> ids.add(
-                IdExpr(
-                    ctx.assignable().idExpr().ID().text,
-                    lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
-                )
+                visitIdExpr(ctx.assignable().idExpr()) as IdExpr
             )
             ctx.assignable().arrayIndexExpr() != null -> arrayIndexExprs.add(
-                visitArrayIndexExprReference(ctx.assignable().arrayIndexExpr())
+                visitArrayIndexExpr(ctx.assignable().arrayIndexExpr(), reference = true)
             )
             ctx.assignable().classField() != null -> classFields.add(
                 visitClassField(ctx.assignable().classField(), reference = true)
@@ -343,11 +352,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                 lineNumber = ctx.start.line,
                 charPosition = ctx.start.charPositionInLine
             )
-            ctx.idExpr() != null -> IdExpr(
-                ctx.idExpr().ID().text,
-                lineNumber = ctx.start.line,
-                charPosition = ctx.start.charPositionInLine
-            )
+            ctx.idExpr() != null -> visitIdExpr(ctx.idExpr())
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             ctx.arrayExpr() != null -> visitArrayExpr(ctx.arrayExpr())
@@ -384,6 +389,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         }
     }
 
+    override fun visitIdExpr(ctx: MainParser.IdExprContext): ASTNode {
+        return IdExpr(
+            ctx.ID().text,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
     override fun visitArrayExpr(ctx: MainParser.ArrayExprContext): ASTNode {
         return ArrayExpr(
             ctx.expr().map { visitExpr(it) as Expr },
@@ -393,12 +406,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitArrayIndexExpr(ctx: MainParser.ArrayIndexExprContext): ASTNode {
-        return ArrayIndexExpr(
-            ctx.idExpr().ID().text,
-            ctx.expr().map { visitExpr(it) as Expr },
-            lineNumber = ctx.start.line,
-            charPosition = ctx.start.charPositionInLine
-        )
+        return visitArrayIndexExpr(ctx, reference = false)
     }
 
     override fun visitParenExpr(ctx: MainParser.ParenExprContext): ASTNode {
