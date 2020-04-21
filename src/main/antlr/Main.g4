@@ -43,7 +43,8 @@ methodCall: (CLASSNAME | ID | 'this') '.' funcCall ;
 classField: (CLASSNAME | ID | 'this') '.' ID ;
 objectInstantiation: CLASSNAME '(' argList ')' ;
 
-arrayIndexExpr: idExpr ('[' expr ']')+ ;
+arrayIndexExpr: indexable ('[' expr ']')+ ;
+indexable: (idExpr | classField | funcCall | methodCall) ;
 
 expr: funcCall
     | objectInstantiation

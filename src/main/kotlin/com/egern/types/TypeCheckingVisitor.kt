@@ -108,7 +108,8 @@ class TypeCheckingVisitor(
     override fun preVisit(varAssign: VarAssign) {
         // Check variable ids
         // TODO check types on varAssign classFields
-        val allIds = varAssign.ids + varAssign.indexExprs.map { it.id }
+        //val allIds = varAssign.ids + varAssign.indexExprs.map { it.id }
+        val allIds = varAssign.ids
         allIds.forEach { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field)) }
 
         val exprType = deriveType(varAssign.expr)
@@ -237,7 +238,8 @@ class TypeCheckingVisitor(
     }
 
     override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
-        val arrayType = getVariableType(arrayIndexExpr.id, currentTable, classDefinitions) as ARRAY
+        //val arrayType = getVariableType(arrayIndexExpr.id, currentTable, classDefinitions) as ARRAY
+        val arrayType = deriveType(arrayIndexExpr.id, currentTable, classDefinitions) as ARRAY
         if (arrayIndexExpr.indices.size > arrayType.depth) {
             ErrorLogger.log(arrayIndexExpr, "Indexing too deeply into array of ${arrayType.depth} dimensions")
         }
