@@ -1,0 +1,40 @@
+interface Cake {
+    func getIngredients(): [string]
+    func eatPieces(int, eatingSound: string)
+}
+
+class Brownie(): Cake {
+    var piecesLeft = 1
+
+    override func getIngredients(): [string] {
+        return ["chocolate", "sugar", "water", "eggs", "flour"]
+    }
+
+    override func eatPieces(n: int, sound: string) {
+        piecesLeft -= n
+        print(sound)
+    }
+}
+
+class Brunsviger(): Cake {
+    override var piecesLeft = 8
+
+    override func getIngredients(): [string] {
+        return ["flour", "sugar", "water", "eggs", "milk", "brun farin in English"]
+    }
+
+    override func eatPieces(n: int, sound: string) {
+        piecesLeft -= n
+        print(sound)
+    }
+}
+
+var brownie = Brownie()
+var brunsviger = Brunsviger()
+var cakes = [brownie, brunsviger]
+var i = 0
+while (i < len(cakes)) {
+    var cake = cakes[i]
+    print(cake.getIngredients()[0])
+    i += 1
+}

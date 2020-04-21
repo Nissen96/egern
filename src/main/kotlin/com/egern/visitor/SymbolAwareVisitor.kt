@@ -133,8 +133,19 @@ abstract class SymbolAwareVisitor(
         if (innerType is ARRAY) {
             depth += innerType.depth
             innerType = innerType.innerType
+        } else if (innerType is CLASS) {
+            val arrayElements = flattenArrayExpr(arrayExpr)
+            innerType = deriveSharedType(arrayElements)
         }
 
         return ARRAY(depth, innerType)
+    }
+
+    private fun flattenArrayExpr(arrayExpr: ArrayExpr): List<Expr> {
+        return emptyList()  // TODO
+    }
+
+    private fun deriveSharedType(arrayElements: List<Expr>): ExprType {
+        return VOID  // TODO
     }
 }
