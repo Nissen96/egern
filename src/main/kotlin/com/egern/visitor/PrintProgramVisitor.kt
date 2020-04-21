@@ -184,7 +184,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
 
     override fun visit(methodSignature: MethodSignature) {
         printIndented("func ${methodSignature.id}(")
-        print(methodSignature.params.joinToString(", ") { "${it.first}: ${typeString(it.second)}" }) // Params
+        print(methodSignature.params.joinToString(", ") { typeString(it) })  // Params
         println("): ${typeString(methodSignature.returnType)}")
     }
 

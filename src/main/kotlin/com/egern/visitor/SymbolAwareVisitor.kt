@@ -99,7 +99,7 @@ abstract class SymbolAwareVisitor(
             methodCall.objectId
         )
         val classDefinition = classDefinitions.find { it.className == callerClass.className }!!
-        val methods = classDefinition.getMethods(callerClass.castTo ?: callerClass.className)
+        val methods = classDefinition.getAllMethods(callerClass.castTo ?: callerClass.className)
         return methods.find { it.id == methodCall.methodId }!!.returnType
     }
 

@@ -120,7 +120,7 @@ class CodeGenerationVisitor(symbolTable: SymbolTable, classDefinitions: MutableL
 
         classDefinitions.forEach {
             it.vTableOffset = currentOffset
-            it.getMethods().forEach { method ->
+            it.getAllMethods().forEach { method ->
                 add(
                     Instruction(
                         InstructionType.MOV,
@@ -903,7 +903,7 @@ class CodeGenerationVisitor(symbolTable: SymbolTable, classDefinitions: MutableL
         val vTablePointer = classDefinition.vTableOffset
 
         // Find latest override of method
-        val methodOffset = classDefinition.getMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
+        val methodOffset = classDefinition.getAllMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
             it.id == methodCall.methodId
         }
         val numArgs = methodCall.args.size
@@ -986,7 +986,7 @@ class CodeGenerationVisitor(symbolTable: SymbolTable, classDefinitions: MutableL
         val vTablePointer = classDefinition.vTableOffset
 
         // Find latest override of method
-        val methodOffset = classDefinition.getMethods().indexOfLast {
+        val methodOffset = classDefinition.getAllMethods().indexOfLast {
             it.id == staticMethodCall.methodId
         }
         val numArgs = staticMethodCall.args.size

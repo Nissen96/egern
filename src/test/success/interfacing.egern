@@ -1,0 +1,27 @@
+interface Cake {
+    func getIngredients(): [string]
+    func eatPieces(int, eatingSound: string)
+}
+
+class Cupcake(): Cake {
+    var piecesLeft = 1
+
+    override func getIngredients(): [string] {
+        return ["flour", "sugar", "water", "eggs"]
+    }
+
+    override func eatPieces(n: int, sound: string) {
+        piecesLeft -= n
+        print(sound)
+    }
+}
+
+class LayeredCake(layer: int): Cupcake {
+    override var piecesLeft = 8
+}
+
+var cupcake = Cupcake()
+print(cupcake.getIngredients()[0])
+print(cupcake.piecesLeft)
+cupcake.eatPieces(1, "yum")
+print(cupcake.piecesLeft)
