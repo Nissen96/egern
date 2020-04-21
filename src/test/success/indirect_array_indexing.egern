@@ -1,0 +1,35 @@
+func addArrays(a: [int], b: [int]): [int] {
+    var n = len(a)
+    if (n != len(b)) {
+        print("Lengths must be equal")
+        return [0]
+    }
+    var i = 0
+    while (i < n) {
+        a[i] += b[i]
+        i += 1
+    }
+    return a
+}
+
+class ArrayHandler(arr: [int]) {
+    var arr2 = ["hello", "there"]
+
+    func square(): [int] {
+        var i = 0
+        var n = len(arr)
+        while (i < n) {
+            arr[i] *= arr[i]
+            i += 1
+        }
+        return arr
+    }
+}
+
+var a = [1, 2, 3]
+var b = [4, 5, 6]
+var ah = ArrayHandler(a)
+print(a[2])
+print(addArrays(a, b)[1])
+print(ah.arr2[0])
+print(ah.square()[2])
