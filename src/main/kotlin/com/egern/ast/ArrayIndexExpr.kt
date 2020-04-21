@@ -13,12 +13,12 @@ class ArrayIndexExpr(
     Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
-        id.accept(visitor)
         indices.reversed().forEach {
             visitor.preMidVisit(this)
             it.accept(visitor)
             visitor.postMidVisit(this)
         }
+        id.accept(visitor)
         visitor.postVisit(this)
     }
 }
