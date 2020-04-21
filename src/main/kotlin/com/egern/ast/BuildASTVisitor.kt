@@ -254,7 +254,12 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         ctx.assignable().forEach {
             when {
                 it.idExpr() != null -> ids.add(it.idExpr().text)
-                it.arrayIndexExpr() != null -> indexExprs.add(visitArrayIndexExpr(it.arrayIndexExpr(), true))
+                it.arrayIndexExpr() != null -> indexExprs.add(
+                    visitArrayIndexExpr(
+                        it.arrayIndexExpr(),
+                        reference = true
+                    )
+                )
                 it.classField() != null -> classFields.add(
                     visitClassField(it.classField(), reference = true)
                 )
@@ -278,7 +283,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
                 visitIdExpr(ctx.assignable().idExpr()) as IdExpr
             )
             ctx.assignable().arrayIndexExpr() != null -> arrayIndexExprs.add(
-                visitArrayIndexExpr(ctx.assignable().arrayIndexExpr(), true)
+                visitArrayIndexExpr(ctx.assignable().arrayIndexExpr(), reference = true)
             )
             ctx.assignable().classField() != null -> classFields.add(
                 visitClassField(ctx.assignable().classField(), reference = true)
@@ -401,7 +406,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitArrayIndexExpr(ctx: MainParser.ArrayIndexExprContext): ASTNode {
-        return visitArrayIndexExpr(ctx, false)
+        return visitArrayIndexExpr(ctx, reference = false)
     }
 
     override fun visitParenExpr(ctx: MainParser.ParenExprContext): ASTNode {
