@@ -16,41 +16,6 @@ class WindowsEmitter(
         const val SHADOW_SPACE_SIZE = 32
     }
 
-//    override fun emitProgramPrologue() {
-//        builder
-//            .addLine("global", "_main")
-//            .addLine("default", "rel")
-//            .addLine("extern", "printf")
-//            .addLine("extern", "malloc")
-//            .addLine("extern", "free")
-//        emitDataSection()
-//        emitUninitializedDataSection()
-//        builder.addLine("segment", ".text")
-//    }
-//
-//    override fun emitDataSection() {
-//        builder
-//            .addLine("segment", ".data")
-//        staticStrings.forEach {
-//            if (it.key != "format_string")
-//                builder.addLine("${it.key}: db \"${it.value}\", 10, 0")
-//            else
-//                builder.addLine("${it.key}: db \"${it.value}\", 0")
-//
-//        }
-//        builder.newline()
-//    }
-//
-//    private fun emitUninitializedDataSection() {
-//        builder
-//            .addLine("section .bss")
-//            .addLine(HEAP_POINTER, " resq 1")
-//            .addLine(VTABLE_POINTER, " resq 1")
-//        dataFields.forEach {
-//            builder.addLine(it, " resq 1")
-//        }
-//    }
-
     override fun emitProgramEpilogue() {
         //builder.addLine("format: db \"%d\", 10, 0")
     }

@@ -10,19 +10,12 @@ abstract class Emitter(
     protected val builder: AsmStringBuilder,
     protected val syntax: SyntaxManager
 ) {
-    //abstract fun emitProgramPrologue()
-    //abstract fun emitDataSection()
     abstract fun emitProgramEpilogue()
     abstract fun emitAllocateProgramHeap()
     abstract fun emitAllocateVTable()
-    //abstract fun emitRequestProgramHeap()
-    //abstract fun emitFreeProgramHeap()
     abstract fun emitPrint(type: Int)
     abstract fun emitMainLabel(): String
     abstract val paramPassingRegs: List<String>
-
-//    abstract fun platformCallPrologue()
-//    abstract fun platformCallEpilogue()
 
     // Defaults to nothing; can be overwritten
     open fun addPlatformPrefix(symbol: String): String {
@@ -60,29 +53,6 @@ abstract class Emitter(
         dataFields.add(VTABLE_POINTER)
         syntax.prologue(builder,  emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
     }
-
-//    fun emitDataSection() {
-//        builder
-//            .addLine("segment", ".data")
-//        staticStrings.forEach {
-//            if (it.key != "format_string")
-//                builder.addLine("${it.key}: db \"${it.value}\", 10, 0")
-//            else
-//                builder.addLine("${it.key}: db \"${it.value}\", 0")
-//
-//        }
-//        builder.newline()
-//    }
-//
-//    private fun emitUninitializedDataSection() {
-//        builder
-//            .addLine("section .bss")
-//            .addLine(HEAP_POINTER, " resq 1")
-//            .addLine(VTABLE_POINTER, " resq 1")
-//        dataFields.forEach {
-//            builder.addLine(it, " resq 1")
-//        }
-//    }
 
     protected fun emitPrintBase(value: Int, additionalOffset: Int = 0) {
         val enumType = ExprTypeEnum.fromInt(value)
@@ -137,9 +107,7 @@ abstract class Emitter(
 
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"), syntax.register(paramPassingRegs[0]))
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
-//        val intermediateAddress = syntax.register(emitInstructionTarget(Register(OpReg1)))
         val (arg5, arg6) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(HEAP_POINTER))
-//        val (arg7, arg8) = syntax.argOrder(syntax.indirect(HEAP_POINTER), intermediateAddress)
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
@@ -150,10 +118,6 @@ abstract class Emitter(
                 syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
                 makeComment("Move returned heap pointer to fixed heap pointer register")
             )
-//            .addLine(
-//                syntax.ops.getValue(InstructionType.LoadEffectiveAddress), arg7, arg8,
-//                makeComment("Load address of global heap pointer")
-//            )
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
                 makeComment("Save start of heap pointer globally")

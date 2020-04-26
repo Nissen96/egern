@@ -16,28 +16,6 @@ class MacOSEmitter(
         return "_$symbol"
     }
 
-
-//    override fun emitProgramPrologue() {
-//        builder
-//            .addLine("global", "_main")
-//            .addLine("extern", "_printf")
-//            .addLine("default rel")
-//            .newline()
-//        emitDataSection()
-//        builder.addLine("section .text")
-//    }
-//
-//    override fun emitDataSection() {
-//        builder
-//            .addLine(".bss")
-//            .addLine("$HEAP_POINTER: resq 1")
-//            .addLine("$VTABLE_POINTER: resq 1")
-//        dataFields.forEach {
-//            builder.addLine("$it: resq 1")
-//        }
-//        builder.newline()
-//    }
-
     override fun emitProgramEpilogue() {
         builder.addLine("format: db \"%d\", 10, 0")
     }
