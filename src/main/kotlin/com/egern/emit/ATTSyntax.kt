@@ -31,6 +31,38 @@ class ATTSyntax : SyntaxManager() {
         return "*"
     }
 
+    override fun prologue(
+        asmStringBuilder: AsmStringBuilder,
+        mainLabel: String,
+        platformPrefix: String,
+        dataFields: List<String>,
+        staticStrings: Map<String, String>
+    ) {
+        asmStringBuilder.addLine(".globl", mainLabel)
+        emitDataSection(asmStringBuilder, staticStrings)
+        emitUninitializedDataSection(asmStringBuilder, dataFields)
+        asmStringBuilder
+            .addLine(".text")
+            .newline()
+    }
+
+    private fun emitDataSection(asmStringBuilder: AsmStringBuilder, staticStrings: Map<String, String>) {
+        asmStringBuilder.addLine(".data")
+        staticStrings.forEach {
+            asmStringBuilder.addLine("${it.key}: .asciz \"${it.value}\"")
+
+        }
+        asmStringBuilder.newline()
+    }
+
+    private fun emitUninitializedDataSection(asmStringBuilder: AsmStringBuilder, dataFields: List<String>) {
+        asmStringBuilder.addLine(".bss")
+        dataFields.forEach {
+            asmStringBuilder.addLine(".lcomm $it, 8")
+        }
+        asmStringBuilder.newline()
+    }
+
     override val ops = mapOf(
         InstructionType.MOV to "movq",
         InstructionType.ADD to "addq",

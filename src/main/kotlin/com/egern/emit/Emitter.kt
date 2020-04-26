@@ -5,13 +5,13 @@ import com.egern.types.ExprTypeEnum
 
 abstract class Emitter(
     private val instructions: List<Instruction>,
-    protected val dataFields: List<String>,
+    protected val dataFields: MutableList<String>,
     protected val staticStrings: Map<String, String>,
     protected val builder: AsmStringBuilder,
     protected val syntax: SyntaxManager
 ) {
-    abstract fun emitProgramPrologue()
-    abstract fun emitDataSection()
+    //abstract fun emitProgramPrologue()
+    //abstract fun emitDataSection()
     abstract fun emitProgramEpilogue()
     abstract fun emitAllocateProgramHeap()
     abstract fun emitAllocateVTable()
@@ -54,6 +54,35 @@ abstract class Emitter(
     protected fun makeComment(text: String): Comment {
         return Comment(syntax.commentSym(), text)
     }
+
+    fun emitProgramPrologue() {
+        dataFields.add(HEAP_POINTER)
+        dataFields.add(VTABLE_POINTER)
+        syntax.prologue(builder,  emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
+    }
+
+//    fun emitDataSection() {
+//        builder
+//            .addLine("segment", ".data")
+//        staticStrings.forEach {
+//            if (it.key != "format_string")
+//                builder.addLine("${it.key}: db \"${it.value}\", 10, 0")
+//            else
+//                builder.addLine("${it.key}: db \"${it.value}\", 0")
+//
+//        }
+//        builder.newline()
+//    }
+//
+//    private fun emitUninitializedDataSection() {
+//        builder
+//            .addLine("section .bss")
+//            .addLine(HEAP_POINTER, " resq 1")
+//            .addLine(VTABLE_POINTER, " resq 1")
+//        dataFields.forEach {
+//            builder.addLine(it, " resq 1")
+//        }
+//    }
 
     protected fun emitPrintBase(value: Int, additionalOffset: Int = 0) {
         val enumType = ExprTypeEnum.fromInt(value)

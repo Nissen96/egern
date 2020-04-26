@@ -31,6 +31,38 @@ class IntelSyntax : SyntaxManager() {
         return ""
     }
 
+    override fun prologue(asmStringBuilder: AsmStringBuilder, mainLabel: String, platformPrefix: String, dataFields: List<String>,
+                       staticStrings: Map<String, String>) {
+        asmStringBuilder
+            .addLine("global", mainLabel)
+            .addLine("default", "rel")
+            .addLine("extern", "${platformPrefix}printf")
+            .addLine("extern", "${platformPrefix}malloc")
+            .addLine("extern", "${platformPrefix}free")
+        emitDataSection(asmStringBuilder, staticStrings)
+        emitUninitializedDataSection(asmStringBuilder, dataFields)
+        asmStringBuilder.addLine("segment", ".text")
+    }
+
+    private fun emitDataSection(asmStringBuilder: AsmStringBuilder, staticStrings: Map<String, String>) {
+        asmStringBuilder.addLine("section", ".data")
+        staticStrings.forEach {
+            if (it.key != "format_string")
+                asmStringBuilder.addLine("${it.key}: db \"${it.value}\", 10, 0")
+            else
+                asmStringBuilder.addLine("${it.key}: db \"${it.value}\", 0")
+
+        }
+        asmStringBuilder.newline()
+    }
+
+    private fun emitUninitializedDataSection(asmStringBuilder: AsmStringBuilder, dataFields: List<String>) {
+        asmStringBuilder.addLine("section .bss")
+        dataFields.forEach {
+            asmStringBuilder.addLine(it, " resq 1")
+        }
+    }
+
     override val ops = mapOf(
         InstructionType.MOV to "mov",
         InstructionType.ADD to "add",
