@@ -110,7 +110,7 @@ abstract class Emitter(
             )
         if (enumType != ExprTypeEnum.VOID) {
             val (arg3, arg4) = syntax.argOrder(
-                syntax.indirectRelative("rsp", -ADDRESSING_OFFSET * CALLER_SAVE_REGISTERS.size + additionalOffset),
+                syntax.indirectRelative(syntax.register("rsp"), -ADDRESSING_OFFSET * CALLER_SAVE_REGISTERS.size + additionalOffset),
                 syntax.register(paramPassingRegs[1])
             )
             builder.addLine(

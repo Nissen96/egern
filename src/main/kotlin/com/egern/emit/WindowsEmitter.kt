@@ -76,12 +76,12 @@ class WindowsEmitter(
     }
 
     private fun allocateShadowSpace() {
-        val (arg1, arg2) = syntax.argOrder("$SHADOW_SPACE_SIZE", syntax.register("rsp"))
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("$SHADOW_SPACE_SIZE"), syntax.register("rsp"))
         builder.addLine(syntax.ops.getValue(InstructionType.SUB), arg1, arg2, makeComment("Allocate shadow space"))
     }
 
     private fun deallocateShadowSpace() {
-        val (arg1, arg2) = syntax.argOrder("$SHADOW_SPACE_SIZE", syntax.register("rsp"))
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("$SHADOW_SPACE_SIZE"), syntax.register("rsp"))
         builder.addLine(syntax.ops.getValue(InstructionType.ADD), arg1, arg2, makeComment("Deallocate shadow space"))
     }
 
