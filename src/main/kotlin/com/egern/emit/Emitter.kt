@@ -1,20 +1,30 @@
 package com.egern.emit
 
 import com.egern.codegen.*
+import com.egern.types.ExprTypeEnum
 
 abstract class Emitter(
     private val instructions: List<Instruction>,
+    protected val dataFields: List<String>,
+    protected val staticStrings: Map<String, String>,
     protected val builder: AsmStringBuilder,
     protected val syntax: SyntaxManager
 ) {
     abstract fun emitProgramPrologue()
     abstract fun emitDataSection()
     abstract fun emitProgramEpilogue()
-    abstract fun emitAllocateProgramHeap(heapSize: Int)
+    abstract fun emitAllocateProgramHeap()
+    abstract fun emitAllocateVTable()
     //abstract fun emitRequestProgramHeap()
-    abstract fun emitPrint(isEmpty: Int)
+    //abstract fun emitFreeProgramHeap()
+    abstract fun emitPrint(type: Int)
     abstract fun emitMainLabel(): String
     abstract val paramPassingRegs: List<String>
+
+//    abstract fun platformCallPrologue()
+//    abstract fun platformCallEpilogue()
+
+    // Defaults to nothing; can be overwritten
     open fun addPlatformPrefix(symbol: String): String {
         return symbol
     }
@@ -45,20 +55,31 @@ abstract class Emitter(
         return Comment(syntax.commentSym(), text)
     }
 
-    protected fun emitPrintBase(isEmpty: Boolean, additionalOffset: Int = 0) {
+    protected fun emitPrintBase(value: Int, additionalOffset: Int = 0) {
+        val enumType = ExprTypeEnum.fromInt(value)
+        val type = when (enumType) {
+            ExprTypeEnum.VOID -> "newline"
+            ExprTypeEnum.STRING -> "string"
+            ExprTypeEnum.INT -> "int"
+            ExprTypeEnum.BOOLEAN -> "string"
+            else -> throw Exception("Printing $enumType is invalid")
+        }
+
         val (arg1, arg2) = syntax.argOrder(
-            syntax.immediate("format_${if (isEmpty) "newline" else "int"}"),
+            syntax.immediate("format_$type"),
             syntax.register(paramPassingRegs[0])
         )
+
         builder
             .newline()
-            .addLine(comment = makeComment("PRINTING USING PRINTF"))
+            .addComment(comment = makeComment("PRINTING USING PRINTF"))
+            .newline()
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV),
                 arg1, arg2,
                 makeComment("Pass formatting as 1st argument in ${paramPassingRegs[0]}")
             )
-        if (!isEmpty) {
+        if (enumType != ExprTypeEnum.VOID) {
             val (arg3, arg4) = syntax.argOrder(
                 syntax.indirectRelative("rsp", -ADDRESSING_OFFSET * CALLER_SAVE_REGISTERS.size + additionalOffset),
                 syntax.register(paramPassingRegs[1])
@@ -78,50 +99,72 @@ abstract class Emitter(
             .addLine("call", addPlatformPrefix("printf"), comment = makeComment("Call function printf"))
     }
 
-    protected fun emitAllocateProgramHeapBase(heapSize: Int) {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * heapSize}"), syntax.register(paramPassingRegs[0]))
-        val (arg3, arg4) = syntax.argOrder(syntax.register("rax"), syntax.register("rbx"))
+    private fun emitAllocateInternalHeaps() {
+        emitAllocateProgramHeap()
+        emitAllocateVTable()
+    }
+
+    protected fun emitAllocateProgramHeapBase() {
+
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"), syntax.register(paramPassingRegs[0]))
+        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
+//        val intermediateAddress = syntax.register(emitInstructionTarget(Register(OpReg1)))
+        val (arg5, arg6) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(HEAP_POINTER))
+//        val (arg7, arg8) = syntax.argOrder(syntax.indirect(HEAP_POINTER), intermediateAddress)
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
                 makeComment("Move argument into parameter register for malloc call")
             )
-            .addLine("call", addPlatformPrefix("malloc"))
+            .addLine("call ${addPlatformPrefix("malloc")}")
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
                 makeComment("Move returned heap pointer to fixed heap pointer register")
             )
-    }
-
-    private fun emitAllocateVTable() {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"), syntax.register("rdi"))
-        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), VTABLE_POINTER)
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            "Move argument into parameter register for malloc call"
-        )
-        emitRequestProgramHeap()
-        builder.addLine(
-            syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
-            "Save start of vtable pointer globally"
-        )
-    }
-
-    private fun emitDeallocateInternalHeaps() {
-        emitDeallocateInternalHeap(VTABLE_POINTER)
-        emitDeallocateInternalHeap(HEAP_POINTER)
+//            .addLine(
+//                syntax.ops.getValue(InstructionType.LoadEffectiveAddress), arg7, arg8,
+//                makeComment("Load address of global heap pointer")
+//            )
+            .addLine(
+                syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
+                makeComment("Save start of heap pointer globally")
+            )
 
     }
 
-    private fun emitDeallocateInternalHeap(pointer: String) {
-        val (arg1, arg2) = syntax.argOrder(pointer, syntax.register("rdi"))
+    protected fun emitAllocateVTableBase() {
+
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"), syntax.register(paramPassingRegs[0]))
+        val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(VTABLE_POINTER))
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-                "Move argument into parameter register for free call"
+                makeComment("Move argument into parameter register for malloc call")
+             )
+            .addLine("call ${addPlatformPrefix("malloc")}")
+            .addLine(
+                syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
+                makeComment("Save start of vtable pointer globally")
             )
-        emitFreeProgramHeap()
     }
+
+    private fun emitDeallocateInternalHeaps() {
+//        emitDeallocateInternalHeap(VTABLE_POINTER)
+//        emitDeallocateInternalHeap(HEAP_POINTER)
+
+    }
+
+//    private fun emitDeallocateInternalHeap(pointer: String) {
+//        platformCallPrologue()
+//        val (arg1, arg2) = syntax.argOrder(pointer, syntax.register(paramPassingRegs[0]))
+//        builder
+//            .addLine(
+//                syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+//                makeComment("Move argument into parameter register for free call")
+//            )
+//            .addLine("call ${addPlatformPrefix("free")}")
+//        platformCallEpilogue()
+//    }
 
     private fun emitInstruction(instruction: Instruction) {
         when (instruction.instructionType) {
@@ -146,7 +189,7 @@ abstract class Emitter(
         builder.addOp(instr)
 
         // Check for indirect function call
-        val prefix = if ((instruction.args[0] as InstructionArg).instructionTarget is Register) "*" else ""
+        val prefix = if ((instruction.args[0] as InstructionArg).instructionTarget is Register) syntax.indirectFuncCall() else ""
         builder.addRegs("$prefix${emitArg(instruction.args[0])}")
     }
 
@@ -262,7 +305,7 @@ abstract class Emitter(
     private fun emitLabel(instruction: Instruction) {
         builder
             .newline()
-            .addOp(emitArg(instruction.args[0]) + ":")
+            .addLabel(emitArg(instruction.args[0]))
             .newline()
     }
 

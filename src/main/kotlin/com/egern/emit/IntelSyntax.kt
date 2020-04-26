@@ -27,6 +27,10 @@ class IntelSyntax : SyntaxManager() {
         return ";"
     }
 
+    override fun indirectFuncCall(): String {
+        return ""
+    }
+
     override val ops = mapOf(
         InstructionType.MOV to "mov",
         InstructionType.ADD to "add",

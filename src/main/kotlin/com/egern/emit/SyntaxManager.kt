@@ -9,7 +9,7 @@ abstract class SyntaxManager {
     abstract fun indirect(target: String): String
     abstract fun indirectRelative(target: String, offset: Int): String
     abstract fun commentSym(): String
-
+    abstract fun indirectFuncCall(): String
     abstract val ops: Map<InstructionType, String>
 }
 

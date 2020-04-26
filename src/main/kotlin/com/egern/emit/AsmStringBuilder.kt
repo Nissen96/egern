@@ -12,6 +12,7 @@ class AsmStringBuilder() {
     companion object {
         const val OP_OFFSET = 10
         const val REGS_OFFSET = 28
+        const val LABEL_INDENTATION = 8
     }
 
     fun add(s: String, pad: Int = 0): AsmStringBuilder {
@@ -25,6 +26,7 @@ class AsmStringBuilder() {
         reg2: String? = null,
         comment: Comment? = null
     ): AsmStringBuilder {
+
         if (op != null) {
             addOp(op)
         }
@@ -42,7 +44,15 @@ class AsmStringBuilder() {
         return this
     }
 
+    fun addLabel(label: String) : AsmStringBuilder {
+        builder
+            .append("$label:")
+            .appendln()
+        return this
+    }
+
     fun addOp(op: String): AsmStringBuilder {
+        add("", LABEL_INDENTATION)
         add(op, OP_OFFSET)
         return this
     }

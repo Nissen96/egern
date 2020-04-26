@@ -27,6 +27,10 @@ class ATTSyntax : SyntaxManager() {
         return "#"
     }
 
+    override fun indirectFuncCall(): String {
+        return "*"
+    }
+
     override val ops = mapOf(
         InstructionType.MOV to "movq",
         InstructionType.ADD to "addq",
