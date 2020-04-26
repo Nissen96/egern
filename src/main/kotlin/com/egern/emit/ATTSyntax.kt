@@ -49,8 +49,10 @@ class ATTSyntax : SyntaxManager() {
     private fun emitDataSection(asmStringBuilder: AsmStringBuilder, staticStrings: Map<String, String>) {
         asmStringBuilder.addLine(".data")
         staticStrings.forEach {
-            asmStringBuilder.addLine("${it.key}: .asciz \"${it.value}\\n\"")
-
+            if (it.key != "format_string")
+                asmStringBuilder.addLine("${it.key}: .asciz \"${it.value}\\n\"")
+            else
+                asmStringBuilder.addLine("${it.key}: .asciz \"${it.value}\"")
         }
         asmStringBuilder.newline()
     }
