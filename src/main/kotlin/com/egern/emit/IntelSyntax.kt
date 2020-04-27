@@ -3,6 +3,8 @@ package com.egern.emit
 import com.egern.codegen.InstructionType
 
 class IntelSyntax : SyntaxManager() {
+    override val commentSymbol = ";"
+
     override fun argOrder(source: String, destination: String): Pair<String, String> {
         return Pair(destination, source)
     }
@@ -19,8 +21,46 @@ class IntelSyntax : SyntaxManager() {
         return "qword [$target]"
     }
 
-    override fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String {
-        return "qword [$target + ${addressingOffset * offset}]"
+    override fun indirectRelative(target: String, offset: Int): String {
+        return "qword [$target + $offset]"
+    }
+
+    override fun indirectFuncCall(): String {
+        return ""
+    }
+
+    override fun emitPrologue(
+        asmStringBuilder: AsmStringBuilder,
+        mainLabel: String,
+        platformPrefix: String, dataFields: List<String>,
+        staticStrings: Map<String, String>
+    ) {
+        asmStringBuilder
+            .addLine("global", mainLabel)
+            .addLine("default", "rel")
+            .addLine("extern", "${platformPrefix}printf")
+            .addLine("extern", "${platformPrefix}malloc")
+            .addLine("extern", "${platformPrefix}free")
+        emitDataSection(asmStringBuilder, staticStrings)
+        emitUninitializedDataSection(asmStringBuilder, dataFields)
+        asmStringBuilder.addLine("segment", ".text")
+    }
+
+    private fun emitDataSection(asmStringBuilder: AsmStringBuilder, staticStrings: Map<String, String>) {
+        asmStringBuilder.addLine("section", ".data")
+        staticStrings.forEach {
+            asmStringBuilder.addLine(
+                "${it.key}: db \"${it.value}\"${if (it.key.startsWith("format_")) ", 10" else ""}, 0"
+            )
+        }
+        asmStringBuilder.newline()
+    }
+
+    private fun emitUninitializedDataSection(asmStringBuilder: AsmStringBuilder, dataFields: List<String>) {
+        asmStringBuilder.addLine("section .bss")
+        dataFields.forEach {
+            asmStringBuilder.addLine(it, " resq 1")
+        }
     }
 
     override val ops = mapOf(
@@ -44,6 +84,7 @@ class IntelSyntax : SyntaxManager() {
         InstructionType.PUSH to "push",
         InstructionType.POP to "pop",
         InstructionType.CALL to "call",
-        InstructionType.RET to "ret"
+        InstructionType.RET to "ret",
+        InstructionType.XOR to "xor"
     )
 }

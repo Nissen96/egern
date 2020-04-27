@@ -3,6 +3,8 @@ package com.egern.emit
 import com.egern.codegen.InstructionType
 
 class ATTSyntax : SyntaxManager() {
+    override val commentSymbol = "#"
+
     override fun argOrder(source: String, destination: String): Pair<String, String> {
         return Pair(source, destination)
     }
@@ -19,8 +21,45 @@ class ATTSyntax : SyntaxManager() {
         return "($target)"
     }
 
-    override fun indirectRelative(target: String, addressingOffset: Int, offset: Int): String {
-        return "${addressingOffset * offset}($target)"
+    override fun indirectRelative(target: String, offset: Int): String {
+        return "$offset($target)"
+    }
+
+    override fun indirectFuncCall(): String {
+        return "*"
+    }
+
+    override fun emitPrologue(
+        asmStringBuilder: AsmStringBuilder,
+        mainLabel: String,
+        platformPrefix: String,
+        dataFields: List<String>,
+        staticStrings: Map<String, String>
+    ) {
+        asmStringBuilder.addLine(".globl", mainLabel)
+        emitDataSection(asmStringBuilder, staticStrings)
+        emitUninitializedDataSection(asmStringBuilder, dataFields)
+        asmStringBuilder
+            .addLine(".text")
+            .newline()
+    }
+
+    private fun emitDataSection(asmStringBuilder: AsmStringBuilder, staticStrings: Map<String, String>) {
+        asmStringBuilder.addLine(".data")
+        staticStrings.forEach {
+            asmStringBuilder.addLine(
+                "${it.key}: .asciz \"${it.value}${if (it.key.startsWith("format_")) "\\n" else ""}\""
+            )
+        }
+        asmStringBuilder.newline()
+    }
+
+    private fun emitUninitializedDataSection(asmStringBuilder: AsmStringBuilder, dataFields: List<String>) {
+        asmStringBuilder.addLine(".bss")
+        dataFields.forEach {
+            asmStringBuilder.addLine(".lcomm $it, 8")
+        }
+        asmStringBuilder.newline()
     }
 
     override val ops = mapOf(
@@ -44,6 +83,7 @@ class ATTSyntax : SyntaxManager() {
         InstructionType.PUSH to "pushq",
         InstructionType.POP to "popq",
         InstructionType.CALL to "call",
-        InstructionType.RET to "ret"
+        InstructionType.RET to "ret",
+        InstructionType.XOR to "xor"
     )
 }

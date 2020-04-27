@@ -9,10 +9,11 @@ enum class Platform {
 }
 
 class PlatformManager {
-    val platform: Platform = when (System.getProperty("os.name")) {
+    val platform: Platform = when (val os = System.getProperty("os.name")) {
+        "Windows 8.1" -> Platform.Windows
         "Windows 10" -> Platform.Windows
         "Mac OS X" -> Platform.MacOS
         "Linux" -> Platform.Linux
-        else -> throw Exception("Unsupported platform")
+        else -> throw Exception("Unsupported platform: $os")
     }
 }

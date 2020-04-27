@@ -1,75 +1,59 @@
 package com.egern.emit
 
 import com.egern.codegen.Instruction
+import com.egern.codegen.InstructionType
 
-class WindowsEmitter(instructions: List<Instruction>, dataFields: List<String>, syntax: SyntaxManager) :
-    Emitter(instructions, AsmStringBuilder(";"), syntax) {
+class WindowsEmitter(
+    instructions: List<Instruction>,
+    dataFields: MutableList<String>,
+    staticStrings: Map<String, String>,
+    syntax: SyntaxManager
+) : Emitter(instructions, dataFields, staticStrings, syntax) {
 
-    override fun emitProgramPrologue() {
-        builder
-            .addLine("global", "main")
-            .addLine("extern", "GetStdHandle")
-            .addLine("extern", "WriteFile")
-            .addLine("extern", "ExitProcess")
-            .addLine("extern", "malloc")
-            .addLine("extern", "free")
-            .addLine("NULL EQU 0")
-            .addLine("STD_HANDLE EQU -11")
-        emitDataSection()
-        builder.addLine("section .text")
-    }
+    override val paramPassingRegs: List<String> = listOf("rcx", "rdx", "r8", "r9")
 
-    override fun emitDataSection() {
-        builder
-            .addLine("section .bss")
-            .addLine("alignb", "8")
-            .addLine("Handle", "resq 1")
-            .addLine("Written", "resq 1")
-            .newline()
+    companion object {
+        const val SHADOW_SPACE_SIZE = 32
     }
 
     override fun emitProgramEpilogue() {
         //builder.addLine("format: db \"%d\", 10, 0")
     }
 
-    override fun emitRequestProgramHeap() {
-        builder.addLine("call malloc")
+    private fun wrapCallInShadowSpace(call: () -> (Unit)) {
+        allocateShadowSpace()
+        call()
+        deallocateShadowSpace()
     }
 
-    override fun emitFreeProgramHeap() {
-        builder.addLine("call free")
+    override fun emitAllocateProgramHeap() {
+        wrapCallInShadowSpace { super.emitAllocateProgramHeap() }
     }
 
-    override fun emitPrint(value: Int) {
-        // TODO: handle print empty
-        builder
-            .newline()
-            .addLine("; Get handle")
-            .addLine("sub", "rsp", "32")
-            .addLine("mov", "ecx", "STD_HANDLE")
-            .addLine("call", "GetStdHandle")
-            .addLine("mov", "qword [REL Handle]", "rax")
-            .addLine("add", "rsp", "32")
-            .newline()
-            .addLine("; Write to file")
-            //.addLine("mov", "rdx", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size}]")
-            .addLine("sub", "rsp", "40")
-            .addLine("mov", "rcx", "qword [REL Handle]")
+    override fun emitAllocateVTable() {
+        wrapCallInShadowSpace { super.emitAllocateVTable() }
+    }
 
-            .addLine("mov", "r15", "[rsp + ${8 * CALLER_SAVE_REGISTERS.size} + 40]")
-            .addLine("add", "r15", "48")
-            .addLine("push", "r15")
-            .addLine("lea", "rdx", "[rsp]")
-            .addLine("mov", "r8", "1")
-            .addLine("lea", "r9", "[REL Written]")
-            .addLine("mov", "qword [rsp + 4 * 8]", "NULL")
-            .addLine("call", "WriteFile")
-            .addLine("add", "rsp", "40")
+    override fun emitDeallocateInternalHeap(pointer: String) {
+        wrapCallInShadowSpace { super.emitDeallocateInternalHeap(pointer) }
+    }
 
+    override fun emitPrint(typeValue: Int) {
+        wrapCallInShadowSpace { super.emitPrint(typeValue, SHADOW_SPACE_SIZE) }
+    }
+
+    private fun allocateShadowSpace() {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("$SHADOW_SPACE_SIZE"), syntax.register("rsp"))
+        builder.addLine(syntax.ops.getValue(InstructionType.SUB), arg1, arg2, "Allocate shadow space")
+    }
+
+    private fun deallocateShadowSpace() {
+        val (arg1, arg2) = syntax.argOrder(syntax.immediate("$SHADOW_SPACE_SIZE"), syntax.register("rsp"))
+        builder.addLine(syntax.ops.getValue(InstructionType.ADD), arg1, arg2, "Deallocate shadow space")
     }
 
     override fun emitMainLabel(): String {
-        return "main"
+        return "_main"
     }
 
 }

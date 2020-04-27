@@ -1,11 +1,12 @@
 package com.egern.emit
 
-class AsmStringBuilder(private val commentSym: String) {
+class AsmStringBuilder(private val commentSymbol: String) {
     private val builder = StringBuilder()
 
     companion object {
         const val OP_OFFSET = 10
         const val REGS_OFFSET = 28
+        const val LABEL_INDENTATION = 8
     }
 
     fun add(s: String, pad: Int = 0): AsmStringBuilder {
@@ -19,24 +20,22 @@ class AsmStringBuilder(private val commentSym: String) {
         reg2: String? = null,
         comment: String? = null
     ): AsmStringBuilder {
-        if (op != null) {
-            addOp(op)
-        }
-
-        if (reg1 != null) {
-            addRegs(reg1, reg2)
-        } else {
-            add("", REGS_OFFSET)
-        }
-
-        if (comment != null) {
-            addComment(comment)
-        }
+        op?.let { addOp(op) }
+        if (reg1 != null) addRegs(reg1, reg2) else add("", REGS_OFFSET)
+        comment?.let { addComment(comment) }
         newline()
         return this
     }
 
+    fun addLabel(label: String): AsmStringBuilder {
+        builder
+            .append("$label:")
+            .appendln()
+        return this
+    }
+
     fun addOp(op: String): AsmStringBuilder {
+        add("", LABEL_INDENTATION)
         add(op, OP_OFFSET)
         return this
     }
@@ -52,7 +51,7 @@ class AsmStringBuilder(private val commentSym: String) {
     }
 
     fun addComment(comment: String): AsmStringBuilder {
-        add("$commentSym $comment")
+        add("$commentSymbol $comment")
         return this
     }
 

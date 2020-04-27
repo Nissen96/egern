@@ -11,7 +11,7 @@ class Labrador(): Dog() {
     override var legs = 4
     var age = 3
     override func bark() {
-        print("brøl")
+        print("broel") // note Windows likely won't work with non-ascii encodings
     }
 
     func getLegs(): int {

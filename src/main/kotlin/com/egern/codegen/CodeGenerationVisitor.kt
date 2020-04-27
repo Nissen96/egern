@@ -16,7 +16,13 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     Visitor() {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
-    val staticStrings = mutableMapOf("boolean_true" to "true", "boolean_false" to "false")
+    val staticStrings = mutableMapOf(
+        "boolean_true" to "true",
+        "boolean_false" to "false",
+        "format_int" to "%d",
+        "format_newline" to "",
+        "format_string" to "%s"
+    )
     private val functionStack = stackOf<FuncDecl>()
     private var currentClassDefinition: ClassDefinition? = null
 
@@ -106,7 +112,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Direct),
+                InstructionArg(VTable, Indirect),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Store Vtable base address in register"
             )
@@ -781,7 +787,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Direct),
+                InstructionArg(VTable, Indirect),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Get pointer to vtable"
             )
@@ -857,7 +863,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
                     add(
                         Instruction(
                             InstructionType.MOV,
-                            InstructionArg(Memory(fieldDecl.staticDataField), Direct),
+                            InstructionArg(Memory(fieldDecl.staticDataField), Indirect),
                             InstructionArg(Register(OpReg1), Direct),
                             comment = "Get field value from data section"
                         )
@@ -907,7 +913,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Direct),
+                InstructionArg(VTable, Indirect),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Move Vtable pointer to register"
             )
@@ -990,7 +996,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Direct),
+                InstructionArg(VTable, Indirect),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Move Vtable pointer to register"
             )
@@ -1232,7 +1238,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Memory(fieldDecl.staticDataField), Direct),
+                InstructionArg(Memory(fieldDecl.staticDataField), Indirect),
                 comment = "Pop expression result to static data field"
             )
         )
