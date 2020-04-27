@@ -31,7 +31,7 @@ class ATTSyntax : SyntaxManager() {
         return "*"
     }
 
-    override fun prologue(
+    override fun emitPrologue(
         asmStringBuilder: AsmStringBuilder,
         mainLabel: String,
         platformPrefix: String,

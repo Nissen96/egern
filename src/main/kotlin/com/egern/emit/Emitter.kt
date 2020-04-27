@@ -25,7 +25,7 @@ abstract class Emitter(
 
     protected companion object {
         const val VARIABLE_SIZE = 8
-        const val ADDRESSING_OFFSET = -8 //
+        const val ADDRESSING_OFFSET = -8
 
         val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
@@ -52,7 +52,7 @@ abstract class Emitter(
     fun emitProgramPrologue() {
         dataFields.add(HEAP_POINTER)
         dataFields.add(VTABLE_POINTER)
-        syntax.prologue(builder,  emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
+        syntax.emitPrologue(builder,  emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
     }
 
     protected fun emitPrintBase(value: Int, additionalOffset: Int = 0) {

@@ -31,8 +31,8 @@ class IntelSyntax : SyntaxManager() {
         return ""
     }
 
-    override fun prologue(asmStringBuilder: AsmStringBuilder, mainLabel: String, platformPrefix: String, dataFields: List<String>,
-                       staticStrings: Map<String, String>) {
+    override fun emitPrologue(asmStringBuilder: AsmStringBuilder, mainLabel: String, platformPrefix: String, dataFields: List<String>,
+                              staticStrings: Map<String, String>) {
         asmStringBuilder
             .addLine("global", mainLabel)
             .addLine("default", "rel")
