@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
     val labelGenerationVisitor = LabelGenerationVisitor()
     ast.accept(labelGenerationVisitor)
 
-    val classVisitor = ClassVisitor(symbolVisitor.classDefinitions)
+    val classVisitor = ClassVisitor(symbolVisitor.symbolTable, symbolVisitor.classDefinitions)
     ast.accept(classVisitor)
 
     if (doPrint) {
@@ -60,12 +60,12 @@ fun main(args: Array<String>) {
         println()
     }
 
-    val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.currentTable, classVisitor.classDefinitions)
+    val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.symbolTable, classVisitor.classDefinitions)
     ast.accept(typeCheckingVisitor)
 
     val platform = PlatformManager()
 
-    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.currentTable, classVisitor.classDefinitions)
+    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.symbolTable, classVisitor.classDefinitions)
     ast.accept(codeGenVisitor)
 
     val emitter: Emitter = when (platform.platform) {

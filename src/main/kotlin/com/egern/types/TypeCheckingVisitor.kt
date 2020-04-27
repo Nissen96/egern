@@ -7,25 +7,26 @@ import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.util.*
+import com.egern.visitor.FancyVisitor
 import com.egern.visitor.Visitor
 import java.lang.Exception
 
 class TypeCheckingVisitor(
-    private var currentTable: SymbolTable, private val classDefinitions: List<ClassDefinition>
-) : Visitor() {
+    currentTable: SymbolTable, classDefinitions: MutableList<ClassDefinition>
+) : FancyVisitor(symbolTable = currentTable, classDefinitions = classDefinitions) {
     private val functionStack = stackOf<FuncDecl>()
     private var currentClass: ClassDefinition? = null
 
     override fun preVisit(block: Block) {
-        currentTable = block.symbolTable
+        symbolTable = block.symbolTable
     }
 
     override fun postVisit(block: Block) {
-        currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
+        symbolTable = symbolTable.parent ?: throw Exception("No more scopes -- please buy another")
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
-        currentTable = funcDecl.symbolTable
+        symbolTable = funcDecl.symbolTable
         functionStack.push(funcDecl)
 
         // Handle methods
@@ -35,7 +36,7 @@ class TypeCheckingVisitor(
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
-        currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
+        symbolTable = symbolTable.parent ?: throw Exception("No more scopes -- please buy another")
         functionStack.pop()
         if (!funcDecl.stmts.any { it is ReturnStmt }) {
             ErrorLogger.log(funcDecl, "No return statement found in function declaration")
@@ -63,18 +64,6 @@ class TypeCheckingVisitor(
                 "Override in class ${currentClass!!.className} of field ${methodDecl.id} from class $className without override modifier"
             )
         }
-    }
-
-    private fun lookupSymbol(id: String, validTypes: List<SymbolType>): Symbol {
-        val sym = currentTable.lookup(id) ?: throw Exception("Symbol '$id' not defined")
-        if (sym.type !in validTypes) {
-            ErrorLogger.log(Exception("Symbol '$id' should be one of types $validTypes but is not"))
-        }
-        return sym
-    }
-
-    private fun deriveType(expr: Expr): ExprType {
-        return deriveType(expr, currentTable, classDefinitions)
     }
 
     override fun postVisit(funcCall: FuncCall) {
@@ -119,7 +108,7 @@ class TypeCheckingVisitor(
 
         // Expression type must match declared variable
         varAssign.ids.forEach {
-            val varType = getVariableType(it, currentTable, classDefinitions)
+            val varType = getVariableType(it)
             if (varType != exprType) {
                 ErrorLogger.log(
                     varAssign,
@@ -238,7 +227,7 @@ class TypeCheckingVisitor(
     }
 
     override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
-        val arrayType = deriveType(arrayIndexExpr.id, currentTable, classDefinitions) as ARRAY
+        val arrayType = deriveType(arrayIndexExpr.id) as ARRAY
         if (arrayIndexExpr.indices.size > arrayType.depth) {
             ErrorLogger.log(arrayIndexExpr, "Indexing too deeply into array of ${arrayType.depth} dimensions")
         }
@@ -282,11 +271,11 @@ class TypeCheckingVisitor(
 
     override fun preVisit(classDecl: ClassDecl) {
         currentClass = classDefinitions.find { classDecl.id == it.className }!!
-        currentTable = currentClass!!.symbolTable
+        symbolTable = currentClass!!.symbolTable
     }
 
     override fun postVisit(classDecl: ClassDecl) {
-        currentTable = currentTable.parent ?: throw Exception("No more scopes -- please buy another")
+        symbolTable = symbolTable.parent ?: throw Exception("No more scopes -- please buy another")
     }
 
     override fun postVisit(fieldDecl: FieldDecl) {

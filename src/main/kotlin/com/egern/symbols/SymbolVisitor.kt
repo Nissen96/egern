@@ -2,28 +2,32 @@ package com.egern.symbols
 
 import com.egern.ast.*
 import com.egern.util.*
+import com.egern.visitor.FancyVisitor
 import com.egern.visitor.Visitor
 
-class SymbolVisitor : Visitor() {
+class SymbolVisitor : FancyVisitor(symbolTable = SymbolTable(0, null), classDefinitions = mutableListOf()) {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
-    var currentTable = SymbolTable(0, null)
     private val baseClass = ClassDefinition(
         "Base",
         ClassDecl("Base", emptyList(), null, null, emptyList(), emptyList())
     )
-    val classDefinitions = mutableListOf(baseClass)
+
+    // Add base class to class definitions
+    init {
+        classDefinitions.add(baseClass)
+    }
 
     private fun returnToParentScope() {
-        currentTable = currentTable.parent!!
+        symbolTable = symbolTable.parent!!
     }
 
     private fun createNewScope() {
-        currentTable = SymbolTable(currentScopeLevel, currentTable)
+        symbolTable = SymbolTable(currentScopeLevel, symbolTable)
     }
 
     override fun preVisit(program: Program) {
-        baseClass.symbolTable = currentTable
+        baseClass.symbolTable = symbolTable
     }
 
     override fun postVisit(program: Program) {
@@ -32,7 +36,7 @@ class SymbolVisitor : Visitor() {
 
     override fun preVisit(block: Block) {
         createNewScope()
-        block.symbolTable = currentTable
+        block.symbolTable = symbolTable
     }
 
     override fun postVisit(block: Block) {
@@ -40,7 +44,7 @@ class SymbolVisitor : Visitor() {
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
-        currentTable.insert(
+        symbolTable.insert(
             Symbol(
                 funcDecl.id,
                 SymbolType.Function,
@@ -51,7 +55,7 @@ class SymbolVisitor : Visitor() {
         currentScopeLevel++
         createNewScope()
         for ((paramOffset, param) in funcDecl.params.withIndex()) {
-            currentTable.insert(
+            symbolTable.insert(
                 Symbol(
                     param.first,
                     SymbolType.Parameter,
@@ -60,7 +64,7 @@ class SymbolVisitor : Visitor() {
                 )
             )
         }
-        funcDecl.symbolTable = currentTable
+        funcDecl.symbolTable = symbolTable
         varCountStack.push(0)
     }
 
@@ -72,7 +76,7 @@ class SymbolVisitor : Visitor() {
 
     override fun preVisit(varDecl: VarDecl) {
         varDecl.ids.forEach { id ->
-            currentTable.insert(
+            symbolTable.insert(
                 Symbol(
                     id, SymbolType.Variable, currentScopeLevel, mutableMapOf(
                         "variableOffset" to varCountStack.peek(),
@@ -82,18 +86,18 @@ class SymbolVisitor : Visitor() {
             )
             varCountStack.apply { it + 1 }
         }
-        varDecl.symbolTable = currentTable
+        varDecl.symbolTable = symbolTable
     }
 
     override fun preVisit(varAssign: VarAssign) {
         varAssign.ids.forEach {
-            currentTable.lookup(it)?.info?.set("expr", varAssign.expr)
+            symbolTable.lookup(it)?.info?.set("expr", varAssign.expr)
         }
     }
 
     override fun preVisit(fieldDecl: FieldDecl) {
         for (id in fieldDecl.ids) {
-            currentTable.insert(
+            symbolTable.insert(
                 Symbol(
                     id, SymbolType.Field, currentScopeLevel, mutableMapOf(
                         "fieldOffset" to varCountStack.peek(),
@@ -103,11 +107,11 @@ class SymbolVisitor : Visitor() {
             )
             varCountStack.apply { it + 1 }
         }
-        fieldDecl.symbolTable = currentTable
+        fieldDecl.symbolTable = symbolTable
     }
 
     override fun preVisit(classDecl: ClassDecl) {
-        currentTable.insert(
+        symbolTable.insert(
             Symbol(
                 classDecl.id,
                 SymbolType.Class,
@@ -117,7 +121,7 @@ class SymbolVisitor : Visitor() {
         )
         createNewScope()
         for ((index, field) in classDecl.constructor.withIndex()) {
-            currentTable.insert(
+            symbolTable.insert(
                 Symbol(
                     field.first,
                     SymbolType.Field,
@@ -127,7 +131,7 @@ class SymbolVisitor : Visitor() {
             )
         }
         val classDefinition = ClassDefinition(classDecl.id, classDecl, baseClass, classDecl.superclassArgs)
-        classDefinition.symbolTable = currentTable
+        classDefinition.symbolTable = symbolTable
         classDefinitions.add(classDefinition)
         varCountStack.push(classDecl.constructor.size)
     }
