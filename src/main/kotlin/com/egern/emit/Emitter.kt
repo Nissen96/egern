@@ -42,8 +42,8 @@ abstract class Emitter(
         return builder.toFinalStr()
     }
 
-    protected fun makeComment(text: String): Comment {
-        return Comment(syntax.commentSym(), text)
+    protected fun makeComment(text: String): String {
+        return "${syntax.commentSym()} $text"
     }
 
     private fun emitProgramPrologue() {
