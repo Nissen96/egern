@@ -51,7 +51,9 @@ class IntelSyntax : SyntaxManager() {
     private fun emitDataSection(asmStringBuilder: AsmStringBuilder, staticStrings: Map<String, String>) {
         asmStringBuilder.addLine("section", ".data")
         staticStrings.forEach {
-            asmStringBuilder.addLine("${it.key}: db \"${it.value}\", 0")
+            asmStringBuilder.addLine(
+                "${it.key}: db \"${it.value}\"${if (it.key.startsWith("format_")) ", 10" else ""}, 0"
+            )
         }
         asmStringBuilder.newline()
     }
