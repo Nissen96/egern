@@ -94,10 +94,15 @@ abstract class SymbolAwareVisitor(
             if (methodCall is StaticMethodCall) CLASS(methodCall.classId)
             else getObjectClass(methodCall.objectId)
 
-        // TODO HANDLE INTERFACES
-        val classDefinition = classDefinitions.find { it.className == callerClass.className }!!
-        val methods = classDefinition.getAllMethods(callerClass.castTo ?: callerClass.className)
-        return methods.find { it.id == methodCall.methodId }!!.returnType
+        // Find method in class or interface
+        val classDefinition = classDefinitions.find { it.className == callerClass.className }
+        return if (classDefinition != null) {
+            val methods = classDefinition.getAllMethods(callerClass.castTo ?: callerClass.className)
+            methods.find { it.id == methodCall.methodId }!!.returnType
+        } else {
+            val interfaceDecl = interfaces.find { it.id == callerClass.className }!!
+            interfaceDecl.methodSignatures.find { it.id == methodCall.methodId }!!.returnType
+        }
     }
 
     private fun deriveClassFieldType(classField: ClassField): ExprType {
