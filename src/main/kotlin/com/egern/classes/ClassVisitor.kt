@@ -2,14 +2,12 @@ package com.egern.classes
 
 import com.egern.ast.*
 import com.egern.symbols.ClassDefinition
-import com.egern.symbols.SymbolTable
-import com.egern.visitor.SymbolAwareVisitor
+import com.egern.visitor.Visitor
 
 class ClassVisitor(
-    symbolTable: SymbolTable,
-    classDefinitions: MutableList<ClassDefinition>,
+    val classDefinitions: List<ClassDefinition>,
     val interfaces: List<InterfaceDecl>
-) : SymbolAwareVisitor(symbolTable, classDefinitions) {
+) : Visitor() {
     override fun preVisit(classDecl: ClassDecl) {
         val currentClass = classDefinitions.find { it.className == classDecl.id }!!
         val superclass = classDefinitions.find { it.className == classDecl.superclass }

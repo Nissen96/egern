@@ -10,8 +10,10 @@ import com.egern.visitor.SymbolAwareVisitor
 import java.lang.Exception
 
 class TypeCheckingVisitor(
-    currentTable: SymbolTable, classDefinitions: MutableList<ClassDefinition>
-) : SymbolAwareVisitor(symbolTable = currentTable, classDefinitions = classDefinitions) {
+    symbolTable: SymbolTable,
+    classDefinitions: List<ClassDefinition>,
+    interfaces: List<InterfaceDecl>
+) : SymbolAwareVisitor(symbolTable, classDefinitions, interfaces) {
     private val functionStack = stackOf<FuncDecl>()
     private var currentClass: ClassDefinition? = null
 

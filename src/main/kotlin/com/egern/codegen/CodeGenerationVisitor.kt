@@ -12,8 +12,10 @@ import com.egern.visitor.SymbolAwareVisitor
 import kotlin.math.max
 import kotlin.math.min
 
-class CodeGenerationVisitor(symbolTable: SymbolTable, classDefinitions: MutableList<ClassDefinition>) :
-    SymbolAwareVisitor(symbolTable, classDefinitions) {
+class CodeGenerationVisitor(
+    symbolTable: SymbolTable,
+    classDefinitions: List<ClassDefinition>
+) : SymbolAwareVisitor(symbolTable, classDefinitions) {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
     val staticStrings = mutableMapOf(

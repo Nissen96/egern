@@ -11,7 +11,8 @@ import java.lang.Exception
 
 abstract class SymbolAwareVisitor(
     var symbolTable: SymbolTable,
-    val classDefinitions: MutableList<ClassDefinition>
+    val classDefinitions: List<ClassDefinition>,
+    val interfaces: List<InterfaceDecl> = emptyList()
 ) : Visitor() {
     // Utility functions
     fun deriveType(expr: Expr): ExprType {
