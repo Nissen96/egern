@@ -19,9 +19,9 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     val staticStrings = mutableMapOf(
         "boolean_true" to "true",
         "boolean_false" to "false",
-        "format_int" to "%d",
-        "format_newline" to "",
-        "format_string" to "%s"
+        "format_int" to "%d\\n",
+        "format_newline" to "\\n",
+        "format_string" to "%s\\n"
     )
     private val functionStack = stackOf<FuncDecl>()
     private var currentClassDefinition: ClassDefinition? = null

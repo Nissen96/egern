@@ -27,23 +27,19 @@ class WindowsEmitter(
     }
 
     override fun emitAllocateProgramHeap() {
-        wrapCallInShadowSpace { emitAllocateProgramHeapBase() }
+        wrapCallInShadowSpace { super.emitAllocateProgramHeap() }
     }
 
     override fun emitAllocateVTable() {
-        wrapCallInShadowSpace { emitAllocateVTableBase() }
+        wrapCallInShadowSpace { super.emitAllocateVTable() }
     }
 
     override fun emitDeallocateInternalHeap(pointer: String) {
-        allocateShadowSpace()
-        emitDeallocateInternalHeapBase(pointer)
-        deallocateShadowSpace()
+        wrapCallInShadowSpace { super.emitDeallocateInternalHeap(pointer) }
     }
 
-    override fun emitPrint(type: Int) {
-        allocateShadowSpace()
-        emitPrintBase(type, SHADOW_SPACE_SIZE)
-        deallocateShadowSpace()
+    override fun emitPrint(typeValue: Int) {
+        wrapCallInShadowSpace { super.emitPrint(typeValue, SHADOW_SPACE_SIZE) }
     }
 
     private fun allocateShadowSpace() {

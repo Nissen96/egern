@@ -31,8 +31,12 @@ class IntelSyntax : SyntaxManager() {
         return ""
     }
 
-    override fun emitPrologue(asmStringBuilder: AsmStringBuilder, mainLabel: String, platformPrefix: String, dataFields: List<String>,
-                              staticStrings: Map<String, String>) {
+    override fun emitPrologue(
+        asmStringBuilder: AsmStringBuilder,
+        mainLabel: String,
+        platformPrefix: String, dataFields: List<String>,
+        staticStrings: Map<String, String>
+    ) {
         asmStringBuilder
             .addLine("global", mainLabel)
             .addLine("default", "rel")
@@ -47,11 +51,7 @@ class IntelSyntax : SyntaxManager() {
     private fun emitDataSection(asmStringBuilder: AsmStringBuilder, staticStrings: Map<String, String>) {
         asmStringBuilder.addLine("section", ".data")
         staticStrings.forEach {
-            if (it.key != "format_string")
-                asmStringBuilder.addLine("${it.key}: db \"${it.value}\", 10, 0")
-            else
-                asmStringBuilder.addLine("${it.key}: db \"${it.value}\", 0")
-
+            asmStringBuilder.addLine("${it.key}: db \"${it.value}\", 0")
         }
         asmStringBuilder.newline()
     }

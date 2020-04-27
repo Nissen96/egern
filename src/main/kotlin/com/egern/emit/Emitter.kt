@@ -5,18 +5,15 @@ import com.egern.types.ExprTypeEnum
 
 abstract class Emitter(
     private val instructions: List<Instruction>,
-    protected val dataFields: MutableList<String>,
-    protected val staticStrings: Map<String, String>,
+    private val dataFields: MutableList<String>,
+    private val staticStrings: Map<String, String>,
     protected val builder: AsmStringBuilder,
     protected val syntax: SyntaxManager
 ) {
     abstract fun emitProgramEpilogue()
-    abstract fun emitAllocateProgramHeap()
-    abstract fun emitAllocateVTable()
-    abstract fun emitDeallocateInternalHeap(pointer: String)
-    abstract fun emitPrint(type: Int)
     abstract fun emitMainLabel(): String
-    abstract val paramPassingRegs: List<String>
+
+    open val paramPassingRegs: List<String> = listOf("rdi", "rsi", "rdx", "rcx", "r8", "r9")
 
     // Defaults to nothing; can be overwritten
     open fun addPlatformPrefix(symbol: String): String {
@@ -49,14 +46,18 @@ abstract class Emitter(
         return Comment(syntax.commentSym(), text)
     }
 
-    fun emitProgramPrologue() {
+    private fun emitProgramPrologue() {
         dataFields.add(HEAP_POINTER)
         dataFields.add(VTABLE_POINTER)
-        syntax.emitPrologue(builder,  emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
+        syntax.emitPrologue(builder, emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
     }
 
-    protected fun emitPrintBase(value: Int, additionalOffset: Int = 0) {
-        val enumType = ExprTypeEnum.fromInt(value)
+    open fun emitPrint(typeValue: Int) {
+        emitPrint(typeValue, 0)
+    }
+
+    fun emitPrint(typeValue: Int, additionalOffset: Int) {
+        val enumType = ExprTypeEnum.fromInt(typeValue)
         val type = when (enumType) {
             ExprTypeEnum.VOID -> "newline"
             ExprTypeEnum.STRING -> "string"
@@ -81,7 +82,10 @@ abstract class Emitter(
             )
         if (enumType != ExprTypeEnum.VOID) {
             val (arg3, arg4) = syntax.argOrder(
-                syntax.indirectRelative(syntax.register("rsp"), -ADDRESSING_OFFSET * CALLER_SAVE_REGISTERS.size + additionalOffset),
+                syntax.indirectRelative(
+                    syntax.register("rsp"),
+                    -ADDRESSING_OFFSET * CALLER_SAVE_REGISTERS.size + additionalOffset
+                ),
                 syntax.register(paramPassingRegs[1])
             )
             builder.addLine(
@@ -104,8 +108,11 @@ abstract class Emitter(
         emitAllocateVTable()
     }
 
-    protected fun emitAllocateProgramHeapBase() {
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"), syntax.register(paramPassingRegs[0]))
+    open fun emitAllocateProgramHeap() {
+        val (arg1, arg2) = syntax.argOrder(
+            syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"),
+            syntax.register(paramPassingRegs[0])
+        )
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
         val (arg5, arg6) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(HEAP_POINTER))
         builder
@@ -125,15 +132,17 @@ abstract class Emitter(
 
     }
 
-    protected fun emitAllocateVTableBase() {
-
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"), syntax.register(paramPassingRegs[0]))
+    open fun emitAllocateVTable() {
+        val (arg1, arg2) = syntax.argOrder(
+            syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"),
+            syntax.register(paramPassingRegs[0])
+        )
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(VTABLE_POINTER))
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
                 makeComment("Move argument into parameter register for malloc call")
-             )
+            )
             .addLine("call ${addPlatformPrefix("malloc")}")
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
@@ -146,7 +155,7 @@ abstract class Emitter(
         emitDeallocateInternalHeap(HEAP_POINTER)
     }
 
-    protected fun emitDeallocateInternalHeapBase(pointer: String) {
+    open fun emitDeallocateInternalHeap(pointer: String) {
         val (arg1, arg2) = syntax.argOrder(pointer, syntax.register(paramPassingRegs[0]))
         builder
             .addLine(
@@ -179,7 +188,8 @@ abstract class Emitter(
         builder.addOp(instr)
 
         // Check for indirect function call
-        val prefix = if ((instruction.args[0] as InstructionArg).instructionTarget is Register) syntax.indirectFuncCall() else ""
+        val prefix =
+            if ((instruction.args[0] as InstructionArg).instructionTarget is Register) syntax.indirectFuncCall() else ""
         builder.addRegs("$prefix${emitArg(instruction.args[0])}")
     }
 
@@ -279,7 +289,12 @@ abstract class Emitter(
                 syntax.register("rbp"),
                 comment = makeComment("Save caller's base pointer")
             )
-            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, makeComment("Make stack pointer new base pointer"))
+            .addLine(
+                syntax.ops.getValue(InstructionType.MOV),
+                reg1,
+                reg2,
+                makeComment("Make stack pointer new base pointer")
+            )
     }
 
     private fun emitCalleeEpilogue() {
@@ -288,7 +303,11 @@ abstract class Emitter(
             .addComment(makeComment("Callee Epilogue"))
             .newline()
             .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, makeComment("Restore stack pointer"))
-            .addLine(syntax.ops.getValue(InstructionType.POP), syntax.register("rbp"), comment = makeComment("Restore base pointer"))
+            .addLine(
+                syntax.ops.getValue(InstructionType.POP),
+                syntax.register("rbp"),
+                comment = makeComment("Restore base pointer")
+            )
             .addLine(syntax.ops.getValue(InstructionType.RET), comment = makeComment("Return from call"))
     }
 

@@ -10,8 +10,6 @@ class MacOSEmitter(
 ) :
     Emitter(instructions, dataFields, staticStrings, AsmStringBuilder(), syntax) {
 
-    override val paramPassingRegs: List<String> = listOf("rdi", "rsi", "rdx", "rcx", "r8", "r9")
-
     override fun addPlatformPrefix(symbol: String): String {
         return "_$symbol"
     }
@@ -21,18 +19,22 @@ class MacOSEmitter(
     }
 
     override fun emitAllocateProgramHeap() {
+        super.emitAllocateProgramHeap()
         TODO("Not yet implemented")
     }
 
     override fun emitAllocateVTable() {
+        super.emitAllocateVTable()
         TODO("Not yet implemented")
     }
 
     override fun emitDeallocateInternalHeap(pointer: String) {
+        super.emitDeallocateInternalHeap(pointer)
         TODO("Not yet implemented")
     }
 
-    override fun emitPrint(type: Int) {
+    override fun emitPrint(typeValue: Int) {
+        super.emitPrint(typeValue, 0)
         TODO("Not yet implemented")
     }
 
