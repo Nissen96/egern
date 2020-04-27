@@ -9,7 +9,6 @@ class MethodSignature(
     val returnType: ExprType,
     lineNumber: Int, charPosition: Int
 ) : ASTNode(lineNumber, charPosition) {
-
     override fun accept(visitor: Visitor) {
         visitor.visit(this)
     }

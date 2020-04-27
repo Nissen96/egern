@@ -8,8 +8,7 @@ class ArrayIndexExpr(
     val reference: Boolean = false,
     lineNumber: Int,
     charPosition: Int
-) :
-    Expr(lineNumber, charPosition) {
+) : Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)
         indices.reversed().forEach {

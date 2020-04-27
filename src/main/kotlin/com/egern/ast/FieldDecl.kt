@@ -10,8 +10,7 @@ class FieldDecl(
     val modifiers: EnumSet<Modifier>,
     lineNumber: Int,
     charPosition: Int
-) :
-    Statement(lineNumber, charPosition) {
+) : Statement(lineNumber, charPosition) {
     lateinit var staticDataField: String
     lateinit var symbolTable: SymbolTable
 

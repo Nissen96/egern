@@ -37,8 +37,8 @@ class MacOSEmitter(
         TODO("Not yet implemented")
     }
 
-    private var printfCounter = 0
-
+//    private var printfCounter = 0
+//
 //    override fun emitPrint(value: Int) {
 //        // TODO: double check alignment (MacOS requires 16 byte)
 //        // TODO: handle print empty

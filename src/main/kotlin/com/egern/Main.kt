@@ -60,7 +60,11 @@ fun main(args: Array<String>) {
         println()
     }
 
-    val typeCheckingVisitor = TypeCheckingVisitor(symbolVisitor.symbolTable, classVisitor.classDefinitions, classVisitor.interfaces)
+    val typeCheckingVisitor = TypeCheckingVisitor(
+        symbolVisitor.symbolTable,
+        classVisitor.classDefinitions,
+        classVisitor.interfaces
+    )
     ast.accept(typeCheckingVisitor)
 
     val platform = PlatformManager()

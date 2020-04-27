@@ -8,7 +8,6 @@ class LinuxEmitter(
     staticStrings: Map<String, String>,
     syntax: SyntaxManager
 ) : Emitter(instructions, dataFields, staticStrings, syntax) {
-
     override fun emitProgramEpilogue() {
         // Empty epilogue
     }

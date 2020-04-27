@@ -4,7 +4,6 @@ import com.egern.ast.ClassDecl
 import com.egern.ast.FuncDecl
 import com.egern.ast.IfElse
 import com.egern.ast.WhileLoop
-import com.egern.labels.LabelGenerator
 import com.egern.visitor.Visitor
 
 class LabelGenerationVisitor : Visitor() {
