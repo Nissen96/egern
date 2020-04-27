@@ -8,13 +8,12 @@ import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.types.ExprTypeEnum
 import com.egern.util.*
-import com.egern.visitor.FancyVisitor
-import com.egern.visitor.Visitor
+import com.egern.visitor.SymbolAwareVisitor
 import kotlin.math.max
 import kotlin.math.min
 
 class CodeGenerationVisitor(symbolTable: SymbolTable, classDefinitions: MutableList<ClassDefinition>) :
-    FancyVisitor(symbolTable, classDefinitions) {
+    SymbolAwareVisitor(symbolTable, classDefinitions) {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
     val staticStrings = mutableMapOf(

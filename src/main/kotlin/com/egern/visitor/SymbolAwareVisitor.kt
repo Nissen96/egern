@@ -9,7 +9,7 @@ import com.egern.symbols.SymbolType
 import com.egern.types.*
 import java.lang.Exception
 
-abstract class FancyVisitor(
+abstract class SymbolAwareVisitor(
     var symbolTable: SymbolTable,
     val classDefinitions: MutableList<ClassDefinition>
 ) : Visitor() {

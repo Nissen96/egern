@@ -2,10 +2,9 @@ package com.egern.symbols
 
 import com.egern.ast.*
 import com.egern.util.*
-import com.egern.visitor.FancyVisitor
-import com.egern.visitor.Visitor
+import com.egern.visitor.SymbolAwareVisitor
 
-class SymbolVisitor : FancyVisitor(symbolTable = SymbolTable(0, null), classDefinitions = mutableListOf()) {
+class SymbolVisitor : SymbolAwareVisitor(symbolTable = SymbolTable(0, null), classDefinitions = mutableListOf()) {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
     private val baseClass = ClassDefinition(

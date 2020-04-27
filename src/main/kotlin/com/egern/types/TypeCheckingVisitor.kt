@@ -3,17 +3,15 @@ package com.egern.types
 import com.egern.ast.*
 import com.egern.error.ErrorLogger
 import com.egern.symbols.ClassDefinition
-import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.util.*
-import com.egern.visitor.FancyVisitor
-import com.egern.visitor.Visitor
+import com.egern.visitor.SymbolAwareVisitor
 import java.lang.Exception
 
 class TypeCheckingVisitor(
     currentTable: SymbolTable, classDefinitions: MutableList<ClassDefinition>
-) : FancyVisitor(symbolTable = currentTable, classDefinitions = classDefinitions) {
+) : SymbolAwareVisitor(symbolTable = currentTable, classDefinitions = classDefinitions) {
     private val functionStack = stackOf<FuncDecl>()
     private var currentClass: ClassDefinition? = null
 
