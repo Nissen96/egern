@@ -13,6 +13,15 @@ class ClassDefinition(
     var vTableOffset: Int = -1
     lateinit var symbolTable: SymbolTable
 
+    fun getSuperclasses(): List<String> {
+        // Insert interface before Base class
+        if (interfaceDecl != null) {
+            return listOf(className, interfaceDecl!!.id, "Base")
+        }
+
+        return listOf(className) + (superclass?.getSuperclasses() ?: emptyList())
+    }
+
     fun getAllMethods(): List<FuncDecl> {
         return (superclass?.getAllMethods() ?: emptyList()) + classDecl.methods
     }

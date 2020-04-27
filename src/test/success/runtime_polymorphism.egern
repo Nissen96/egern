@@ -31,10 +31,22 @@ class Brunsviger(): Cake {
 
 var brownie = Brownie()
 var brunsviger = Brunsviger()
-var cakes = [brownie, brunsviger]
+var cakes = [
+    [[brownie, brunsviger]],
+    [[brownie], [brownie, brownie]],
+    [[brunsviger, brunsviger]]
+]
 var i = 0
 while (i < len(cakes)) {
-    var cake = cakes[i]
-    print(cake.getIngredients()[0])
+    var j = 0
+    while (j < len(cakes[i])) {
+        var k = 0
+        while (k < len(cakes[i][j])) {
+            var cake = cakes[i][j][k]
+            print(cake.getIngredients()[0])
+            k += 1
+        }
+        j += 1
+    }
     i += 1
 }
