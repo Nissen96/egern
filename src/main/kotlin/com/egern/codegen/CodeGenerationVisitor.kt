@@ -8,12 +8,12 @@ import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
 import com.egern.types.ExprTypeEnum
 import com.egern.util.*
-import com.egern.visitor.Visitor
+import com.egern.visitor.SymbolAwareVisitor
 import kotlin.math.max
 import kotlin.math.min
 
-class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val classDefinitions: List<ClassDefinition>) :
-    Visitor() {
+class CodeGenerationVisitor(symbolTable: SymbolTable, classDefinitions: MutableList<ClassDefinition>) :
+    SymbolAwareVisitor(symbolTable, classDefinitions) {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
     val staticStrings = mutableMapOf(
@@ -898,7 +898,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     override fun postVisit(methodCall: MethodCall) {
         // VTable lookup
-        val objectClass = getObjectClass(methodCall.objectId, symbolTable, classDefinitions)
+        val objectClass = getObjectClass(methodCall.objectId)
         val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
         val vTablePointer = classDefinition.vTableOffset
 
@@ -934,7 +934,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
     }
 
     override fun visit(classField: ClassField) {
-        val objectClass = getObjectClass(classField.objectId, symbolTable, classDefinitions)
+        val objectClass = getObjectClass(classField.objectId)
         val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
         val fieldOffset = classDefinition.getFieldOffset(classField.fieldId, objectClass.castTo)
         val objectPointer = getIdLocation(classField.objectId)
@@ -1013,9 +1013,7 @@ class CodeGenerationVisitor(private var symbolTable: SymbolTable, private val cl
 
     override fun postVisit(printStmt: PrintStmt) {
         val type = if (printStmt.expr != null) deriveType(
-            printStmt.expr,
-            symbolTable,
-            classDefinitions
+            printStmt.expr
         ).type else ExprTypeEnum.VOID
 
         // Special case for booleans, we want to print 'true' or 'false'
