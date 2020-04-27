@@ -8,7 +8,7 @@ class WindowsEmitter(
     dataFields: MutableList<String>,
     staticStrings: Map<String, String>,
     syntax: SyntaxManager
-) : Emitter(instructions, dataFields, staticStrings, AsmStringBuilder(), syntax) {
+) : Emitter(instructions, dataFields, staticStrings, syntax) {
 
     override val paramPassingRegs: List<String> = listOf("rcx", "rdx", "r8", "r9")
 
@@ -44,12 +44,12 @@ class WindowsEmitter(
 
     private fun allocateShadowSpace() {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("$SHADOW_SPACE_SIZE"), syntax.register("rsp"))
-        builder.addLine(syntax.ops.getValue(InstructionType.SUB), arg1, arg2, makeComment("Allocate shadow space"))
+        builder.addLine(syntax.ops.getValue(InstructionType.SUB), arg1, arg2, "Allocate shadow space")
     }
 
     private fun deallocateShadowSpace() {
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("$SHADOW_SPACE_SIZE"), syntax.register("rsp"))
-        builder.addLine(syntax.ops.getValue(InstructionType.ADD), arg1, arg2, makeComment("Deallocate shadow space"))
+        builder.addLine(syntax.ops.getValue(InstructionType.ADD), arg1, arg2, "Deallocate shadow space")
     }
 
     override fun emitMainLabel(): String {

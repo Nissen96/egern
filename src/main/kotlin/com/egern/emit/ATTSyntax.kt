@@ -3,6 +3,8 @@ package com.egern.emit
 import com.egern.codegen.InstructionType
 
 class ATTSyntax : SyntaxManager() {
+    override val commentSymbol = "#"
+
     override fun argOrder(source: String, destination: String): Pair<String, String> {
         return Pair(source, destination)
     }
@@ -21,10 +23,6 @@ class ATTSyntax : SyntaxManager() {
 
     override fun indirectRelative(target: String, offset: Int): String {
         return "$offset($target)"
-    }
-
-    override fun commentSym(): String {
-        return "#"
     }
 
     override fun indirectFuncCall(): String {

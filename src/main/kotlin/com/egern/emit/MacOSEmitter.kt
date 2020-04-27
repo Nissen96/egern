@@ -8,7 +8,7 @@ class MacOSEmitter(
     staticStrings: Map<String, String>,
     syntax: SyntaxManager
 ) :
-    Emitter(instructions, dataFields, staticStrings, AsmStringBuilder(), syntax) {
+    Emitter(instructions, dataFields, staticStrings, syntax) {
 
     override fun addPlatformPrefix(symbol: String): String {
         return "_$symbol"

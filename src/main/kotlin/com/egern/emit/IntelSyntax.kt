@@ -3,6 +3,8 @@ package com.egern.emit
 import com.egern.codegen.InstructionType
 
 class IntelSyntax : SyntaxManager() {
+    override val commentSymbol = ";"
+
     override fun argOrder(source: String, destination: String): Pair<String, String> {
         return Pair(destination, source)
     }
@@ -21,10 +23,6 @@ class IntelSyntax : SyntaxManager() {
 
     override fun indirectRelative(target: String, offset: Int): String {
         return "qword [$target + $offset]"
-    }
-
-    override fun commentSym(): String {
-        return ";"
     }
 
     override fun indirectFuncCall(): String {

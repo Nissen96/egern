@@ -7,13 +7,13 @@ abstract class Emitter(
     private val instructions: List<Instruction>,
     private val dataFields: MutableList<String>,
     private val staticStrings: Map<String, String>,
-    protected val builder: AsmStringBuilder,
     protected val syntax: SyntaxManager
 ) {
+    protected val builder = AsmStringBuilder(syntax.commentSymbol)
+    open val paramPassingRegs: List<String> = listOf("rdi", "rsi", "rdx", "rcx", "r8", "r9")
+
     abstract fun emitProgramEpilogue()
     abstract fun emitMainLabel(): String
-
-    open val paramPassingRegs: List<String> = listOf("rdi", "rsi", "rdx", "rcx", "r8", "r9")
 
     // Defaults to nothing; can be overwritten
     open fun addPlatformPrefix(symbol: String): String {
@@ -40,10 +40,6 @@ abstract class Emitter(
         emitProgramEpilogue()
 
         return builder.toFinalStr()
-    }
-
-    protected fun makeComment(text: String): String {
-        return "${syntax.commentSym()} $text"
     }
 
     private fun emitProgramPrologue() {
@@ -73,12 +69,12 @@ abstract class Emitter(
 
         builder
             .newline()
-            .addComment(comment = makeComment("PRINTING USING PRINTF"))
+            .addComment(comment = "PRINTING USING PRINTF")
             .newline()
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV),
                 arg1, arg2,
-                makeComment("Pass formatting as 1st argument in ${paramPassingRegs[0]}")
+                "Pass formatting as 1st argument in ${paramPassingRegs[0]}"
             )
         if (enumType != ExprTypeEnum.VOID) {
             val (arg3, arg4) = syntax.argOrder(
@@ -90,7 +86,7 @@ abstract class Emitter(
             )
             builder.addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
-                makeComment("Pass possible value to print as 2nd argument in ${paramPassingRegs[1]}")
+                "Pass possible value to print as 2nd argument in ${paramPassingRegs[1]}"
             )
         }
         builder
@@ -98,9 +94,9 @@ abstract class Emitter(
                 syntax.ops.getValue(InstructionType.XOR),
                 syntax.register("rax"),
                 syntax.register("rax"),
-                makeComment("No floating point registers used")
+                "No floating point registers used"
             )
-            .addLine("call", addPlatformPrefix("printf"), comment = makeComment("Call function printf"))
+            .addLine("call", addPlatformPrefix("printf"), comment = "Call function printf")
     }
 
     private fun emitAllocateInternalHeaps() {
@@ -118,16 +114,16 @@ abstract class Emitter(
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-                makeComment("Move argument into parameter register for malloc call")
+                "Move argument into parameter register for malloc call"
             )
             .addLine("call ${addPlatformPrefix("malloc")}")
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
-                makeComment("Move returned heap pointer to fixed heap pointer register")
+                "Move returned heap pointer to fixed heap pointer register"
             )
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg5, arg6,
-                makeComment("Save start of heap pointer globally")
+                "Save start of heap pointer globally"
             )
 
     }
@@ -141,12 +137,12 @@ abstract class Emitter(
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-                makeComment("Move argument into parameter register for malloc call")
+                "Move argument into parameter register for malloc call"
             )
             .addLine("call ${addPlatformPrefix("malloc")}")
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg3, arg4,
-                makeComment("Save start of vtable pointer globally")
+                "Save start of vtable pointer globally"
             )
     }
 
@@ -160,7 +156,7 @@ abstract class Emitter(
         builder
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-                makeComment("Move argument into parameter register for free call")
+                "Move argument into parameter register for free call"
             )
             .addLine("call ${addPlatformPrefix("free")}")
     }
@@ -178,7 +174,7 @@ abstract class Emitter(
         }
         // Add comment
         if (instruction.comment != null) {
-            builder.addComment(makeComment(instruction.comment))
+            builder.addComment(instruction.comment)
         }
         builder.newline()
     }
@@ -271,7 +267,7 @@ abstract class Emitter(
         val op = if (restore) InstructionType.POP else InstructionType.PUSH
         builder
             .newline()
-            .addComment(makeComment("Caller/Callee ${if (restore) "Restore" else "Save"}"))
+            .addComment("Caller/Callee ${if (restore) "Restore" else "Save"}")
             .newline()
         for (register in (if (restore) registers.reversed() else registers)) {
             builder.addLine(syntax.ops.getValue(op), syntax.register(register))
@@ -282,33 +278,33 @@ abstract class Emitter(
     private fun emitCalleePrologue() {
         val (reg1, reg2) = syntax.argOrder(syntax.register("rsp"), syntax.register("rbp"))
         builder
-            .addComment(makeComment("Callee Prologue"))
+            .addComment("Callee Prologue")
             .newline()
             .addLine(
                 syntax.ops.getValue(InstructionType.PUSH),
                 syntax.register("rbp"),
-                comment = makeComment("Save caller's base pointer")
+                comment = "Save caller's base pointer"
             )
             .addLine(
                 syntax.ops.getValue(InstructionType.MOV),
                 reg1,
                 reg2,
-                makeComment("Make stack pointer new base pointer")
+                "Make stack pointer new base pointer"
             )
     }
 
     private fun emitCalleeEpilogue() {
         val (reg1, reg2) = syntax.argOrder(syntax.register("rbp"), syntax.register("rsp"))
         builder
-            .addComment(makeComment("Callee Epilogue"))
+            .addComment("Callee Epilogue")
             .newline()
-            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, makeComment("Restore stack pointer"))
+            .addLine(syntax.ops.getValue(InstructionType.MOV), reg1, reg2, "Restore stack pointer")
             .addLine(
                 syntax.ops.getValue(InstructionType.POP),
                 syntax.register("rbp"),
-                comment = makeComment("Restore base pointer")
+                comment = "Restore base pointer"
             )
-            .addLine(syntax.ops.getValue(InstructionType.RET), comment = makeComment("Return from call"))
+            .addLine(syntax.ops.getValue(InstructionType.RET), comment = "Return from call")
     }
 
     private fun emitLabel(instruction: Instruction) {
@@ -321,28 +317,28 @@ abstract class Emitter(
     private fun emitPerformDivision(inst: Instruction) {
         val (arg1, arg2) = syntax.argOrder(emitArg(inst.args[1]), syntax.register("rax"))
         builder
-            .addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, makeComment("Setup dividend"))
-            .addLine("cqo", comment = makeComment("Sign extend into rdx"))
-            .addLine(syntax.ops.getValue(InstructionType.IDIV), emitArg(inst.args[0]), comment = makeComment("Divide"))
+            .addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Setup dividend")
+            .addLine("cqo", comment = "Sign extend into rdx")
+            .addLine(syntax.ops.getValue(InstructionType.IDIV), emitArg(inst.args[0]), comment = "Divide")
     }
 
     private fun emitDivision(inst: Instruction) {
         emitPerformDivision(inst)
         val (arg1, arg2) = syntax.argOrder(syntax.register("rax"), emitArg(inst.args[1]))
-        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, makeComment("Move resulting quotient"))
+        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Move resulting quotient")
     }
 
     private fun emitModulo(inst: Instruction) {
         emitPerformDivision(inst)
         val (arg1, arg2) = syntax.argOrder(syntax.register("rdx"), emitArg(inst.args[1]))
-        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, makeComment("Move resulting remainder"))
+        builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Move resulting remainder")
     }
 
     private fun emitBooleanNot(inst: Instruction) {
         val arg = emitArg(inst.args[0])
         builder
-            .addLine("test", arg, arg, makeComment("Test argument with itself"))
-            .addLine("setz", "${arg}b", comment = makeComment("Set first byte to 1 if zero etc."))
+            .addLine("test", arg, arg, "Test argument with itself")
+            .addLine("setz", "${arg}b", comment = "Set first byte to 1 if zero etc.")
     }
 
     private fun emitAllocateHeapSpace(size: Int) {
@@ -350,10 +346,10 @@ abstract class Emitter(
         val (arg3, arg4) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * size}"), emitInstructionTarget(RHP))
         builder.addLine(
             syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-            makeComment("Move pointer to return value")
+            "Move pointer to return value"
         ).addLine(
             syntax.ops.getValue(InstructionType.ADD), arg3, arg4,
-            makeComment("Offset pointer by allocated bytes")
+            "Offset pointer by allocated bytes"
         )
     }
 
@@ -374,7 +370,7 @@ abstract class Emitter(
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${-VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
-            makeComment("Move stack pointer to allocate space for local variables")
+            "Move stack pointer to allocate space for local variables"
         )
     }
 
@@ -382,7 +378,7 @@ abstract class Emitter(
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * numVariables}"), syntax.register("rsp"))
         builder.addLine(
             syntax.ops.getValue(InstructionType.ADD), arg1, arg2,
-            makeComment("Move stack pointer to deallocate space for local variables")
+            "Move stack pointer to deallocate space for local variables"
         )
     }
 }
