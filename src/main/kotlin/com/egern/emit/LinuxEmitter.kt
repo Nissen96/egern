@@ -26,6 +26,10 @@ class LinuxEmitter(
         emitAllocateVTableBase()
     }
 
+    override fun emitDeallocateInternalHeap(pointer: String) {
+        emitDeallocateInternalHeapBase(pointer)
+    }
+
     override fun emitPrint(type: Int) {
         emitPrintBase(type)
     }

@@ -13,6 +13,7 @@ abstract class Emitter(
     abstract fun emitProgramEpilogue()
     abstract fun emitAllocateProgramHeap()
     abstract fun emitAllocateVTable()
+    abstract fun emitDeallocateInternalHeap(pointer: String)
     abstract fun emitPrint(type: Int)
     abstract fun emitMainLabel(): String
     abstract val paramPassingRegs: List<String>
@@ -104,7 +105,6 @@ abstract class Emitter(
     }
 
     protected fun emitAllocateProgramHeapBase() {
-
         val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"), syntax.register(paramPassingRegs[0]))
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
         val (arg5, arg6) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(HEAP_POINTER))
@@ -142,22 +142,19 @@ abstract class Emitter(
     }
 
     private fun emitDeallocateInternalHeaps() {
-//        emitDeallocateInternalHeap(VTABLE_POINTER)
-//        emitDeallocateInternalHeap(HEAP_POINTER)
-
+        emitDeallocateInternalHeap(VTABLE_POINTER)
+        emitDeallocateInternalHeap(HEAP_POINTER)
     }
 
-//    private fun emitDeallocateInternalHeap(pointer: String) {
-//        platformCallPrologue()
-//        val (arg1, arg2) = syntax.argOrder(pointer, syntax.register(paramPassingRegs[0]))
-//        builder
-//            .addLine(
-//                syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-//                makeComment("Move argument into parameter register for free call")
-//            )
-//            .addLine("call ${addPlatformPrefix("free")}")
-//        platformCallEpilogue()
-//    }
+    protected fun emitDeallocateInternalHeapBase(pointer: String) {
+        val (arg1, arg2) = syntax.argOrder(pointer, syntax.register(paramPassingRegs[0]))
+        builder
+            .addLine(
+                syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
+                makeComment("Move argument into parameter register for free call")
+            )
+            .addLine("call ${addPlatformPrefix("free")}")
+    }
 
     private fun emitInstruction(instruction: Instruction) {
         when (instruction.instructionType) {

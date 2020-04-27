@@ -34,6 +34,12 @@ class WindowsEmitter(
         wrapCallInShadowSpace { emitAllocateVTableBase() }
     }
 
+    override fun emitDeallocateInternalHeap(pointer: String) {
+        allocateShadowSpace()
+        emitDeallocateInternalHeapBase(pointer)
+        deallocateShadowSpace()
+    }
+
     override fun emitPrint(type: Int) {
         allocateShadowSpace()
         emitPrintBase(type, SHADOW_SPACE_SIZE)

@@ -28,6 +28,10 @@ class MacOSEmitter(
         TODO("Not yet implemented")
     }
 
+    override fun emitDeallocateInternalHeap(pointer: String) {
+        TODO("Not yet implemented")
+    }
+
     override fun emitPrint(type: Int) {
         TODO("Not yet implemented")
     }
