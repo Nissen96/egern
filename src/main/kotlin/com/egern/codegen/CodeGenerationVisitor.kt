@@ -934,12 +934,11 @@ class CodeGenerationVisitor(
             currentClassDefinition = currentClassDefinition?.superclass
         }
 
-        // Move all constructor args to object
+        // Move constructor args and class fields to object per superclass
         val numArgs = classDefinition.getNumConstructorArgsPerClass()
         val fieldsPerClass = classDefinition.getLocalFieldsPerClass()
-        val numSuperclasses = numArgs.size
-        repeat(numSuperclasses) { classNum ->
-            val numConstructorArgs = numArgs[classNum]
+        numArgs.zip(fieldsPerClass).forEach { (numConstructorArgs, localFields) ->
+            // Handle constructor args
             repeat(numConstructorArgs) { index ->
                 add(
                     Instruction(
@@ -960,8 +959,7 @@ class CodeGenerationVisitor(
 
             heapOffset += numConstructorArgs
 
-            // Move local class fields to object
-            val localFields = fieldsPerClass[classNum]
+            // Handle local fields
             localFields.forEachIndexed { index, fieldDecl ->
                 fieldDecl.ids.forEach { _ ->
                     add(
