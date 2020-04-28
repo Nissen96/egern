@@ -37,10 +37,6 @@ class CodeGenerationVisitor(
         const val PARAM_OFFSET = -3
 
         const val PARAMS_IN_REGISTERS = 6
-
-        // VTABLE OFFSETS
-        const val CLASS_POINTER_BITMAP_OFFSET = 1
-        const val METHOD_OFFSET = 2
     }
 
     private fun add(instruction: Instruction) {
@@ -150,49 +146,9 @@ class CodeGenerationVisitor(
 
         classDefinitions.forEach {
             it.vTableOffset = currentOffset
-            val allMethods = it.getAllMethods()
-
-            // Add size information
-            add(
-                Instruction(
-                    InstructionType.MOV,
-                    InstructionArg(ImmediateValue(allMethods.size.toString()), Direct),
-                    InstructionArg(Register(OpReg2), Direct),
-                    comment = "Store number of methods for class"
-                )
-            )
-            add(
-                Instruction(
-                    InstructionType.MOV,
-                    InstructionArg(Register(OpReg2), Direct),
-                    InstructionArg(Register(OpReg1), IndirectRelative(-currentOffset)),
-                    comment = "Add size information to Vtable"
-                )
-            )
-            currentOffset++
-
-            // Add pointer bitmap
-            val pointerBitmap = makeClassPointerBitmap(it.getAllFields())
-            add(
-                Instruction(
-                    InstructionType.MOV,
-                    InstructionArg(ImmediateValue(pointerBitmap), Direct),
-                    InstructionArg(Register(OpReg2), Direct),
-                    comment = "Store pointer bitmap of class fields"
-                )
-            )
-            add(
-                Instruction(
-                    InstructionType.MOV,
-                    InstructionArg(Register(OpReg2), Direct),
-                    InstructionArg(Register(OpReg1), IndirectRelative(-currentOffset)),
-                    comment = "Add pointer bitmap to Vtable"
-                )
-            )
-            currentOffset++
 
             // Add methods
-            allMethods.forEach { method ->
+            it.getAllMethods().forEach { method ->
                 add(
                     Instruction(
                         InstructionType.MOV,
@@ -529,7 +485,7 @@ class CodeGenerationVisitor(
 
     private fun getMethodFieldLocation(symbol: Symbol): InstructionArg {
         val fieldOffset = currentClassDefinition!!.getFieldOffset(symbol.id)
-        return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + 1)))
+        return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + 3)))
     }
 
     private fun getConstructorArgLocation(param: String): InstructionArg? {
@@ -719,13 +675,13 @@ class CodeGenerationVisitor(
             )
         )
 
-        val containsPointers = isPointer(deriveType(arrayExpr))
+        val pointerBitmap = isPointer(deriveType(arrayExpr)).toString().repeat(arrayLen)
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(ImmediateValue(containsPointers.toString()), Direct),
+                InstructionArg(ImmediateValue("0b0$pointerBitmap"), Direct),
                 InstructionArg(ReturnValue, IndirectRelative(-1)),
-                comment = "Write whether elements are references or not"
+                comment = "Write whether elements are references or not as a bitmap"
             )
         )
 
@@ -875,13 +831,14 @@ class CodeGenerationVisitor(
 
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
-        val totalFields = classDefinition.getNumFields()
+        val allFields = classDefinition.getAllFields()
+        var heapOffset = 0
 
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(totalFields + 1)
+                MetaOperationArg(allFields.size + 3)
             )
         )
 
@@ -911,6 +868,46 @@ class CodeGenerationVisitor(
                 comment = "Save class pointer at beginning of object in heap"
             )
         )
+        heapOffset++
+
+        // Insert information about number of fields
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue(allFields.size.toString()), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Store number of fields for class"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-heapOffset)),
+                comment = "Add size information to object"
+            )
+        )
+        heapOffset++
+
+        // Add pointer bitmap
+        val pointerBitmap = makeClassPointerBitmap(allFields)
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue(pointerBitmap), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Store pointer bitmap of class fields"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-heapOffset)),
+                comment = "Add pointer bitmap to object"
+            )
+        )
+        heapOffset++
 
 
         // Visit all superclass args, pushing results to stack
@@ -935,7 +932,6 @@ class CodeGenerationVisitor(
         // Move all constructor args to object
         val numArgs = classDefinition.getNumConstructorArgsPerClass()
         val fieldsPerClass = classDefinition.getLocalFieldsPerClass()
-        var heapOffset = 0
         repeat(numArgs.size) { classNum ->
             val numConstructorArgs = numArgs[classNum]
             repeat(numConstructorArgs) { index ->
@@ -950,8 +946,8 @@ class CodeGenerationVisitor(
                     Instruction(
                         InstructionType.MOV,
                         InstructionArg(Register(OpReg1), Direct),
-                        InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + numConstructorArgs - index))),
-                        comment = "Save value at object's constructor field ${heapOffset + index + 1}"
+                        InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + numConstructorArgs - index - 1))),
+                        comment = "Save value at object's constructor field ${index + 1}"
                     )
                 )
             }
@@ -975,7 +971,7 @@ class CodeGenerationVisitor(
                         Instruction(
                             InstructionType.MOV,
                             InstructionArg(Register(OpReg1), Direct),
-                            InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + fieldOffset + 1))),
+                            InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + fieldOffset))),
                             comment = "Save value at object's constructor field ${fieldOffset + 1}"
                         )
                     )
@@ -1008,7 +1004,7 @@ class CodeGenerationVisitor(
         // Find latest override of method
         val methodOffset = classDefinition.getAllMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
             it.id == methodCall.methodId
-        } + METHOD_OFFSET
+        }
         val numArgs = methodCall.args.size
 
         passFunctionArgs(numArgs)
@@ -1053,7 +1049,7 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.ADD,
-                InstructionArg(ImmediateValue("${8 * (fieldOffset + 1)}"), Direct),
+                InstructionArg(ImmediateValue("${8 * (fieldOffset + 3)}"), Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Store address of field"
             )
@@ -1091,7 +1087,7 @@ class CodeGenerationVisitor(
         // Find latest override of method
         val methodOffset = classDefinition.getAllMethods().indexOfLast {
             it.id == staticMethodCall.methodId
-        } + METHOD_OFFSET
+        }
         val numArgs = staticMethodCall.args.size
 
         passFunctionArgs(numArgs)
