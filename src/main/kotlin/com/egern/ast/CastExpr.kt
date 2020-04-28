@@ -8,8 +8,7 @@ class CastExpr(
     val type: ExprType,
     lineNumber: Int,
     charPosition: Int
-) :
-    Expr(lineNumber, charPosition) {
+) : Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         expr.accept(visitor)
         visitor.postVisit(this)

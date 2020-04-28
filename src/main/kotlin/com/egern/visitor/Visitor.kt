@@ -1,16 +1,9 @@
 package com.egern.visitor
 
 import com.egern.ast.*
-import com.egern.error.ErrorLogger
-import com.egern.symbols.ClassDefinition
-import com.egern.symbols.Symbol
-import com.egern.symbols.SymbolTable
-import com.egern.symbols.SymbolType
 import com.egern.types.*
-import java.lang.Exception
 
-abstract class Visitor() {
-
+abstract class Visitor {
     // Utility functions
     fun typeString(type: ExprType): String {
         return when (type) {
@@ -25,7 +18,6 @@ abstract class Visitor() {
 
     // General visits
     open fun preStmtVisit() {}
-
     open fun postStmtVisit() {}
 
     // AST node visits
@@ -79,6 +71,9 @@ abstract class Visitor() {
     open fun postMidVisit(ifElse: IfElse) {}
     open fun postVisit(ifElse: IfElse) {}
 
+    open fun preVisit(interfaceDecl: InterfaceDecl) {}
+    open fun postVisit(interfaceDecl: InterfaceDecl) {}
+
     open fun visit(intExpr: IntExpr) {}
 
     open fun preVisit(lenExpr: LenExpr) {}
@@ -87,6 +82,8 @@ abstract class Visitor() {
     open fun preVisit(methodCall: MethodCall) {}
     open fun midVisit(methodCall: MethodCall) {}
     open fun postVisit(methodCall: MethodCall) {}
+
+    open fun visit(methodSignature: MethodSignature) {}
 
     open fun preVisit(objectInstantiation: ObjectInstantiation) {}
     open fun midVisit(objectInstantiation: ObjectInstantiation) {}

@@ -14,8 +14,7 @@ class FuncDecl(
     val modifiers: EnumSet<Modifier>,
     val isMethod: Boolean,
     lineNumber: Int, charPosition: Int
-) :
-    ASTNode(lineNumber, charPosition) {
+) : ASTNode(lineNumber, charPosition) {
     lateinit var symbolTable: SymbolTable
     var variableCount: Int = 0
     lateinit var startLabel: String

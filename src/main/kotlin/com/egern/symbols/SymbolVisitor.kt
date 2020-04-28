@@ -2,20 +2,18 @@ package com.egern.symbols
 
 import com.egern.ast.*
 import com.egern.util.*
-import com.egern.visitor.SymbolAwareVisitor
+import com.egern.visitor.Visitor
 
-class SymbolVisitor : SymbolAwareVisitor(symbolTable = SymbolTable(0, null), classDefinitions = mutableListOf()) {
+class SymbolVisitor : Visitor() {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
     private val baseClass = ClassDefinition(
         "Base",
         ClassDecl("Base", emptyList(), null, null, emptyList(), emptyList())
     )
-
-    // Add base class to class definitions
-    init {
-        classDefinitions.add(baseClass)
-    }
+    var symbolTable = SymbolTable(0, null)
+    val classDefinitions = mutableListOf(baseClass)
+    val interfaces = mutableListOf<InterfaceDecl>()
 
     private fun returnToParentScope() {
         symbolTable = symbolTable.parent!!
@@ -137,5 +135,9 @@ class SymbolVisitor : SymbolAwareVisitor(symbolTable = SymbolTable(0, null), cla
 
     override fun postVisit(classDecl: ClassDecl) {
         returnToParentScope()
+    }
+
+    override fun preVisit(interfaceDecl: InterfaceDecl) {
+        interfaces.add(interfaceDecl)
     }
 }

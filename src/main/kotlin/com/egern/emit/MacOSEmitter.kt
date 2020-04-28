@@ -7,8 +7,7 @@ class MacOSEmitter(
     dataFields: MutableList<String>,
     staticStrings: Map<String, String>,
     syntax: SyntaxManager
-) :
-    Emitter(instructions, dataFields, staticStrings, syntax) {
+) : Emitter(instructions, dataFields, staticStrings, syntax) {
 
     override fun addPlatformPrefix(symbol: String): String {
         return "_$symbol"
@@ -38,8 +37,8 @@ class MacOSEmitter(
         TODO("Not yet implemented")
     }
 
-    private var printfCounter = 0
-
+//    private var printfCounter = 0
+//
 //    override fun emitPrint(value: Int) {
 //        // TODO: double check alignment (MacOS requires 16 byte)
 //        // TODO: handle print empty

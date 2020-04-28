@@ -7,13 +7,23 @@ class ClassDefinition(
     val className: String,
     val classDecl: ClassDecl,
     var superclass: ClassDefinition? = null,
-    val superclassArgs: List<Expr>? = null
+    val superclassArgs: List<Expr>? = null,
+    var interfaceDecl: InterfaceDecl? = null
 ) {
     var vTableOffset: Int = -1
     lateinit var symbolTable: SymbolTable
 
-    fun getMethods(): List<FuncDecl> {
-        return (superclass?.getMethods() ?: emptyList()) + classDecl.methods
+    fun getSuperclasses(): List<String> {
+        // Insert interface before Base class
+        if (interfaceDecl != null) {
+            return listOf(className, interfaceDecl!!.id, "Base")
+        }
+
+        return listOf(className) + (superclass?.getSuperclasses() ?: emptyList())
+    }
+
+    fun getAllMethods(): List<FuncDecl> {
+        return (superclass?.getAllMethods() ?: emptyList()) + classDecl.methods
     }
 
     fun getConstructor(): List<Pair<String, ExprType>> {
@@ -82,10 +92,14 @@ class ClassDefinition(
         return Pair(className, funcDecl)
     }
 
-    fun getMethods(actualClass: String, actualClassReached: Boolean = false): List<FuncDecl> {
+    fun getAllMethods(actualClass: String, actualClassReached: Boolean = false): List<FuncDecl> {
         var relevantMethods = classDecl.methods
         val classReached = actualClass == className || actualClassReached
         if (!classReached) relevantMethods = relevantMethods.filter { Modifier.OVERRIDE in it.modifiers }
-        return (superclass?.getMethods(actualClass, classReached) ?: emptyList()) + relevantMethods
+        return (superclass?.getAllMethods(actualClass, classReached) ?: emptyList()) + relevantMethods
+    }
+
+    fun getInterface(): InterfaceDecl? {
+        return interfaceDecl ?: superclass?.getInterface()
     }
 }

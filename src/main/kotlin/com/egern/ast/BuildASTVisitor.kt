@@ -14,6 +14,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.stmt().map { it.accept(this) } + ReturnStmt(IntExpr(0, isVoid = true)),
             ctx.funcDecl().map { it.accept(this) as FuncDecl },
             ctx.classDecl().map { it.accept(this) as ClassDecl },
+            ctx.interfaceDecl().map { it.accept(this) as InterfaceDecl },
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -118,6 +119,25 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
+    override fun visitInterfaceDecl(ctx: MainParser.InterfaceDeclContext): ASTNode {
+        return InterfaceDecl(
+            ctx.CLASSNAME().text,
+            ctx.methodSignature().map { it.accept(this) as MethodSignature },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitMethodSignature(ctx: MainParser.MethodSignatureContext): ASTNode {
+        return MethodSignature(
+            ctx.ID().text,
+            ctx.signatureParams().typeDecl().map { getType(it) },
+            if (ctx.typeDecl() != null) getType(ctx.typeDecl()) else VOID,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
     override fun visitStmt(ctx: MainParser.StmtContext): ASTNode {
         return when {
             ctx.ifElse() != null -> ctx.ifElse().accept(this)
@@ -136,7 +156,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
         // Return 0 implicitly if return value is undefined
         return ReturnStmt(
-            (if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0, -1, -1, isVoid = true)) as Expr,
+            (if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0, isVoid = true)) as Expr,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -368,7 +388,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.typeDecl() != null -> visitCastExpr(ctx.expr(0), ctx.typeDecl())
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
-                    IntExpr(-1, lineNumber = ctx.start.line, charPosition = -1),
+                    IntExpr(-1, lineNumber = ctx.start.line),
                     ctx.expr(0).accept(this) as Expr,
                     ArithOp.TIMES,
                     lineNumber = ctx.start.line,

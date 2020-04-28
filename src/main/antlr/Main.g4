@@ -1,6 +1,6 @@
 grammar Main;
 
-prog:   ( stmt | funcDecl | classDecl )* ;
+prog:   ( stmt | funcDecl | classDecl | interfaceDecl )* ;
 stmt:   varDecl ';'?
     |   varAssign ';'?
     |   opAssign ';'?
@@ -42,6 +42,10 @@ fieldDecl: MODIFIER* varDecl ;
 methodCall: (CLASSNAME | ID | 'this') '.' funcCall ;
 classField: (CLASSNAME | ID | 'this') '.' ID ;
 objectInstantiation: CLASSNAME '(' argList ')' ;
+
+interfaceDecl: 'interface' CLASSNAME '{' methodSignature* '}' ;
+methodSignature: 'func' ID '(' signatureParams ')' (':' typeDecl)? ;
+signatureParams: ((ID ':')? typeDecl ',')* ((ID ':')? typeDecl)? ;
 
 arrayIndexExpr: indexable ('[' expr ']')+ ;
 indexable: (idExpr | classField | funcCall | methodCall) ;

@@ -10,8 +10,10 @@ import com.egern.visitor.SymbolAwareVisitor
 import java.lang.Exception
 
 class TypeCheckingVisitor(
-    currentTable: SymbolTable, classDefinitions: MutableList<ClassDefinition>
-) : SymbolAwareVisitor(symbolTable = currentTable, classDefinitions = classDefinitions) {
+    symbolTable: SymbolTable,
+    classDefinitions: List<ClassDefinition>,
+    interfaces: List<InterfaceDecl>
+) : SymbolAwareVisitor(symbolTable, classDefinitions, interfaces) {
     private val functionStack = stackOf<FuncDecl>()
     private var currentClass: ClassDefinition? = null
 
@@ -41,7 +43,7 @@ class TypeCheckingVisitor(
         }
     }
 
-    fun checkMethodDecl(methodDecl: FuncDecl) {
+    private fun checkMethodDecl(methodDecl: FuncDecl) {
         // Check modifiers for the method itself
         val methodOverrides = Modifier.OVERRIDE in methodDecl.modifiers
         if (methodOverrides && Modifier.STATIC in methodDecl.modifiers) {
@@ -49,7 +51,17 @@ class TypeCheckingVisitor(
         }
 
         // Check if method overrides any static methods or overrides without the override modifier
-        val foundMethod = currentClass!!.superclass!!.lookupMethod(methodDecl.id) ?: return
+        val foundMethod = currentClass!!.superclass!!.lookupMethod(methodDecl.id)
+        if (foundMethod == null) {
+            // Check if method overrides from interface
+            val foundInterfaceMethod = currentClass!!.getInterface()?.methodSignatures?.find { it.id == methodDecl.id }
+            if (foundInterfaceMethod == null && methodOverrides) {
+                ErrorLogger.log(methodDecl, "Method ${methodDecl.id} overrides nothing")
+            }
+            return
+        }
+
+
         val (className, superMethod) = foundMethod
         if (Modifier.STATIC in superMethod.modifiers) {
             ErrorLogger.log(
@@ -273,6 +285,51 @@ class TypeCheckingVisitor(
     }
 
     override fun postVisit(classDecl: ClassDecl) {
+        // Check class overrides all interface methods
+        val classInterface = currentClass!!.interfaceDecl
+        classInterface?.methodSignatures?.forEach {
+            var foundMethod: FuncDecl? = null
+
+            classDecl.methods.forEach { method ->
+                if (it.id == method.id) {
+                    foundMethod = method
+
+                    // Check signature (parameter and return types)
+                    val methodParams = method.params.drop(1).map { param -> param.second }
+
+                    if (it.params.size != methodParams.size) {
+                        ErrorLogger.log(
+                            method,
+                            "Overridden method has the wrong number of parameters: " +
+                                    "${methodParams.size} - expected: ${it.params.size}"
+                        )
+                    } else {
+                        it.params.zip(methodParams).forEach { param ->
+                            if (param.first != param.second) {
+                                ErrorLogger.log(
+                                    method,
+                                    "Overridden method parameter has wrong type: " +
+                                            "${typeString(param.first)} - expected: ${typeString(param.second)}"
+                                )
+                            }
+                        }
+                    }
+
+                    if (it.returnType != method.returnType) {
+                        ErrorLogger.log(
+                            method,
+                            "Overridden method has invalid return type: " +
+                                    "${typeString(method.returnType)} - expected: ${typeString(it.returnType)}"
+                        )
+                    }
+                }
+            }
+
+            if (foundMethod == null || Modifier.OVERRIDE !in foundMethod!!.modifiers) {
+                ErrorLogger.log(classDecl, "Method ${it.id} not implemented")
+            }
+        }
+
         symbolTable = symbolTable.parent ?: throw Exception("No more scopes -- please buy another")
     }
 

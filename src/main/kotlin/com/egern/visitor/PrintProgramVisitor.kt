@@ -1,7 +1,6 @@
 package com.egern.visitor
 
 import com.egern.ast.*
-import com.egern.types.*
 import com.egern.util.forEach
 
 class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
@@ -149,6 +148,16 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         if (ifElse.elseBlock != null) print(" else ")
     }
 
+    override fun preVisit(interfaceDecl: InterfaceDecl) {
+        printIndented("interface ${interfaceDecl.id} {\n")
+        level++
+    }
+
+    override fun postVisit(interfaceDecl: InterfaceDecl) {
+        level--
+        printIndented("}\n\n")
+    }
+
     override fun visit(intExpr: IntExpr) {
         print(intExpr.value)
     }
@@ -171,6 +180,12 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
 
     override fun postVisit(methodCall: MethodCall) {
         print(")")
+    }
+
+    override fun visit(methodSignature: MethodSignature) {
+        printIndented("func ${methodSignature.id}(")
+        print(methodSignature.params.joinToString(", ") { typeString(it) })  // Params
+        println("): ${typeString(methodSignature.returnType)}")
     }
 
     override fun preVisit(objectInstantiation: ObjectInstantiation) {
@@ -218,8 +233,8 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         if (returnStmt.expr != null) print(" ")
     }
 
-    override fun visit(classField: StaticClassField) {
-        print("${classField.classId}.${classField.fieldId}")
+    override fun visit(staticClassField: StaticClassField) {
+        print("${staticClassField.classId}.${staticClassField.fieldId}")
     }
 
     override fun preVisit(staticMethodCall: StaticMethodCall) {
