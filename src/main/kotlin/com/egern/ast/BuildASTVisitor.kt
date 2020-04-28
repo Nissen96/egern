@@ -11,7 +11,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitProg(ctx: MainParser.ProgContext): ASTNode {
         // Add implicit "return 0" as last statement
         return Program(
-            ctx.stmt().map { it.accept(this) } + ReturnStmt(IntExpr(0, isVoid = true)),
+            ctx.stmt().map { it.accept(this) } + ReturnStmt(VoidExpr()),
             ctx.funcDecl().map { it.accept(this) as FuncDecl },
             ctx.classDecl().map { it.accept(this) as ClassDecl },
             ctx.interfaceDecl().map { it.accept(this) as InterfaceDecl },
@@ -156,7 +156,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitReturnStmt(ctx: MainParser.ReturnStmtContext): ASTNode {
         // Return 0 implicitly if return value is undefined
         return ReturnStmt(
-            (if (ctx.expr() != null) ctx.expr().accept(this) else IntExpr(0, isVoid = true)) as Expr,
+            (if (ctx.expr() != null) ctx.expr().accept(this) else VoidExpr()) as Expr,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -208,7 +208,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
         // Always add implicit return for void functions
         if (returnType == VOID) {
-            stmts.add(ReturnStmt(IntExpr(0, isVoid = true)))
+            stmts.add(ReturnStmt(VoidExpr()))
         }
 
         val paramList = mutableListOf<Pair<String, ExprType>>()
