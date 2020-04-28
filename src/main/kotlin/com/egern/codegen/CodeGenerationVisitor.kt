@@ -27,6 +27,7 @@ class CodeGenerationVisitor(
     )
     private val functionStack = stackOf<FuncDecl>()
     private var currentClassDefinition: ClassDefinition? = null
+    var vTableSize = 0
 
     companion object {
         // STACK FRAME - CONSTANT OFFSETS FROM RBP
@@ -211,6 +212,8 @@ class CodeGenerationVisitor(
                 currentOffset++
             }
         }
+
+        vTableSize = currentOffset
     }
 
     override fun midVisit(program: Program) {

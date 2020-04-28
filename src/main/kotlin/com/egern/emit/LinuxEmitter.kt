@@ -6,8 +6,9 @@ class LinuxEmitter(
     instructions: List<Instruction>,
     dataFields: MutableList<String>,
     staticStrings: Map<String, String>,
+    vTableSize: Int,
     syntax: SyntaxManager
-) : Emitter(instructions, dataFields, staticStrings, syntax) {
+) : Emitter(instructions, dataFields, staticStrings, vTableSize, syntax) {
     override fun emitProgramEpilogue() {
         // Empty epilogue
     }

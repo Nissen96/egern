@@ -7,6 +7,7 @@ abstract class Emitter(
     private val instructions: List<Instruction>,
     private val dataFields: MutableList<String>,
     private val staticStrings: Map<String, String>,
+    private val vTableSize: Int,
     protected val syntax: SyntaxManager
 ) {
     protected val builder = AsmStringBuilder(syntax.commentSymbol)
@@ -29,7 +30,6 @@ abstract class Emitter(
         const val HEAP_POINTER: String = "heap_pointer"
         const val HEAP_SIZE: Int = 1024
         const val VTABLE_POINTER: String = "vtable_pointer"
-        const val VTABLE_SIZE: Int = 1024
     }
 
     fun emit(): String {
@@ -130,7 +130,7 @@ abstract class Emitter(
 
     open fun emitAllocateVTable() {
         val (arg1, arg2) = syntax.argOrder(
-            syntax.immediate("${VARIABLE_SIZE * VTABLE_SIZE}"),
+            syntax.immediate("${VARIABLE_SIZE * vTableSize}"),
             syntax.register(paramPassingRegs[0])
         )
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), syntax.indirect(VTABLE_POINTER))
