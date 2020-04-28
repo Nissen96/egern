@@ -6,7 +6,7 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
-import com.egern.types.ExprTypeEnum
+import com.egern.types.*
 import com.egern.util.*
 import com.egern.visitor.SymbolAwareVisitor
 import kotlin.math.max
@@ -30,7 +30,8 @@ class CodeGenerationVisitor(
 
     companion object {
         // CONSTANT OFFSETS FROM RBP
-        const val LOCAL_VAR_OFFSET = 1
+        const val LOCAL_VAR_OFFSET = 2
+        const val POINTER_BITMAP_OFFSET = 1
         const val STATIC_LINK_OFFSET = -2
         const val PARAM_OFFSET = -3
 
@@ -57,6 +58,28 @@ class CodeGenerationVisitor(
                     comment = "Following static link pointer"
                 )
             )
+        }
+    }
+
+    private fun makeFunctionPointerBitmap(stmts: List<ASTNode>): String {
+        return "0b0" + stmts.filterIsInstance<VarDecl>().map { isPointer(deriveType(it.expr)) }.joinToString("")
+    }
+
+    private fun makeClassPointerBitmap(fields: List<Any>): String {
+        return "0b0" + fields.map {
+            when (it) {
+                is FieldDecl -> isPointer(deriveType(it.expr))
+                is Pair<*, *> -> isPointer(it.second as ExprType)
+                else -> throw Exception("Invalid field type")
+            }
+        }.joinToString("")
+    }
+
+    private fun isPointer(exprType: ExprType): Int {
+        return when (exprType) {
+            is ARRAY -> 1
+            is CLASS -> 1
+            else -> 0
         }
     }
 
@@ -122,7 +145,49 @@ class CodeGenerationVisitor(
 
         classDefinitions.forEach {
             it.vTableOffset = currentOffset
-            it.getAllMethods().forEach { method ->
+            val allMethods = it.getAllMethods()
+
+            // Add size information
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(ImmediateValue(allMethods.size.toString()), Direct),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Store number of methods for class"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(OpReg2), Direct),
+                    InstructionArg(Register(OpReg1), IndirectRelative(-currentOffset)),
+                    comment = "Add size information to Vtable"
+                )
+            )
+            currentOffset++
+
+            // Add pointer bitmap
+            val pointerBitmap = makeClassPointerBitmap(it.getAllFields())
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(ImmediateValue(pointerBitmap), Direct),
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Store pointer bitmap of class fields"
+                )
+            )
+            add(
+                Instruction(
+                    InstructionType.MOV,
+                    InstructionArg(Register(OpReg2), Direct),
+                    InstructionArg(Register(OpReg1), IndirectRelative(-currentOffset)),
+                    comment = "Add pointer bitmap to Vtable"
+                )
+            )
+            currentOffset++
+
+            // Add methods
+            allMethods.forEach { method ->
                 add(
                     Instruction(
                         InstructionType.MOV,
@@ -198,6 +263,8 @@ class CodeGenerationVisitor(
     override fun preVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable
         functionStack.push(funcDecl)
+        val pointerBitmap = makeFunctionPointerBitmap(funcDecl.stmts)
+
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -208,6 +275,13 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.META,
                 MetaOperation.CalleePrologue
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue(pointerBitmap), Direct),
+                comment = "Push pointer bitmap"
             )
         )
         add(
@@ -1024,9 +1098,7 @@ class CodeGenerationVisitor(
     }
 
     override fun postVisit(printStmt: PrintStmt) {
-        val type = if (printStmt.expr != null) deriveType(
-            printStmt.expr
-        ).type else ExprTypeEnum.VOID
+        val type = if (printStmt.expr != null) deriveType(printStmt.expr).type else ExprTypeEnum.VOID
 
         // Special case for booleans, we want to print 'true' or 'false'
         if (type == ExprTypeEnum.BOOLEAN) {

@@ -10,7 +10,8 @@ class ClassDecl(
     val superclassArgs: List<Expr>?,
     val fieldDecls: List<FieldDecl>,
     val methods: List<FuncDecl>,
-    lineNumber: Int? = null, charPosition: Int? = null
+    lineNumber: Int? = null,
+    charPosition: Int? = null
 ) : ASTNode(lineNumber, charPosition) {
     lateinit var endLabel: String
 
