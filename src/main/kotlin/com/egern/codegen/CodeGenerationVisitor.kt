@@ -29,13 +29,17 @@ class CodeGenerationVisitor(
     private var currentClassDefinition: ClassDefinition? = null
 
     companion object {
-        // CONSTANT OFFSETS FROM RBP
+        // STACK FRAME - CONSTANT OFFSETS FROM RBP
         const val LOCAL_VAR_OFFSET = 2
-        const val POINTER_BITMAP_OFFSET = 1
+        const val FUNCTION_POINTER_BITMAP_OFFSET = 1
         const val STATIC_LINK_OFFSET = -2
         const val PARAM_OFFSET = -3
 
         const val PARAMS_IN_REGISTERS = 6
+
+        // VTABLE OFFSETS
+        const val CLASS_POINTER_BITMAP_OFFSET = 1
+        const val METHOD_OFFSET = 2
     }
 
     private fun add(instruction: Instruction) {
@@ -991,7 +995,7 @@ class CodeGenerationVisitor(
         // Find latest override of method
         val methodOffset = classDefinition.getAllMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
             it.id == methodCall.methodId
-        }
+        } + METHOD_OFFSET
         val numArgs = methodCall.args.size
 
         passFunctionArgs(numArgs)
@@ -1074,7 +1078,7 @@ class CodeGenerationVisitor(
         // Find latest override of method
         val methodOffset = classDefinition.getAllMethods().indexOfLast {
             it.id == staticMethodCall.methodId
-        }
+        } + METHOD_OFFSET
         val numArgs = staticMethodCall.args.size
 
         passFunctionArgs(numArgs)
