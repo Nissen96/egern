@@ -17,8 +17,8 @@ abstract class SymbolAwareVisitor(
     // Utility functions
     fun deriveType(expr: Expr): ExprType {
         return when (expr) {
-            // Handle implicit returns of nothing (int=0)
-            is IntExpr -> if (expr.isVoid) VOID else INT
+            is VoidExpr -> VOID
+            is IntExpr -> INT
             is BooleanExpr -> BOOLEAN
             is StringExpr -> STRING
             is BooleanOpExpr -> BOOLEAN
@@ -126,7 +126,7 @@ abstract class SymbolAwareVisitor(
         var expr: Expr = arrayExpr
         while (expr is ArrayExpr) {
             depth++
-            expr = if (expr.entries.isNotEmpty()) expr.entries[0] else IntExpr(0, isVoid = true)
+            expr = if (expr.entries.isNotEmpty()) expr.entries[0] else VoidExpr()
         }
 
         var innerType = deriveType(expr)

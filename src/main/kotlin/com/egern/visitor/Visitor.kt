@@ -119,6 +119,8 @@ abstract class Visitor {
     open fun preVisit(varDecl: VarDecl) {}
     open fun postVisit(varDecl: VarDecl) {}
 
+    open fun visit(voidExpr: VoidExpr) {}
+
     open fun preVisit(whileLoop: WhileLoop) {}
     open fun midVisit(whileLoop: WhileLoop) {}
     open fun postVisit(whileLoop: WhileLoop) {}

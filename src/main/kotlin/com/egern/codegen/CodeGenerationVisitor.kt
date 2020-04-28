@@ -342,6 +342,16 @@ class CodeGenerationVisitor(
         symbolTable = block.symbolTable.parent!!
     }
 
+    override fun visit(voidExpr: VoidExpr) {
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("0"), Direct),
+                comment = "Push static integer value (default return 0)"
+            )
+        )
+    }
+
     override fun visit(intExpr: IntExpr) {
         add(
             Instruction(

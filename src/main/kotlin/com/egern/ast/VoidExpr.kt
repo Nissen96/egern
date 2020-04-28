@@ -2,8 +2,7 @@ package com.egern.ast
 
 import com.egern.visitor.Visitor
 
-class IntExpr(
-    val value: Int,
+class VoidExpr(
     lineNumber: Int = -1,
     charPosition: Int = -1
 ) : Expr(lineNumber, charPosition) {
