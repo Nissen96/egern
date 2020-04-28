@@ -37,6 +37,13 @@ class CodeGenerationVisitor(
         const val PARAM_OFFSET = -3
 
         const val PARAMS_IN_REGISTERS = 6
+
+        // OBJECT AND ARRAY INFO (admin info common to both)
+        const val SIZE_INFO_OFFSET = 0
+        const val BITMAP_OFFSET = 1
+        const val OBJECT_VTABLE_POINTER_OFFSET = 2
+        const val OBJECT_DATA_OFFSET = 3
+        const val ARRAY_DATA_OFFSET = 2
     }
 
     private fun add(instruction: Instruction) {
@@ -485,7 +492,7 @@ class CodeGenerationVisitor(
 
     private fun getMethodFieldLocation(symbol: Symbol): InstructionArg {
         val fieldOffset = currentClassDefinition!!.getFieldOffset(symbol.id)
-        return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + 3)))
+        return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + OBJECT_DATA_OFFSET)))
     }
 
     private fun getConstructorArgLocation(param: String): InstructionArg? {
@@ -670,7 +677,7 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(ImmediateValue(arrayLen.toString()), Direct),
-                InstructionArg(ReturnValue, Indirect),
+                InstructionArg(ReturnValue, IndirectRelative(-SIZE_INFO_OFFSET)),
                 comment = "Write size information before array"
             )
         )
@@ -680,7 +687,7 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(ImmediateValue("0b0$pointerBitmap"), Direct),
-                InstructionArg(ReturnValue, IndirectRelative(-1)),
+                InstructionArg(ReturnValue, IndirectRelative(-BITMAP_OFFSET)),
                 comment = "Write whether elements are references or not as a bitmap"
             )
         )
@@ -697,7 +704,7 @@ class CodeGenerationVisitor(
                 Instruction(
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
-                    InstructionArg(ReturnValue, IndirectRelative(-(arrayLen - index + 1))),
+                    InstructionArg(ReturnValue, IndirectRelative(-(ARRAY_DATA_OFFSET + arrayLen - index - 1))),
                     comment = "Move expression to array index $index"
                 )
             )
@@ -724,7 +731,7 @@ class CodeGenerationVisitor(
             add(
                 Instruction(
                     InstructionType.ADD,
-                    InstructionArg(ImmediateValue("16"), Direct),
+                    InstructionArg(ImmediateValue("${8 * ARRAY_DATA_OFFSET}"), Direct),
                     InstructionArg(Register(OpReg2), Direct),
                     comment = "Move past array info"
                 )
@@ -832,13 +839,50 @@ class CodeGenerationVisitor(
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
         val allFields = classDefinition.getAllFields()
-        var heapOffset = 0
+        val numFields = allFields.size
 
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(allFields.size + 3)
+                MetaOperationArg(numFields + 3)
+            )
+        )
+
+        // Insert information about number of fields - includes the VTable pointer field
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue((numFields + 1).toString()), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Store number of fields for class + 1 for the VTable pointer field"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-SIZE_INFO_OFFSET)),
+                comment = "Add size information to object"
+            )
+        )
+
+        // Add pointer bitmap
+        val pointerBitmap = makeClassPointerBitmap(allFields)
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue(pointerBitmap), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Store pointer bitmap of class fields"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-BITMAP_OFFSET)),
+                comment = "Add pointer bitmap to object"
             )
         )
 
@@ -864,53 +908,14 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(Register(OpReg1), Direct),
-                InstructionArg(ReturnValue, Indirect),
+                InstructionArg(ReturnValue, IndirectRelative(-OBJECT_VTABLE_POINTER_OFFSET)),
                 comment = "Save class pointer at beginning of object in heap"
             )
         )
-        heapOffset++
-
-        // Insert information about number of fields
-        add(
-            Instruction(
-                InstructionType.MOV,
-                InstructionArg(ImmediateValue(allFields.size.toString()), Direct),
-                InstructionArg(Register(OpReg2), Direct),
-                comment = "Store number of fields for class"
-            )
-        )
-        add(
-            Instruction(
-                InstructionType.MOV,
-                InstructionArg(Register(OpReg2), Direct),
-                InstructionArg(ReturnValue, IndirectRelative(-heapOffset)),
-                comment = "Add size information to object"
-            )
-        )
-        heapOffset++
-
-        // Add pointer bitmap
-        val pointerBitmap = makeClassPointerBitmap(allFields)
-        add(
-            Instruction(
-                InstructionType.MOV,
-                InstructionArg(ImmediateValue(pointerBitmap), Direct),
-                InstructionArg(Register(OpReg2), Direct),
-                comment = "Store pointer bitmap of class fields"
-            )
-        )
-        add(
-            Instruction(
-                InstructionType.MOV,
-                InstructionArg(Register(OpReg2), Direct),
-                InstructionArg(ReturnValue, IndirectRelative(-heapOffset)),
-                comment = "Add pointer bitmap to object"
-            )
-        )
-        heapOffset++
 
 
         // Visit all superclass args, pushing results to stack
+        var heapOffset = OBJECT_DATA_OFFSET
         currentClassDefinition = classDefinition
         while (currentClassDefinition != null) {
             // Save "base pointer" for current class constructor
@@ -932,7 +937,8 @@ class CodeGenerationVisitor(
         // Move all constructor args to object
         val numArgs = classDefinition.getNumConstructorArgsPerClass()
         val fieldsPerClass = classDefinition.getLocalFieldsPerClass()
-        repeat(numArgs.size) { classNum ->
+        val numSuperclasses = numArgs.size
+        repeat(numSuperclasses) { classNum ->
             val numConstructorArgs = numArgs[classNum]
             repeat(numConstructorArgs) { index ->
                 add(
@@ -956,8 +962,7 @@ class CodeGenerationVisitor(
 
             // Move local class fields to object
             val localFields = fieldsPerClass[classNum]
-            var fieldOffset = 0
-            localFields.forEach { fieldDecl ->
+            localFields.forEachIndexed { index, fieldDecl ->
                 fieldDecl.ids.forEach { _ ->
                     add(
                         Instruction(
@@ -971,15 +976,13 @@ class CodeGenerationVisitor(
                         Instruction(
                             InstructionType.MOV,
                             InstructionArg(Register(OpReg1), Direct),
-                            InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + fieldOffset))),
-                            comment = "Save value at object's constructor field ${fieldOffset + 1}"
+                            InstructionArg(ReturnValue, IndirectRelative(-heapOffset)),
+                            comment = "Save value at object's constructor field ${index + 1}"
                         )
                     )
-                    fieldOffset++
+                    heapOffset++
                 }
             }
-
-            heapOffset += fieldOffset
         }
 
         add(
@@ -1049,7 +1052,7 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.ADD,
-                InstructionArg(ImmediateValue("${8 * (fieldOffset + 3)}"), Direct),
+                InstructionArg(ImmediateValue("${8 * (fieldOffset + OBJECT_DATA_OFFSET)}"), Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Store address of field"
             )
