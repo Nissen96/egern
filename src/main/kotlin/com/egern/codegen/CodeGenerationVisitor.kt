@@ -1238,6 +1238,26 @@ class CodeGenerationVisitor(
         )
     }
 
+    override fun visit(continueStmt: ContinueStmt) {
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(continueStmt.jumpLabel), Direct),
+                comment = "Jump to loop start"
+            )
+        )
+    }
+
+    override fun visit(breakStmt: BreakStmt) {
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(breakStmt.jumpLabel), Direct),
+                comment = "Jump to loop end"
+            )
+        )
+    }
+
     override fun postVisit(varDecl: VarDecl) {
         // First declaration of variable in this scope
         varDecl.ids.forEach { symbolTable.lookup(it)?.isDeclared = true }

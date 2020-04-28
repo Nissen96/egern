@@ -43,6 +43,8 @@ abstract class Visitor {
     open fun midVisit(booleanOpExpr: BooleanOpExpr) {}
     open fun postVisit(booleanOpExpr: BooleanOpExpr) {}
 
+    open fun visit(breakStmt: BreakStmt) {}
+
     open fun postVisit(castExpr: CastExpr) {}
 
     open fun preVisit(classDecl: ClassDecl) {}
@@ -53,6 +55,8 @@ abstract class Visitor {
 
     open fun midVisit(compExpr: CompExpr) {}
     open fun postVisit(compExpr: CompExpr) {}
+
+    open fun visit(continueStmt: ContinueStmt) {}
 
     open fun preVisit(fieldDecl: FieldDecl) {}
     open fun postVisit(fieldDecl: FieldDecl) {}
