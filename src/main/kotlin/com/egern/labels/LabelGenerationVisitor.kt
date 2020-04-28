@@ -1,6 +1,7 @@
 package com.egern.labels
 
 import com.egern.ast.*
+import com.egern.error.ErrorLogger
 import com.egern.visitor.Visitor
 
 class LabelGenerationVisitor : Visitor() {
@@ -31,10 +32,18 @@ class LabelGenerationVisitor : Visitor() {
     }
 
     override fun visit(continueStmt: ContinueStmt) {
-        continueStmt.jumpLabel = currentLoop?.startLabel ?: throw Exception("Continue outside loop not allowed")
+        if (currentLoop != null) {
+            continueStmt.jumpLabel = currentLoop!!.startLabel
+        } else {
+            ErrorLogger.log(continueStmt, "Continue invalid outside loop")
+        }
     }
 
     override fun visit(breakStmt: BreakStmt) {
-        breakStmt.jumpLabel = currentLoop?.endLabel ?: throw Exception("Continue outside loop not allowed")
+        if (currentLoop != null) {
+            breakStmt.jumpLabel = currentLoop!!.endLabel
+        } else {
+            ErrorLogger.log(breakStmt, "Break invalid outside loop")
+        }
     }
 }

@@ -1,0 +1,8 @@
+func keywordError() {
+    var a = 3
+    continue
+    a = 4
+    break
+}
+
+keywordError()
