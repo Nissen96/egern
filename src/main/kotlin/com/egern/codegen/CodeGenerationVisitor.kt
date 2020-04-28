@@ -705,7 +705,7 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(arrayExpr.entries.size + 1)
+                MetaOperationArg(arrayExpr.entries.size + 2)
             )
         )
 
@@ -716,6 +716,16 @@ class CodeGenerationVisitor(
                 InstructionArg(ImmediateValue(arrayLen.toString()), Direct),
                 InstructionArg(ReturnValue, Indirect),
                 comment = "Write size information before array"
+            )
+        )
+
+        val containsPointers = isPointer(deriveType(arrayExpr))
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue(containsPointers.toString()), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-1)),
+                comment = "Write whether elements are references or not"
             )
         )
 
@@ -731,7 +741,7 @@ class CodeGenerationVisitor(
                 Instruction(
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
-                    InstructionArg(ReturnValue, IndirectRelative(-(arrayLen - index))),
+                    InstructionArg(ReturnValue, IndirectRelative(-(arrayLen - index + 1))),
                     comment = "Move expression to array index $index"
                 )
             )
@@ -758,7 +768,7 @@ class CodeGenerationVisitor(
             add(
                 Instruction(
                     InstructionType.ADD,
-                    InstructionArg(ImmediateValue("8"), Direct),
+                    InstructionArg(ImmediateValue("16"), Direct),
                     InstructionArg(Register(OpReg2), Direct),
                     comment = "Move past array info"
                 )

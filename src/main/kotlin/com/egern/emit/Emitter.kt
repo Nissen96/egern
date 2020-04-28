@@ -106,7 +106,7 @@ abstract class Emitter(
 
     open fun emitAllocateProgramHeap() {
         val (arg1, arg2) = syntax.argOrder(
-            syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE}"),
+            syntax.immediate("${VARIABLE_SIZE * HEAP_SIZE * 2}"),  // Double heap size for garbage collection
             syntax.register(paramPassingRegs[0])
         )
         val (arg3, arg4) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitInstructionTarget(RHP))
@@ -259,7 +259,6 @@ abstract class Emitter(
             MetaOperation.AllocateStackSpace -> emitAllocateStackSpace(value)
             MetaOperation.DeallocateStackSpace -> emitDeallocateStackSpace(value)
             MetaOperation.AllocateHeapSpace -> emitAllocateHeapSpace(value)
-            MetaOperation.DeallocateHeapSpace -> emitDeallocateHeapSpace(value)
         }
     }
 
@@ -351,19 +350,6 @@ abstract class Emitter(
             syntax.ops.getValue(InstructionType.ADD), arg3, arg4,
             "Offset pointer by allocated bytes"
         )
-    }
-
-    private fun emitDeallocateHeapSpace(size: Int) {
-        // TODO()
-        /**
-        val (arg1, arg2) = syntax.argOrder(syntax.immediate("${VARIABLE_SIZE * arg.value}"), syntax.register("rdi"))
-        builder
-        .addLine(
-        syntax.ops.getValue(InstructionType.MOV), arg1, arg2,
-        "Move argument into parameter register for free call"
-        )
-        .addLine("call free")
-         **/
     }
 
     private fun emitAllocateStackSpace(numVariables: Int) {
