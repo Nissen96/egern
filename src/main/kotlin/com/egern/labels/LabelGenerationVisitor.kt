@@ -2,10 +2,11 @@ package com.egern.labels
 
 import com.egern.ast.*
 import com.egern.error.ErrorLogger
+import com.egern.util.*
 import com.egern.visitor.Visitor
 
 class LabelGenerationVisitor : Visitor() {
-    var currentLoop: WhileLoop? = null
+    private val loopStack = stackOf<WhileLoop>()
 
     override fun preVisit(funcDecl: FuncDecl) {
         funcDecl.startLabel = LabelGenerator.nextLabel(funcDecl.id)
@@ -24,24 +25,24 @@ class LabelGenerationVisitor : Visitor() {
     override fun preVisit(whileLoop: WhileLoop) {
         whileLoop.startLabel = LabelGenerator.nextLabel("while_start")
         whileLoop.endLabel = LabelGenerator.nextLabel("while_end")
-        currentLoop = whileLoop
+        loopStack.push(whileLoop)
     }
 
     override fun postVisit(whileLoop: WhileLoop) {
-        currentLoop = null
+        loopStack.pop()
     }
 
     override fun visit(continueStmt: ContinueStmt) {
-        if (currentLoop != null) {
-            continueStmt.jumpLabel = currentLoop!!.startLabel
+        if (loopStack.isNotEmpty()) {
+            continueStmt.jumpLabel = loopStack.peek()!!.startLabel
         } else {
             ErrorLogger.log(continueStmt, "Continue invalid outside loop")
         }
     }
 
     override fun visit(breakStmt: BreakStmt) {
-        if (currentLoop != null) {
-            breakStmt.jumpLabel = currentLoop!!.endLabel
+        if (loopStack.isNotEmpty()) {
+            breakStmt.jumpLabel = loopStack.peek()!!.endLabel
         } else {
             ErrorLogger.log(breakStmt, "Break invalid outside loop")
         }
