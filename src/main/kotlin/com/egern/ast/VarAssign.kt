@@ -7,8 +7,8 @@ class VarAssign(
     val indexExprs: List<ArrayIndexExpr>,
     val classFields: List<ClassField>,
     val expr: Expr,
-    lineNumber: Int,
-    charPosition: Int
+    lineNumber: Int = -1,
+    charPosition: Int = -1
 ) : Statement(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)

@@ -6,8 +6,8 @@ import com.egern.visitor.Visitor
 class VarDecl(
     val ids: List<String>,
     val expr: Expr,
-    lineNumber: Int,
-    charPosition: Int
+    lineNumber: Int = -1,
+    charPosition: Int = -1
 ) : Statement(lineNumber, charPosition) {
     lateinit var symbolTable: SymbolTable
 

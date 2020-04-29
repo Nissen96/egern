@@ -6,8 +6,8 @@ class ArrayIndexExpr(
     val id: Expr,
     val indices: List<Expr>,
     val reference: Boolean = false,
-    lineNumber: Int,
-    charPosition: Int
+    lineNumber: Int = -1,
+    charPosition: Int = -1
 ) : Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         visitor.preVisit(this)

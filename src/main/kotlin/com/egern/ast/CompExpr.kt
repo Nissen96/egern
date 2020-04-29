@@ -6,8 +6,8 @@ class CompExpr(
     val lhs: Expr,
     val rhs: Expr,
     val op: CompOp,
-    lineNumber: Int,
-    charPosition: Int
+    lineNumber: Int = -1,
+    charPosition: Int = -1
 ) : Expr(lineNumber, charPosition) {
     override fun accept(visitor: Visitor) {
         lhs.accept(visitor)

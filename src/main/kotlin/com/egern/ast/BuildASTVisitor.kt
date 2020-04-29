@@ -367,10 +367,44 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
+    override fun visitForInLoop(ctx: MainParser.ForInLoopContext): ASTNode {
+        // Syntactic sugar for a while loop
+        // Set starting index and length of iterable
+        val iterable = ctx.indexable().accept(this) as Expr
+        val iterator = IdExpr("current-index")
+        val length = LenExpr(iterable)
+
+        // Expression testing index in bounds
+        val loopExpr = CompExpr(iterator, length, CompOp.LT)
+
+        // Assign a value to the iterator before all statements in the block and increment index after
+        val assignIterator = VarDecl(listOf(ctx.ID().text), ArrayIndexExpr(iterable, listOf(iterator)))
+
+        val incrementIndex = VarAssign(
+            listOf(iterator.id), emptyList(), emptyList(),
+            ArithExpr(iterator, IntExpr(1), op = ArithOp.PLUS)
+        )
+
+        val block = ctx.block().accept(this) as Block
+        block.stmts = listOf(assignIterator) + block.stmts + listOf(incrementIndex)
+
+        // Return a block of the iterator declaration and loop
+        val declareIterator = VarDecl(listOf(iterator.id), IntExpr(0))
+        val forInLoop = WhileLoop(
+            loopExpr,
+            block,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+
+        return Block(listOf(declareIterator, forInLoop))
+    }
+
     override fun visitBlock(ctx: MainParser.BlockContext): ASTNode {
         return Block(
             ctx.stmt().map { it.accept(this) },
-            lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
