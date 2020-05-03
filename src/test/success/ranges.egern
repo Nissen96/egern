@@ -1,0 +1,28 @@
+var a = 1..7
+var b = 2...5
+
+print(a[0])
+print(a[3])
+print(a[5])
+print(len(a))
+print()
+
+print(b[0])
+print(b[3])
+print(len(b))
+print()
+
+var n = len(a)
+var i = 0
+while (i < n) {
+    print(a[i])
+    i += 1
+}
+print()
+
+n = len(b)
+i = 0
+while (i < n) {
+    print(b[i])
+    i += 1
+}

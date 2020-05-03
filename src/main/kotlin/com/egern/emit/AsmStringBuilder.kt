@@ -28,9 +28,7 @@ class AsmStringBuilder(private val commentSymbol: String) {
     }
 
     fun addLabel(label: String): AsmStringBuilder {
-        builder
-            .append("$label:")
-            .appendln()
+        builder.append("$label:")
         return this
     }
 

@@ -9,6 +9,7 @@ import com.egern.symbols.SymbolType
 import com.egern.types.*
 import com.egern.util.*
 import com.egern.visitor.SymbolAwareVisitor
+import com.sun.xml.internal.ws.org.objectweb.asm.Label
 import kotlin.math.max
 import kotlin.math.min
 
@@ -763,7 +764,162 @@ class CodeGenerationVisitor(
         )
     }
 
+    override fun postVisit(rangeExpr: RangeExpr) {
+        // Pop range indices to register 1 and 2 in reverse order
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Pop range end to register 2"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop range start to register 1"
+            )
+        )
+
+        // Calculate range size and push to stack
+        add(
+            Instruction(
+                InstructionType.SUB,
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Calculate range size"
+            )
+        )
+        if (!rangeExpr.excluding) {
+            add(
+                Instruction(
+                    InstructionType.INC,
+                    InstructionArg(Register(OpReg2), Direct),
+                    comment = "Range includes end index - add 1"
+                )
+            )
+        }
+        add(
+            Instruction(
+                InstructionType.INC,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Add 1 to allocate room for size info"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Push range size to allow heap allocation"
+            )
+        )
+
+        // Allocate space for array - automatically pops size from stack
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateHeapSpace
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Push array address to stack"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.DEC,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Restore array size"
+            )
+        )
+        
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(ReturnValue, Indirect),
+                comment = "Write size information before array"
+            )
+        )
+
+        // Add indices in a loop - first re-add size to start so start and end indices can be compared
+        add(
+            Instruction(
+                InstructionType.ADD,
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Add back size to start index to get end index"
+            )
+        )
+
+        val loopLabel = LabelGenerator.nextLabel("rangeLoop")
+        val moveLabel = LabelGenerator.nextLabel("moveIndex")
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(loopLabel), Direct),
+                comment = "Jump to loop start"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(moveLabel), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("8"), Direct),
+                InstructionArg(ReturnValue, Direct),
+                comment = "Next array index address"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(ReturnValue, Indirect),
+                comment = "Move index to array"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.INC,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Increment range value"
+            )
+        )
+
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(loopLabel), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.CMP,
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Check if end index is reached"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.JG,
+                InstructionArg(Memory(moveLabel), Direct),
+                comment = "Continue writing indices if end index is not reached"
+            )
+        )
+    }
+
     override fun postVisit(arrayExpr: ArrayExpr) {
+        val arrayLen = arrayExpr.entries.size
+
         add(
             Instruction(
                 InstructionType.META,
@@ -771,8 +927,6 @@ class CodeGenerationVisitor(
                 MetaOperationArg(arrayExpr.entries.size + ARRAY_DATA_OFFSET)
             )
         )
-
-        val arrayLen = arrayExpr.entries.size
         add(
             Instruction(
                 InstructionType.MOV,
@@ -1518,16 +1672,8 @@ class CodeGenerationVisitor(
         )
         add(
             Instruction(
-                InstructionType.MOV,
-                InstructionArg(ImmediateValue("1"), Direct),
-                InstructionArg(Register(OpReg2), Direct),
-                comment = "Move true to other register"
-            )
-        )
-        add(
-            Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(ImmediateValue("1"), Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Compare the expression to true"
             )

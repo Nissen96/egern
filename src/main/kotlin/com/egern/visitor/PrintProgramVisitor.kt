@@ -240,6 +240,10 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         println()
     }
 
+    override fun midVisit(rangeExpr: RangeExpr) {
+        print(if (rangeExpr.excluding) ".." else "...")
+    }
+
     override fun preVisit(returnStmt: ReturnStmt) {
         print("return")
         if (returnStmt.expr != null) print(" ")

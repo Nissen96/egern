@@ -78,6 +78,7 @@ expr: funcCall
     | parenExpr
     | lenExpr
     | expr 'as' typeDecl
+    | expr op=('..' | '...') expr
     ;
 
 idExpr: ID ;

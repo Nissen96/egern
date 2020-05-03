@@ -470,6 +470,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.op.text in ArithOp.operators() -> visitArithExpr(ctx.expr(), ctx.op.text)
             ctx.op.text in CompOp.operators() -> visitCompExpr(ctx.expr(), ctx.op.text)
             ctx.op.text in BooleanOp.operators() -> visitBooleanExpr(ctx.expr(), ctx.op.text)
+            ctx.op.text in listOf("..", "...") -> visitRangeExpr(ctx.expr(), ctx.op.text)
             else -> throw Exception("Invalid Expression Type!")
         }
     }
@@ -534,7 +535,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
             CompOp.fromString(op)!!,
-            exprs[0].start.line, exprs[0].start.charPositionInLine
+            lineNumber = exprs[0].start.line,
+            charPosition = exprs[0].start.charPositionInLine
         )
     }
 
@@ -543,7 +545,18 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
             ArithOp.fromString(op)!!,
-            exprs[0].start.line, exprs[0].start.charPositionInLine
+            lineNumber = exprs[0].start.line,
+            charPosition = exprs[0].start.charPositionInLine
+        )
+    }
+
+    private fun visitRangeExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
+        return RangeExpr(
+            exprs[0].accept(this) as Expr,
+            exprs[1].accept(this) as Expr,
+            excluding = op == "..",
+            lineNumber = exprs[0].start.line,
+            charPosition = exprs[1].start.charPositionInLine
         )
     }
 }
