@@ -1,6 +1,7 @@
 package com.egern.emit
 
 import com.egern.codegen.InstructionType
+import java.io.File
 
 abstract class SyntaxManager {
     abstract fun argOrder(source: String, destination: String): Pair<String, String>
@@ -19,6 +20,11 @@ abstract class SyntaxManager {
 
     abstract val commentSymbol: String
     abstract val ops: Map<InstructionType, String>
+
+    abstract fun emitRuntime(asmStringBuilder: AsmStringBuilder)
+    protected fun emitRuntime(asmStringBuilder: AsmStringBuilder, filename: String) {
+        File(filename).forEachLine { asmStringBuilder.add(it).newline() }
+    }
 }
 
 

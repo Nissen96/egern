@@ -63,6 +63,10 @@ class IntelSyntax : SyntaxManager() {
         }
     }
 
+    override fun emitRuntime(asmStringBuilder: AsmStringBuilder) {
+        emitRuntime(asmStringBuilder, "emit/runtime_intel.asm")
+    }
+
     override val ops = mapOf(
         InstructionType.MOV to "mov",
         InstructionType.ADD to "add",

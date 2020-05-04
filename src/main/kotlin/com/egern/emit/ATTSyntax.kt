@@ -62,6 +62,10 @@ class ATTSyntax : SyntaxManager() {
         asmStringBuilder.newline()
     }
 
+    override fun emitRuntime(asmStringBuilder: AsmStringBuilder) {
+        emitRuntime(asmStringBuilder, "src/main/runtime/runtime_att.asm")
+    }
+
     override val ops = mapOf(
         InstructionType.MOV to "movq",
         InstructionType.ADD to "addq",
