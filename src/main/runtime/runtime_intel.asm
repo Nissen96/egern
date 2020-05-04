@@ -53,7 +53,7 @@ allocate_heap:
 .L4:
         mov     eax, DWORD PTR [rbp-20]
         sal     eax, 3
-        add     %rbx, %rax
+        add     rbx, rax
         mov     rax, QWORD PTR [rbp-32]
         leave
         ret
