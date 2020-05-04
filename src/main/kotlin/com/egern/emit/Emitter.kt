@@ -28,7 +28,7 @@ abstract class Emitter(
         val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
         const val HEAP_POINTER = "heap_pointer"
-        const val HEAP_SIZE = 1024
+        const val HEAP_SIZE = 16
         const val VTABLE_POINTER = "vtable_pointer"
         const val ALLOCATE_HEAP_ROUTINE = "allocate_heap"
     }
@@ -352,10 +352,11 @@ abstract class Emitter(
 
         // Move arguments to registers: size, current heap pointer, heap base pointer, heap size
         val args = listOf(
-            ImmediateValue("${VARIABLE_SIZE * size}"),
+            ImmediateValue("${size * VARIABLE_SIZE}"),
             RHP,
             Heap,
-            ImmediateValue("$HEAP_SIZE")
+            ImmediateValue("${HEAP_SIZE * VARIABLE_SIZE}"),
+            RBP
         )
         args.forEachIndexed { index, arg ->
             emitInstruction(
@@ -373,6 +374,15 @@ abstract class Emitter(
                 InstructionType.CALL,
                 InstructionArg(Memory(ALLOCATE_HEAP_ROUTINE), Direct),
                 comment = "Call heap allocator routine"
+            )
+        )
+
+        emitInstruction(
+            Instruction(
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("${size * VARIABLE_SIZE}"), Direct),
+                InstructionArg(RHP, Direct),
+                comment = "Offset heap pointer by allocated bytes"
             )
         )
 

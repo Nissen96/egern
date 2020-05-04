@@ -31,8 +31,10 @@ class CodeGenerationVisitor(
 
     companion object {
         // STACK FRAME - CONSTANT OFFSETS FROM RBP
-        const val LOCAL_VAR_OFFSET = 2
-        const val FUNCTION_POINTER_BITMAP_OFFSET = 1
+        const val LOCAL_VAR_OFFSET = 4
+        const val FUNCTION_BITMAP_OFFSET = 3
+        const val NUM_PARAMETERS_OFFSET = 2
+        const val NUM_LOCAL_VARS_OFFSET = 1
         const val STATIC_LINK_OFFSET = -2
         const val PARAM_OFFSET = -3
 
@@ -69,18 +71,30 @@ class CodeGenerationVisitor(
         }
     }
 
-    private fun makeFunctionPointerBitmap(stmts: List<ASTNode>): String {
-        return "0b0" + stmts.filterIsInstance<VarDecl>().map { isPointer(deriveType(it.expr)) }.joinToString("")
+    private fun toBitmap(pointerMap: List<Int>): String {
+        return "0b0" + pointerMap.joinToString("")
     }
 
-    private fun makeClassPointerBitmap(fields: List<Any>): String {
-        return "0b0" + fields.map {
+    private fun getParamPointerMap(params: List<Pair<String, ExprType>>): List<Int> {
+        return params.map { isPointer(it.second) }
+    }
+
+    private fun getVariablePointerMap(stmts: List<ASTNode>): List<Int> {
+        return stmts.filterIsInstance<VarDecl>().map { isPointer(deriveType(it.expr)) }
+    }
+
+    private fun getFunctionPointerMap(funcDecl: FuncDecl): List<Int> {
+        return getParamPointerMap(funcDecl.params) + getVariablePointerMap(funcDecl.stmts)
+    }
+
+    private fun getClassPointerMap(fields: List<Any>): List<Int> {
+        return fields.map {
             when (it) {
                 is FieldDecl -> isPointer(deriveType(it.expr))
                 is Pair<*, *> -> isPointer(it.second as ExprType)
                 else -> throw Exception("Invalid field type")
             }
-        }.joinToString("")
+        }
     }
 
     private fun isPointer(exprType: ExprType): Int {
@@ -113,6 +127,24 @@ class CodeGenerationVisitor(
                 MetaOperation.AllocateInternalHeap
             )
         )
+
+        // Insert number of local variables and a pointer bitmap (for garbage collection)
+        val pointerBitmap = toBitmap(getVariablePointerMap(program.stmts))
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("${program.variableCount}"), Direct),
+                comment = "Push number of local variables"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue(pointerBitmap), Direct),
+                comment = "Push pointer bitmap"
+            )
+        )
+
         add(
             Instruction(
                 InstructionType.META,
@@ -233,7 +265,7 @@ class CodeGenerationVisitor(
     override fun preVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable
         functionStack.push(funcDecl)
-        val pointerBitmap = makeFunctionPointerBitmap(funcDecl.stmts)
+        val pointerBitmap = toBitmap(getFunctionPointerMap(funcDecl))
 
         add(
             Instruction(
@@ -247,6 +279,22 @@ class CodeGenerationVisitor(
                 MetaOperation.CalleePrologue
             )
         )
+
+        // Insert number of parameters, local variables and a pointer bitmap (for garbage collection)
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("${funcDecl.params.size}"), Direct),
+                comment = "Push number of parameters"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("${funcDecl.variableCount}"), Direct),
+                comment = "Push number of local variables"
+            )
+        )
         add(
             Instruction(
                 InstructionType.PUSH,
@@ -254,6 +302,7 @@ class CodeGenerationVisitor(
                 comment = "Push pointer bitmap"
             )
         )
+
         add(
             Instruction(
                 InstructionType.META,
@@ -868,7 +917,7 @@ class CodeGenerationVisitor(
         )
 
         // Add pointer bitmap
-        val pointerBitmap = makeClassPointerBitmap(allFields)
+        val pointerBitmap = toBitmap(getClassPointerMap(allFields))
         add(
             Instruction(
                 InstructionType.MOV,
