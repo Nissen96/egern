@@ -10,6 +10,8 @@ stmt:   varDecl ';'?
     |   whileLoop
     |   funcCall ';'?
     |   methodCall ';'?
+    |   continueStmt ';'?
+    |   breakStmt ';'?
     ;
 
 varDecl: 'var' (ID '=')+ expr ;
@@ -25,6 +27,8 @@ returnStmt: 'return' expr? ;
 printStmt: 'print' '(' expr? ')' ;
 
 whileLoop: 'while' '(' expr ')' block ;
+continueStmt: 'continue' ;
+breakStmt: 'break' ;
 funcCall:   ID '(' argList ')' ;
 argList:    (expr ',')* expr? ;
 

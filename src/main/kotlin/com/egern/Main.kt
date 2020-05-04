@@ -67,6 +67,11 @@ fun main(args: Array<String>) {
     )
     ast.accept(typeCheckingVisitor)
 
+    if (ErrorLogger.hasErrors()) {
+        ErrorLogger.print()
+        throw Exception("One or more errors occurred while compiling")
+    }
+
     val platform = PlatformManager()
 
     val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.symbolTable, classVisitor.classDefinitions)
@@ -93,10 +98,7 @@ fun main(args: Array<String>) {
         )
     }
     val code = emitter.emit()
-    if (ErrorLogger.hasErrors()) {
-        ErrorLogger.print()
-        throw Exception("One or more errors occurred while compiling")
-    } else if (!doPrint) {
+    if (!doPrint) {
         print(code)
     }
 }

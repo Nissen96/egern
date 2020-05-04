@@ -72,6 +72,10 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         }
     }
 
+    override fun visit(breakStmt: BreakStmt) {
+        print("break")
+    }
+
     override fun postVisit(castExpr: CastExpr) {
         print(" as ${typeString(castExpr.type)}")
     }
@@ -98,6 +102,10 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
 
     override fun midVisit(compExpr: CompExpr) {
         print(" ${compExpr.op.value} ")
+    }
+
+    override fun visit(continueStmt: ContinueStmt) {
+        print("continue")
     }
 
     override fun preVisit(fieldDecl: FieldDecl) {

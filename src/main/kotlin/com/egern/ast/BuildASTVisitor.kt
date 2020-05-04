@@ -147,6 +147,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.varDecl() != null -> ctx.varDecl().accept(this)
             ctx.opAssign() != null -> ctx.opAssign().accept(this)
             ctx.whileLoop() != null -> ctx.whileLoop().accept(this)
+            ctx.continueStmt() != null -> ctx.continueStmt().accept(this)
+            ctx.breakStmt() != null -> ctx.breakStmt().accept(this)
             ctx.funcCall() != null -> ctx.funcCall().accept(this)
             ctx.methodCall() != null -> ctx.methodCall().accept(this)
             else -> throw Exception("Invalid Statement Type!")
@@ -345,6 +347,20 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.expr().accept(this) as Expr,
             ctx.block().accept(this) as Block,
             lineNumber = ctx.start.line, charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitContinueStmt(ctx: MainParser.ContinueStmtContext): ASTNode {
+        return ContinueStmt(
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitBreakStmt(ctx: MainParser.BreakStmtContext): ASTNode {
+        return BreakStmt(
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
     }
 
