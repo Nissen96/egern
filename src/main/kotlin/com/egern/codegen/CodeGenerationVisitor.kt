@@ -33,8 +33,8 @@ class CodeGenerationVisitor(
         // STACK FRAME - CONSTANT OFFSETS FROM RBP
         const val LOCAL_VAR_OFFSET = 4
         const val FUNCTION_BITMAP_OFFSET = 3
-        const val NUM_PARAMETERS_OFFSET = 2
-        const val NUM_LOCAL_VARS_OFFSET = 1
+        const val NUM_LOCAL_VARS_OFFSET = 2
+        const val NUM_PARAMETERS_OFFSET = 1
         const val STATIC_LINK_OFFSET = -2
         const val PARAM_OFFSET = -3
 
@@ -84,7 +84,7 @@ class CodeGenerationVisitor(
     }
 
     private fun getFunctionPointerMap(funcDecl: FuncDecl): List<Int> {
-        return getParamPointerMap(funcDecl.params) + getVariablePointerMap(funcDecl.stmts)
+        return getVariablePointerMap(funcDecl.stmts) + getParamPointerMap(funcDecl.params)
     }
 
     private fun getClassPointerMap(fields: List<Any>): List<Int> {
@@ -115,6 +115,23 @@ class CodeGenerationVisitor(
                 InstructionArg(MainLabel, Direct)
             )
         )
+        // Let program base pointer be null - save original pointer to restore later
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(RBP, Direct),
+                comment = "Save program base pointer"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue("0"), Direct),
+                InstructionArg(RBP, Direct),
+                comment = "Set program base pointer to 0"
+            )
+        )
+
         add(
             Instruction(
                 InstructionType.META,
@@ -128,8 +145,15 @@ class CodeGenerationVisitor(
             )
         )
 
-        // Insert number of local variables and a pointer bitmap (for garbage collection)
+        // Insert number of parameters (0), local variables and a pointer bitmap (for garbage collection)
         val pointerBitmap = toBitmap(getVariablePointerMap(program.stmts))
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("0"), Direct),
+                comment = "Push number of parameters (0)"
+            )
+        )
         add(
             Instruction(
                 InstructionType.PUSH,
@@ -258,6 +282,13 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.META,
                 MetaOperation.CalleeEpilogue
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(RBP, Direct),
+                comment = "Restore program base pointer"
             )
         )
     }
