@@ -18,19 +18,29 @@ const long int OBJECT_VTABLE_POINTER_OFFSET = 2;
 const long int OBJECT_DATA_OFFSET = 3;
 const long int ARRAY_DATA_OFFSET = 2;
 
-void printBitmap(size_t const size, void const * const ptr){
-    unsigned char *b = (unsigned char*) ptr;
-    unsigned char byte;
-    int i, j;
+long int* heap_pointer;
+long int* from_space;
+long int* to_space;
+long int* current_heap_pointer;
 
-    printf("Bitmap:         ");
-    for (i = size - 1; i >= 0; i--) {
+
+void set_bitmap(long int* ptr, int* bitmap) {
+    unsigned char* b = (unsigned char*) ptr;
+    unsigned char byte;
+
+    int i, j;
+    for (i = sizeof(long int) - 1; i >= 0; i--) {
         for (j = 7; j >= 0; j--) {
             byte = (b[i] >> j) & 1;
-            printf("%u", byte);
+            bitmap[8 * i + j] = byte;
         }
     }
-    puts("");
+}
+
+void print_bitmap(int size, int* bitmap) {
+    printf("Bitmap:         ");
+    for (int i = 0; i < size; ++i) printf("%d", bitmap[i]);
+    printf("\n");
 }
 
 void swap(long int* a, long int* b) {
@@ -39,10 +49,43 @@ void swap(long int* a, long int* b) {
     b = temp;
 }
 
+void forward(long int* ptr) {
+
+}
+
+void visit_pointer_vars(long int num_vars, int* bitmap, long int* variables) {
+    for (int i = 0; i < num_vars; ++i) {
+        int is_pointer = bitmap[i];
+
+        if (is_pointer) {
+            long int* variable = (long int*) variables[-num_vars + i + 1];
+            printf("Var %d = %d is pointer\n", i, variable);
+            forward(variable);
+        }
+    }
+}
+
+void visit_pointer_params(char* bitmap, long int* params) {
+
+}
+
 void scan_stack_frame(long int* rbp) {
-    printf("Num parameters: %d\n", *(rbp - NUM_PARAMETERS_OFFSET));
-    printf("Num variables:  %d\n", *(rbp - NUM_LOCAL_VARS_OFFSET));
-    printBitmap(sizeof(long int), rbp - FUNCTION_BITMAP_OFFSET);
+    // Get stack frame info
+    long int num_params = *(rbp - NUM_PARAMETERS_OFFSET);
+    long int num_vars = *(rbp - NUM_LOCAL_VARS_OFFSET);
+    int bitmap[64];
+    set_bitmap(rbp - FUNCTION_BITMAP_OFFSET, bitmap);
+
+    printf("Num parameters: %d\n", num_params);
+    printf("Num variables:  %d\n", num_vars);
+    print_bitmap(num_params + num_vars, bitmap);
+
+    int param_bitmap[num_params];
+    int var_bitmap[num_vars];
+    int i, j;
+    for (i = 0; i < num_params; i++) param_bitmap[i] = bitmap[i];
+    for (j = 0; j < num_vars; j++) var_bitmap[j] = bitmap[i++];
+    visit_pointer_vars(num_vars, var_bitmap, rbp - LOCAL_VAR_OFFSET);
 }
 
 void collect_garbage(long int* rbp) {
@@ -55,26 +98,32 @@ void collect_garbage(long int* rbp) {
     printf("Done!\n");
 }
 
-long int* allocate_heap(long int size, long int* current_heap_pointer, long int* heap1_pointer, long int heap_size, long int* rbp) {
-    // Divide sizes to use in pointer arithmetic
-    size /= sizeof(long int);
-    heap_size /= sizeof(long int);
-    
-    long int* heap2_pointer = heap1_pointer + heap_size;
-    if (current_heap_pointer >= heap2_pointer) {
-        swap(heap1_pointer, heap2_pointer);
+long int* allocate_heap(long int size, long int heap_size, long int* rbp) {
+    from_space = heap_pointer;
+    to_space = from_space + heap_size;
+
+    if (current_heap_pointer >= to_space) {
+        swap(from_space, to_space);
     }
 
+    /*printf("Heap pointer: %d\n", from_space);
+    printf("Heap size:    %d\n", heap_size);
+    printf("Current:      %d\n", current_heap_pointer);
+    printf("Allocation:   %d\n", size);
+
+    printf("New current:  %d\n", current_heap_pointer + size);
+    printf("Heap 1 end:   %d\n\n", from_space + heap_size);*/
+
     // Run garbage collection if heap limit is reached
-    if (current_heap_pointer + size > heap1_pointer + heap_size) {
+    if (current_heap_pointer + size > from_space + heap_size) {
         collect_garbage(rbp);
     }
 
     // Out of memory
-    if (current_heap_pointer + size > heap1_pointer + heap_size) {
+    if (current_heap_pointer + size > from_space + heap_size) {
         fprintf(stderr, "Out of memory\n");
         exit(1);
     }
-    
-    return current_heap_pointer;
+
+    return heap_pointer;
 }
