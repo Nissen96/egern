@@ -43,8 +43,6 @@ collect_garbage:
         nop
         popq    %rbp
         ret
-.LC0:
-        .string "%d\n"
 allocate_heap:
         pushq   %rbp
         movq    %rsp, %rbp
@@ -68,22 +66,6 @@ allocate_heap:
         movq    %rax, %rdi
         call    swap
 .L4:
-        movl    -20(%rbp), %eax
-        movslq  %eax, %rdx
-        movq    -32(%rbp), %rax
-        addq    %rdx, %rax
-        movq    %rax, %rsi
-        movl    $.LC0, %edi
-        movl    $0, %eax
-        call    printf
-        movl    -24(%rbp), %eax
-        movslq  %eax, %rdx
-        movq    -40(%rbp), %rax
-        addq    %rdx, %rax
-        movq    %rax, %rsi
-        movl    $.LC0, %edi
-        movl    $0, %eax
-        call    printf
         movl    -20(%rbp), %eax
         movslq  %eax, %rdx
         movq    -32(%rbp), %rax

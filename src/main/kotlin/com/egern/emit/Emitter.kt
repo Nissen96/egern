@@ -27,9 +27,10 @@ abstract class Emitter(
 
         val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
-        const val HEAP_POINTER = "heap_pointer"
-        const val HEAP_SIZE = 16
         const val VTABLE_POINTER = "vtable_pointer"
+        const val HEAP_POINTER = "heap_pointer"
+        const val CURRENT_HEAP_POINTER = "current_heap_pointer"
+        const val HEAP_SIZE = 16
         const val ALLOCATE_HEAP_ROUTINE = "allocate_heap"
     }
 
@@ -46,6 +47,7 @@ abstract class Emitter(
 
     private fun emitProgramPrologue() {
         dataFields.add(HEAP_POINTER)
+        dataFields.add(CURRENT_HEAP_POINTER)
         dataFields.add(VTABLE_POINTER)
         syntax.emitPrologue(builder, emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
     }
@@ -229,7 +231,7 @@ abstract class Emitter(
             }
             RBP -> syntax.register("rbp")
             RSP -> syntax.register("rsp")
-            RHP -> syntax.register("rbx")
+            RHP -> CURRENT_HEAP_POINTER
             Heap -> HEAP_POINTER
             VTable -> VTABLE_POINTER
             ReturnValue -> syntax.register("rax")
