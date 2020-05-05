@@ -16,11 +16,7 @@ SIZE_INFO_OFFSET:
         .zero   8
 BITMAP_OFFSET:
         .quad   1
-OBJECT_VTABLE_POINTER_OFFSET:
-        .quad   2
-OBJECT_DATA_OFFSET:
-        .quad   3
-ARRAY_DATA_OFFSET:
+DATA_OFFSET:
         .quad   2
 set_bitmap:
         pushq   %rbp
@@ -119,12 +115,102 @@ swap:
         nop
         popq    %rbp
         ret
-forward:
+getPointerField:
+        pushq   %rbp
+        movq    %rsp, %rbp
+        subq    $320, %rsp
+        movq    %rdi, -312(%rbp)
+        movl    %esi, -316(%rbp)
+        movl    $2, %eax
+        leaq    0(,%rax,8), %rdx
+        movq    -312(%rbp), %rax
+        addq    %rdx, %rax
+        movq    %rax, -16(%rbp)
+        movl    $0, %eax
+        leaq    0(,%rax,8), %rdx
+        movq    -312(%rbp), %rax
+        addq    %rdx, %rax
+        movq    (%rax), %rax
+        movq    %rax, -24(%rbp)
+        movl    $1, %eax
+        salq    $3, %rax
+        negq    %rax
+        movq    %rax, %rdx
+        movq    -312(%rbp), %rax
+        addq    %rax, %rdx
+        leaq    -304(%rbp), %rax
+        movq    %rax, %rsi
+        movq    %rdx, %rdi
+        call    set_bitmap
+        movl    $0, -4(%rbp)
+        movl    $0, -8(%rbp)
+        jmp     .L11
+.L15:
+        movl    -8(%rbp), %eax
+        cltq
+        movl    -304(%rbp,%rax,4), %eax
+        movl    %eax, -28(%rbp)
+        cmpl    $0, -28(%rbp)
+        je      .L12
+        movl    -8(%rbp), %eax
+        cltq
+        subq    -24(%rbp), %rax
+        addq    $1, %rax
+        leaq    0(,%rax,8), %rdx
+        movq    -16(%rbp), %rax
+        addq    %rdx, %rax
+        movq    (%rax), %rax
+        movq    %rax, -40(%rbp)
+        movl    -4(%rbp), %eax
+        cmpl    -316(%rbp), %eax
+        jne     .L13
+        movq    -40(%rbp), %rax
+        jmp     .L10
+.L13:
+        addl    $1, -4(%rbp)
+.L12:
+        addl    $1, -8(%rbp)
+.L11:
+        movl    -8(%rbp), %eax
+        cltq
+        cmpq    %rax, -24(%rbp)
+        jg      .L15
+.L10:
+        leave
+        ret
+chase:
         pushq   %rbp
         movq    %rsp, %rbp
         movq    %rdi, -8(%rbp)
         nop
         popq    %rbp
+        ret
+forward:
+        pushq   %rbp
+        movq    %rsp, %rbp
+        subq    $24, %rsp
+        movq    %rdi, -24(%rbp)
+        movq    to_space(%rip), %rax
+        cmpq    %rax, -24(%rbp)
+        jnb     .L18
+        movq    -24(%rbp), %rax
+        movl    $0, %esi
+        movq    %rax, %rdi
+        call    getPointerField
+        movq    %rax, -8(%rbp)
+        movq    to_space(%rip), %rax
+        cmpq    %rax, -8(%rbp)
+        jnb     .L19
+        movq    -24(%rbp), %rax
+        movq    %rax, %rdi
+        call    chase
+.L19:
+        movq    -8(%rbp), %rax
+        jmp     .L20
+.L18:
+        movq    -24(%rbp), %rax
+.L20:
+        leave
         ret
 .LC2:
         .string "Var %d = %d is pointer\n"
@@ -136,8 +222,8 @@ visit_pointer_vars:
         movq    %rsi, -32(%rbp)
         movq    %rdx, -40(%rbp)
         movl    $0, -4(%rbp)
-        jmp     .L12
-.L14:
+        jmp     .L22
+.L24:
         movl    -4(%rbp), %eax
         cltq
         leaq    0(,%rax,4), %rdx
@@ -146,7 +232,7 @@ visit_pointer_vars:
         movl    (%rax), %eax
         movl    %eax, -8(%rbp)
         cmpl    $0, -8(%rbp)
-        je      .L13
+        je      .L23
         movl    -4(%rbp), %eax
         cltq
         subq    -24(%rbp), %rax
@@ -165,13 +251,13 @@ visit_pointer_vars:
         movq    -16(%rbp), %rax
         movq    %rax, %rdi
         call    forward
-.L13:
+.L23:
         addl    $1, -4(%rbp)
-.L12:
+.L22:
         movl    -4(%rbp), %eax
         cltq
         cmpq    %rax, -24(%rbp)
-        jg      .L14
+        jg      .L24
         nop
         nop
         leave
@@ -292,8 +378,8 @@ scan_stack_frame:
         salq    $2, %rax
         movq    %rax, -104(%rbp)
         movl    $0, -64(%rbp)
-        jmp     .L17
-.L18:
+        jmp     .L27
+.L28:
         movl    -64(%rbp), %eax
         cltq
         movl    -368(%rbp,%rax,4), %ecx
@@ -302,14 +388,14 @@ scan_stack_frame:
         movslq  %edx, %rdx
         movl    %ecx, (%rax,%rdx,4)
         addl    $1, -64(%rbp)
-.L17:
+.L27:
         movl    -64(%rbp), %eax
         cltq
         cmpq    %rax, -56(%rbp)
-        jg      .L18
+        jg      .L28
         movl    $0, -60(%rbp)
-        jmp     .L19
-.L20:
+        jmp     .L29
+.L30:
         movl    -64(%rbp), %eax
         leal    1(%rax), %edx
         movl    %edx, -64(%rbp)
@@ -320,11 +406,11 @@ scan_stack_frame:
         movslq  %edx, %rdx
         movl    %ecx, (%rax,%rdx,4)
         addl    $1, -60(%rbp)
-.L19:
+.L29:
         movl    -60(%rbp), %eax
         cltq
         cmpq    %rax, -72(%rbp)
-        jg      .L20
+        jg      .L30
         movl    $4, %eax
         salq    $3, %rax
         negq    %rax
@@ -357,17 +443,17 @@ collect_garbage:
         movq    %rdi, -8(%rbp)
         movl    $.LC5, %edi
         call    puts
-        jmp     .L22
-.L23:
+        jmp     .L32
+.L33:
         movq    -8(%rbp), %rax
         movq    %rax, %rdi
         call    scan_stack_frame
         movq    -8(%rbp), %rax
         movq    (%rax), %rax
         movq    %rax, -8(%rbp)
-.L22:
+.L32:
         cmpq    $0, -8(%rbp)
-        jne     .L23
+        jne     .L33
         movl    $.LC6, %edi
         call    puts
         nop
@@ -392,13 +478,13 @@ allocate_heap:
         movq    current_heap_pointer(%rip), %rdx
         movq    to_space(%rip), %rax
         cmpq    %rax, %rdx
-        jb      .L25
+        jb      .L35
         movq    to_space(%rip), %rdx
         movq    from_space(%rip), %rax
         movq    %rdx, %rsi
         movq    %rax, %rdi
         call    swap
-.L25:
+.L35:
         movq    current_heap_pointer(%rip), %rax
         movq    -8(%rbp), %rdx
         salq    $3, %rdx
@@ -408,11 +494,11 @@ allocate_heap:
         salq    $3, %rdx
         addq    %rdx, %rax
         cmpq    %rax, %rcx
-        jbe     .L26
+        jbe     .L36
         movq    -24(%rbp), %rax
         movq    %rax, %rdi
         call    collect_garbage
-.L26:
+.L36:
         movq    current_heap_pointer(%rip), %rax
         movq    -8(%rbp), %rdx
         salq    $3, %rdx
@@ -422,7 +508,7 @@ allocate_heap:
         salq    $3, %rdx
         addq    %rdx, %rax
         cmpq    %rax, %rcx
-        jbe     .L27
+        jbe     .L37
         movq    stderr(%rip), %rax
         movq    %rax, %rcx
         movl    $14, %edx
@@ -431,7 +517,7 @@ allocate_heap:
         call    fwrite
         movl    $1, %edi
         call    exit
-.L27:
+.L37:
         movq    heap_pointer(%rip), %rax
         leave
         ret

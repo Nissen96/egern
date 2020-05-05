@@ -23,6 +23,7 @@ abstract class SyntaxManager {
 
     abstract fun emitRuntime(asmStringBuilder: AsmStringBuilder)
     protected fun emitRuntime(asmStringBuilder: AsmStringBuilder, filename: String) {
+        asmStringBuilder.addComment("RUNTIME").newline()
         File(filename).forEachLine { asmStringBuilder.add(it).newline() }
     }
 }

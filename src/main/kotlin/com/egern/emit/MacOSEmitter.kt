@@ -15,7 +15,7 @@ class MacOSEmitter(
     }
 
     override fun emitProgramEpilogue() {
-        builder.addLine("format: db \"%d\", 10, 0")
+        builder.addLine("format: db \"%d\", 10, 0").newline()
     }
 
     override fun emitAllocateProgramHeap() {

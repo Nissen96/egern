@@ -19,6 +19,7 @@ class WindowsEmitter(
 
     override fun emitProgramEpilogue() {
         //builder.addLine("format: db \"%d\", 10, 0")
+        builder.newline()
     }
 
     private fun wrapCallInShadowSpace(call: () -> (Unit)) {

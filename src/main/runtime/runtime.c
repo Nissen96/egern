@@ -14,9 +14,7 @@ const long int PARAMS_IN_REGISTERS = 6;
 // OBJECT AND ARRAY INFO (admin info common to both)
 const long int SIZE_INFO_OFFSET = 0;
 const long int BITMAP_OFFSET = 1;
-const long int OBJECT_VTABLE_POINTER_OFFSET = 2;
-const long int OBJECT_DATA_OFFSET = 3;
-const long int ARRAY_DATA_OFFSET = 2;
+const long int DATA_OFFSET = 2;
 
 long int* heap_pointer;
 long int* from_space;
@@ -49,8 +47,40 @@ void swap(long int* a, long int* b) {
     b = temp;
 }
 
-void forward(long int* ptr) {
+long int* getPointerField(long int* ptr, int k) {
+    // Get bitmap
+    long int* fields = ptr + DATA_OFFSET;
+    long int num_fields = *(ptr + SIZE_INFO_OFFSET);
+    int bitmap[64];
+    set_bitmap(ptr - BITMAP_OFFSET, bitmap);
 
+    // Find k'th pointer field
+    int pointers_found = 0;
+    for (int i = 0; i < num_fields; ++i) {
+        int is_pointer = bitmap[i];
+        if (is_pointer) {
+            long int* field = (long int*) fields[-num_fields + i + 1];
+            if (pointers_found == k) return field;
+
+            pointers_found++;
+        }
+    }
+}
+
+long int* chase(long int* ptr) {
+
+}
+
+long int* forward(long int* ptr) {
+    // Points to from-space
+    if (ptr < to_space) {
+        long int* field = getPointerField(ptr, 0);
+        if (field < to_space) {
+            chase(ptr);
+        }
+        return field;
+    }
+    return ptr;
 }
 
 void visit_pointer_vars(long int num_vars, int* bitmap, long int* variables) {

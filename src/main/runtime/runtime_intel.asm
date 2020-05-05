@@ -16,11 +16,7 @@ SIZE_INFO_OFFSET:
         .zero   8
 BITMAP_OFFSET:
         .quad   1
-OBJECT_VTABLE_POINTER_OFFSET:
-        .quad   2
-OBJECT_DATA_OFFSET:
-        .quad   3
-ARRAY_DATA_OFFSET:
+DATA_OFFSET:
         .quad   2
 set_bitmap:
         push    rbp
@@ -119,12 +115,102 @@ swap:
         nop
         pop     rbp
         ret
-forward:
+getPointerField:
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 320
+        mov     QWORD PTR [rbp-312], rdi
+        mov     DWORD PTR [rbp-316], esi
+        mov     eax, 2
+        lea     rdx, [0+rax*8]
+        mov     rax, QWORD PTR [rbp-312]
+        add     rax, rdx
+        mov     QWORD PTR [rbp-16], rax
+        mov     eax, 0
+        lea     rdx, [0+rax*8]
+        mov     rax, QWORD PTR [rbp-312]
+        add     rax, rdx
+        mov     rax, QWORD PTR [rax]
+        mov     QWORD PTR [rbp-24], rax
+        mov     eax, 1
+        sal     rax, 3
+        neg     rax
+        mov     rdx, rax
+        mov     rax, QWORD PTR [rbp-312]
+        add     rdx, rax
+        lea     rax, [rbp-304]
+        mov     rsi, rax
+        mov     rdi, rdx
+        call    set_bitmap
+        mov     DWORD PTR [rbp-4], 0
+        mov     DWORD PTR [rbp-8], 0
+        jmp     .L11
+.L15:
+        mov     eax, DWORD PTR [rbp-8]
+        cdqe
+        mov     eax, DWORD PTR [rbp-304+rax*4]
+        mov     DWORD PTR [rbp-28], eax
+        cmp     DWORD PTR [rbp-28], 0
+        je      .L12
+        mov     eax, DWORD PTR [rbp-8]
+        cdqe
+        sub     rax, QWORD PTR [rbp-24]
+        add     rax, 1
+        lea     rdx, [0+rax*8]
+        mov     rax, QWORD PTR [rbp-16]
+        add     rax, rdx
+        mov     rax, QWORD PTR [rax]
+        mov     QWORD PTR [rbp-40], rax
+        mov     eax, DWORD PTR [rbp-4]
+        cmp     eax, DWORD PTR [rbp-316]
+        jne     .L13
+        mov     rax, QWORD PTR [rbp-40]
+        jmp     .L10
+.L13:
+        add     DWORD PTR [rbp-4], 1
+.L12:
+        add     DWORD PTR [rbp-8], 1
+.L11:
+        mov     eax, DWORD PTR [rbp-8]
+        cdqe
+        cmp     QWORD PTR [rbp-24], rax
+        jg      .L15
+.L10:
+        leave
+        ret
+chase:
         push    rbp
         mov     rbp, rsp
         mov     QWORD PTR [rbp-8], rdi
         nop
         pop     rbp
+        ret
+forward:
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 24
+        mov     QWORD PTR [rbp-24], rdi
+        mov     rax, QWORD PTR to_space[rip]
+        cmp     QWORD PTR [rbp-24], rax
+        jnb     .L18
+        mov     rax, QWORD PTR [rbp-24]
+        mov     esi, 0
+        mov     rdi, rax
+        call    getPointerField
+        mov     QWORD PTR [rbp-8], rax
+        mov     rax, QWORD PTR to_space[rip]
+        cmp     QWORD PTR [rbp-8], rax
+        jnb     .L19
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rdi, rax
+        call    chase
+.L19:
+        mov     rax, QWORD PTR [rbp-8]
+        jmp     .L20
+.L18:
+        mov     rax, QWORD PTR [rbp-24]
+.L20:
+        leave
         ret
 .LC2:
         .string "Var %d = %d is pointer\n"
@@ -136,8 +222,8 @@ visit_pointer_vars:
         mov     QWORD PTR [rbp-32], rsi
         mov     QWORD PTR [rbp-40], rdx
         mov     DWORD PTR [rbp-4], 0
-        jmp     .L12
-.L14:
+        jmp     .L22
+.L24:
         mov     eax, DWORD PTR [rbp-4]
         cdqe
         lea     rdx, [0+rax*4]
@@ -146,7 +232,7 @@ visit_pointer_vars:
         mov     eax, DWORD PTR [rax]
         mov     DWORD PTR [rbp-8], eax
         cmp     DWORD PTR [rbp-8], 0
-        je      .L13
+        je      .L23
         mov     eax, DWORD PTR [rbp-4]
         cdqe
         sub     rax, QWORD PTR [rbp-24]
@@ -165,13 +251,13 @@ visit_pointer_vars:
         mov     rax, QWORD PTR [rbp-16]
         mov     rdi, rax
         call    forward
-.L13:
+.L23:
         add     DWORD PTR [rbp-4], 1
-.L12:
+.L22:
         mov     eax, DWORD PTR [rbp-4]
         cdqe
         cmp     QWORD PTR [rbp-24], rax
-        jg      .L14
+        jg      .L24
         nop
         nop
         leave
@@ -292,8 +378,8 @@ scan_stack_frame:
         sal     rax, 2
         mov     QWORD PTR [rbp-104], rax
         mov     DWORD PTR [rbp-64], 0
-        jmp     .L17
-.L18:
+        jmp     .L27
+.L28:
         mov     eax, DWORD PTR [rbp-64]
         cdqe
         mov     ecx, DWORD PTR [rbp-368+rax*4]
@@ -302,14 +388,14 @@ scan_stack_frame:
         movsx   rdx, edx
         mov     DWORD PTR [rax+rdx*4], ecx
         add     DWORD PTR [rbp-64], 1
-.L17:
+.L27:
         mov     eax, DWORD PTR [rbp-64]
         cdqe
         cmp     QWORD PTR [rbp-56], rax
-        jg      .L18
+        jg      .L28
         mov     DWORD PTR [rbp-60], 0
-        jmp     .L19
-.L20:
+        jmp     .L29
+.L30:
         mov     eax, DWORD PTR [rbp-64]
         lea     edx, [rax+1]
         mov     DWORD PTR [rbp-64], edx
@@ -320,11 +406,11 @@ scan_stack_frame:
         movsx   rdx, edx
         mov     DWORD PTR [rax+rdx*4], ecx
         add     DWORD PTR [rbp-60], 1
-.L19:
+.L29:
         mov     eax, DWORD PTR [rbp-60]
         cdqe
         cmp     QWORD PTR [rbp-72], rax
-        jg      .L20
+        jg      .L30
         mov     eax, 4
         sal     rax, 3
         neg     rax
@@ -357,17 +443,17 @@ collect_garbage:
         mov     QWORD PTR [rbp-8], rdi
         mov     edi, OFFSET FLAT:.LC5
         call    puts
-        jmp     .L22
-.L23:
+        jmp     .L32
+.L33:
         mov     rax, QWORD PTR [rbp-8]
         mov     rdi, rax
         call    scan_stack_frame
         mov     rax, QWORD PTR [rbp-8]
         mov     rax, QWORD PTR [rax]
         mov     QWORD PTR [rbp-8], rax
-.L22:
+.L32:
         cmp     QWORD PTR [rbp-8], 0
-        jne     .L23
+        jne     .L33
         mov     edi, OFFSET FLAT:.LC6
         call    puts
         nop
@@ -392,13 +478,13 @@ allocate_heap:
         mov     rdx, QWORD PTR current_heap_pointer[rip]
         mov     rax, QWORD PTR to_space[rip]
         cmp     rdx, rax
-        jb      .L25
+        jb      .L35
         mov     rdx, QWORD PTR to_space[rip]
         mov     rax, QWORD PTR from_space[rip]
         mov     rsi, rdx
         mov     rdi, rax
         call    swap
-.L25:
+.L35:
         mov     rax, QWORD PTR current_heap_pointer[rip]
         mov     rdx, QWORD PTR [rbp-8]
         sal     rdx, 3
@@ -408,11 +494,11 @@ allocate_heap:
         sal     rdx, 3
         add     rax, rdx
         cmp     rcx, rax
-        jbe     .L26
+        jbe     .L36
         mov     rax, QWORD PTR [rbp-24]
         mov     rdi, rax
         call    collect_garbage
-.L26:
+.L36:
         mov     rax, QWORD PTR current_heap_pointer[rip]
         mov     rdx, QWORD PTR [rbp-8]
         sal     rdx, 3
@@ -422,7 +508,7 @@ allocate_heap:
         sal     rdx, 3
         add     rax, rdx
         cmp     rcx, rax
-        jbe     .L27
+        jbe     .L37
         mov     rax, QWORD PTR stderr[rip]
         mov     rcx, rax
         mov     edx, 14
@@ -431,7 +517,7 @@ allocate_heap:
         call    fwrite
         mov     edi, 1
         call    exit
-.L27:
+.L37:
         mov     rax, QWORD PTR heap_pointer[rip]
         leave
         ret

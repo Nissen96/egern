@@ -11,6 +11,7 @@ class LinuxEmitter(
 ) : Emitter(instructions, dataFields, staticStrings, vTableSize, syntax) {
     override fun emitProgramEpilogue() {
         // Empty epilogue
+        builder.newline()
     }
 
     override fun emitMainLabel(): String {
