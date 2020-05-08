@@ -34,15 +34,19 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         print("]")
     }
 
-    override fun preVisit(arrayIndexExpr: ArrayIndexExpr) {
-        print(arrayIndexExpr.id)
-    }
-
     override fun preMidVisit(arrayIndexExpr: ArrayIndexExpr) {
         print("[")
     }
 
     override fun postMidVisit(arrayIndexExpr: ArrayIndexExpr) {
+        print("]")
+    }
+
+    override fun preVisit(arrayOfSizeExpr: ArrayOfSizeExpr) {
+        print("${typeString(arrayOfSizeExpr.type)}[")
+    }
+
+    override fun postVisit(arrayOfSizeExpr: ArrayOfSizeExpr) {
         print("]")
     }
 

@@ -29,6 +29,10 @@ abstract class SymbolAwareVisitor(
             is ParenExpr -> deriveType(expr.expr)
             is LenExpr -> INT
             is ArrayExpr -> deriveArrayType(expr)
+            is ArrayOfSizeExpr -> if (expr.type is ARRAY)
+                ARRAY(expr.type.depth + 1, expr.type.innerType)
+            else
+                ARRAY(1, expr.type)
             is ArrayIndexExpr -> {
                 val array = deriveType(expr.id) as ARRAY
                 if (array.depth - expr.indices.size > 0) {

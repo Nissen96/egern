@@ -455,10 +455,7 @@ class CodeGenerationVisitor(
             add(
                 Instruction(
                     InstructionType.PUSH,
-                    InstructionArg(
-                        RSP,
-                        IndirectRelative(-(2 * index))
-                    ),
+                    InstructionArg(RSP, IndirectRelative(-(2 * index))),
                     comment = "Push argument to stack"
                 )
             )
@@ -822,7 +819,118 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.PUSH,
                 InstructionArg(ReturnValue, Direct),
-                comment = "Push result to stack"
+                comment = "Push array address to stack"
+            )
+        )
+    }
+
+    override fun postVisit(arrayOfSizeExpr: ArrayOfSizeExpr) {
+        add(
+            Instruction(
+                InstructionType.META,
+                MetaOperation.AllocateHeapSpace
+            )
+        )
+
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop array size"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ReturnValue, Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Copy array address"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Indirect),
+                comment = "Write size information before array"
+            )
+        )
+
+        /* Set all values to 0 in a loop
+                jmp loop
+            insert:
+                inc reg2
+                mov 0, (reg2)
+                dec reg1
+            loop:
+                cmp reg1, 0
+                jg insert
+         */
+        val insertLabel = LabelGenerator.nextLabel("insert")
+        val loopLabel = LabelGenerator.nextLabel("loop")
+        add(
+            Instruction(
+                InstructionType.JMP,
+                InstructionArg(Memory(loopLabel), Direct),
+                comment = "Jump to loop condition"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(insertLabel), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.INC,
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Get address of next array index"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue("0"), Direct),
+                InstructionArg(Register(OpReg2), Indirect),
+                comment = "Insert 0 at array index"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.DEC,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Decrement counter"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.LABEL,
+                InstructionArg(Memory(loopLabel), Direct)
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.CMP,
+                InstructionArg(ImmediateValue("0"), Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Check if all values has been set"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.JG,
+                InstructionArg(Memory(insertLabel), Direct),
+                comment = "If not, insert next"
+            )
+        )
+
+
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ReturnValue, Direct),
+                comment = "Push array address to stack"
             )
         )
     }

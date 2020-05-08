@@ -22,7 +22,6 @@ abstract class Visitor {
 
     // AST node visits
     open fun midVisit(arithExpr: ArithExpr) {}
-
     open fun postVisit(arithExpr: ArithExpr) {}
 
     open fun preVisit(arrayExpr: ArrayExpr) {}
@@ -33,6 +32,9 @@ abstract class Visitor {
     open fun preMidVisit(arrayIndexExpr: ArrayIndexExpr) {}
     open fun postMidVisit(arrayIndexExpr: ArrayIndexExpr) {}
     open fun postVisit(arrayIndexExpr: ArrayIndexExpr) {}
+
+    open fun preVisit(arrayOfSizeExpr: ArrayOfSizeExpr) {}
+    open fun postVisit(arrayOfSizeExpr: ArrayOfSizeExpr) {}
 
     open fun preVisit(block: Block) {}
     open fun postVisit(block: Block) {}
