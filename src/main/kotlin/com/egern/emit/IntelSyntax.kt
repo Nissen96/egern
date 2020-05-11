@@ -53,6 +53,7 @@ class IntelSyntax : SyntaxManager() {
                 "${it.key}: db \"${it.value}\"${if (it.key.startsWith("format_")) ", 10" else ""}, 0"
             )
         }
+        asmStringBuilder.addLine("heap_size: db ${Emitter.HEAP_SIZE}")
         asmStringBuilder.newline()
     }
 

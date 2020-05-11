@@ -21,7 +21,7 @@ abstract class Emitter(
         return symbol
     }
 
-    protected companion object {
+    companion object {
         const val VARIABLE_SIZE = 8
         const val ADDRESSING_OFFSET = -8
 
@@ -32,7 +32,7 @@ abstract class Emitter(
         const val FROM_SPACE = "from_space"
         const val TO_SPACE = "to_space"
         const val CURRENT_HEAP_POINTER = "current_heap_pointer"
-        const val HEAP_SIZE = 16
+        const val HEAP_SIZE = 32
         const val ALLOCATE_HEAP_ROUTINE = "allocate_heap"
     }
 
@@ -52,6 +52,7 @@ abstract class Emitter(
         dataFields.add(FROM_SPACE)  // Starting points of each heap half for garbage collection
         dataFields.add(TO_SPACE)
         dataFields.add(CURRENT_HEAP_POINTER)
+        dataFields.add("current_to_space_pointer")
         dataFields.add(VTABLE_POINTER)
         syntax.emitPrologue(builder, emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
     }
@@ -360,7 +361,6 @@ abstract class Emitter(
         // Move arguments to registers: size, current heap pointer, heap base pointer, heap size
         val args = listOf(
             ImmediateValue("$size"),
-            ImmediateValue("$HEAP_SIZE"),
             RBP
         )
         args.forEachIndexed { index, arg ->

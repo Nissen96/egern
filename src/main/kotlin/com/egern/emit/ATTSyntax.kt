@@ -51,6 +51,7 @@ class ATTSyntax : SyntaxManager() {
                 "${it.key}: .asciz \"${it.value}${if (it.key.startsWith("format_")) "\\n" else ""}\""
             )
         }
+        asmStringBuilder.addLine("heap_size: .quad ${Emitter.HEAP_SIZE}")
         asmStringBuilder.newline()
     }
 
