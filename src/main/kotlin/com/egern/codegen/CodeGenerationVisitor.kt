@@ -762,7 +762,13 @@ class CodeGenerationVisitor(
             )
         )
 
-        val pointerBitmap = isPointer(deriveType(arrayExpr)).toString().repeat(arrayLen)
+
+        val arrayType = deriveType(arrayExpr) as ARRAY
+        val elementType = if (arrayType.depth == 1)
+            arrayType.innerType
+        else
+            ARRAY(arrayType.depth - 1, arrayType.innerType)
+        val pointerBitmap = isPointer(elementType).toString().repeat(arrayLen)
         add(
             Instruction(
                 InstructionType.MOV,
