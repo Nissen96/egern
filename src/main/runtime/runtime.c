@@ -59,6 +59,16 @@ void swap_spaces() {
     from_space = temp;
 }
 
+int min(int a, int b) {
+    if (a <= b) return a;
+    return b;
+}
+
+int max(int a, int b) {
+    if (a >= b) return a;
+    return b;
+}
+
 void check_pointer(long int* ptr) {
     for (int i = -16; i < 16; ++i) {
         printf("Index %d: %d\n", i, ptr[i]);
@@ -147,32 +157,58 @@ void visit_pointer_params(char* bitmap, long int* params) {
 
 }
 
-void scan_stack_frame(long int* rbp) {
+void scan_stack_frame(long int* rbp, int is_top_frame) {
     // Get stack frame info
     long int num_params = *(rbp - NUM_PARAMETERS_OFFSET);
     long int num_vars = *(rbp - NUM_LOCAL_VARS_OFFSET);
     int bitmap[64];
     set_bitmap(rbp - FUNCTION_BITMAP_OFFSET, bitmap);
 
-    int param_bitmap[num_params];
+    int register_params = min(num_params, 6);
+    int stack_params = max(num_params - 6, 0);
+    int register_param_bitmap[register_params];
+    int stack_param_bitmap[stack_params];
     int var_bitmap[num_vars];
+
     int i, j;
-    for (i = 0; i < num_params; i++) param_bitmap[i] = bitmap[i];
+    for (i = 0; i < stack_params; i++) stack_param_bitmap[i] = bitmap[i];
+    for (j = 0; j < register_params; j++) register_param_bitmap[j] = bitmap[i++];
     for (j = 0; j < num_vars; j++) var_bitmap[j] = bitmap[i++];
 
-    //check_pointer(rbp - LOCAL_VAR_OFFSET);
+    print_bitmap(num_params + num_vars, bitmap);
+    print_bitmap(register_params, register_param_bitmap);
+    print_bitmap(stack_params, stack_param_bitmap);
+    print_bitmap(num_vars, var_bitmap);
+
+    check_pointer(rbp);
     visit_pointer_vars(num_vars, var_bitmap, rbp - LOCAL_VAR_OFFSET);
+
+    // Handle params in registers
+    /*if (is_top_frame) {
+
+    // Register params are caller-saved
+    } else {
+
+    }*/
+
+    // Handle remaining params on stack
+    if (num_params >= 6) {
+        visit_pointer_vars(num_params, stack_param_bitmap, rbp - PARAM_OFFSET);
+    }
 }
 
 void collect_garbage(long int* rbp) {
     // Visit and scan all stack frames
     printf("Collecting Garbage:\n");
     scan = to_space;
+    int is_top_frame = 1;
     while (rbp != 0) {
         printf("RBP: %d\n", rbp);
-        scan_stack_frame(rbp);
+        scan_stack_frame(rbp, is_top_frame);
         rbp = (long int*) *rbp;
+        is_top_frame = 0;
     }
+    print_heap();
     memset(from_space, 0, heap_size * 8);
     current_heap_pointer = current_to_space_pointer;
 }
