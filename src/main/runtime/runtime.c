@@ -23,13 +23,13 @@ long int* to_space;
 long int heap_size;
 long int* current_heap_pointer;
 long int* current_to_space_pointer;
-
+long int* scan;
 
 void print_heap() {
     printf("       FROM-SPACE       TO-SPACE\n");
     printf("       (%d)      (%d)\n", from_space, to_space);
     for (int i = 0; i < heap_size; ++i) {
-        printf("%4d: %10d %15d\n", i, from_space[i], to_space[i]);
+        printf("%4d: %10d %15d %10d %10d\n", i, from_space[i], to_space[i], from_space + i, to_space + i);
     }
     printf("\n\n");
 }
@@ -53,10 +53,10 @@ void print_bitmap(int size, int* bitmap) {
     printf("\n");
 }
 
-void swap(long int* a, long int* b) {
-    long int* temp = a;
-    a = b;
-    b = temp;
+void swap_spaces() {
+    long int* temp = to_space;
+    to_space = from_space;
+    from_space = temp;
 }
 
 void check_pointer(long int* ptr) {
@@ -94,53 +94,24 @@ long int* get_pointer_field(long int* ptr, int k) {
     return NULL;
 }
 
-void chase(long int* ptr) {
-    int bitmap[64];
-
-    // Handle entire struct at pointer depth-first
-    while (ptr != NULL) {
-        int num_fields = *(ptr + SIZE_INFO_OFFSET);
-        set_bitmap(ptr + BITMAP_OFFSET, bitmap);
-
-        // Copy everything at ptr to to-space
-        long int* to_ptr = current_to_space_pointer;
-        current_to_space_pointer += DATA_OFFSET + num_fields;
-        memcpy(to_ptr, ptr, (num_fields + 2) * 8);
-
-        // Find last field still pointing to from-space
-        long int* next_from_space_field = NULL;
-        long int* next_field = NULL;
-        int field_num = 0;
-        do {
-            long int* current_field = next_field;
-            next_field = get_pointer_field(to_ptr, field_num);
-            ++field_num;
-
-            if (in_from_space(current_field)) {
-                set_bitmap(current_field + BITMAP_OFFSET, bitmap);
-                if (bitmap[0] == 1 && !in_to_space((long int*) current_field[2])) {
-                    next_from_space_field = current_field;
-                }
-            }
-        } while (next_field != NULL);
-
-        ptr[2] = (long int) to_ptr;
-        ptr = next_from_space_field;
-    }
-}
-
 long int* forward(long int* ptr) {
-    // Nothing to do if already in to-space
     if (in_to_space(ptr)) {
         return ptr;
     }
 
-    // End condition: first pointer field is already in to-space (fields handled in reverse)
-    long int* field = get_pointer_field(ptr, 0);
-    if (field != NULL && !in_to_space(field)) {
-        chase(ptr);
+    int bitmap[64];
+    int num_fields = *(ptr + SIZE_INFO_OFFSET);
+    set_bitmap(ptr + BITMAP_OFFSET, bitmap);
+
+    int long* field = get_pointer_field(ptr, 0);
+    if (in_to_space(field)) {
+        return field;
     }
-    return field;
+
+    memcpy(current_to_space_pointer, ptr, (num_fields + DATA_OFFSET) * 8);
+    ptr[DATA_OFFSET] = (long int) current_to_space_pointer;
+    current_to_space_pointer += DATA_OFFSET + num_fields;
+    return (long int*) ptr[DATA_OFFSET];
 }
 
 void visit_pointer_vars(long int num_vars, int* bitmap, long int* variables) {
@@ -148,14 +119,27 @@ void visit_pointer_vars(long int num_vars, int* bitmap, long int* variables) {
         int is_pointer = bitmap[num_vars - i - 1];
         if (is_pointer) {
             long int* variable = (long int*) variables[-i];
-            if (variable < from_space || variable >= to_space) {
+            if (!in_from_space(variable)) {
                 return;  // reached uninitialized variable
             }
-            printf("Var %d = %d (pointer)\n", i, variable);
 
             // Forward variable to to-space and store forward address
             variables[-i] = (long int) forward(variable);
         }
+    }
+
+    int child_bitmap[64];
+    while (scan < current_to_space_pointer) {
+        set_bitmap(scan + BITMAP_OFFSET, child_bitmap);
+        num_vars = *(scan + SIZE_INFO_OFFSET);
+
+        for (int i = 0; i < num_vars; ++i) {
+            int is_pointer = child_bitmap[i];
+            if (is_pointer) {
+                scan[DATA_OFFSET + i] = (long int) forward((long int*) scan[DATA_OFFSET + i]);
+            }
+        }
+        scan += DATA_OFFSET + num_vars;
     }
 }
 
@@ -170,10 +154,6 @@ void scan_stack_frame(long int* rbp) {
     int bitmap[64];
     set_bitmap(rbp - FUNCTION_BITMAP_OFFSET, bitmap);
 
-    printf("Num parameters: %d\n", num_params);
-    printf("Num variables:  %d\n", num_vars);
-    print_bitmap(num_params + num_vars, bitmap);
-
     int param_bitmap[num_params];
     int var_bitmap[num_vars];
     int i, j;
@@ -182,17 +162,18 @@ void scan_stack_frame(long int* rbp) {
 
     //check_pointer(rbp - LOCAL_VAR_OFFSET);
     visit_pointer_vars(num_vars, var_bitmap, rbp - LOCAL_VAR_OFFSET);
-
-    printf("\n");
 }
 
 void collect_garbage(long int* rbp) {
     // Visit and scan all stack frames
     printf("Collecting Garbage:\n");
+    scan = to_space;
     while (rbp != 0) {
+        printf("RBP: %d\n", rbp);
         scan_stack_frame(rbp);
         rbp = (long int*) *rbp;
     }
+    memset(from_space, 0, heap_size * 8);
     current_heap_pointer = current_to_space_pointer;
 }
 
@@ -201,13 +182,14 @@ long int* allocate_heap(long int size, long int* rbp) {
     to_space = from_space + heap_size;
 
     if (current_heap_pointer >= to_space) {
-        swap(from_space, to_space);
+        swap_spaces();
     }
     current_to_space_pointer = to_space;
 
+    print_heap();
+
     // Run garbage collection if heap limit is reached
     if (current_heap_pointer + size > from_space + heap_size) {
-        print_heap();
         collect_garbage(rbp);
         print_heap();
 

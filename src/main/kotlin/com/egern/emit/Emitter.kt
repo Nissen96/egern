@@ -53,6 +53,7 @@ abstract class Emitter(
         dataFields.add(TO_SPACE)
         dataFields.add(CURRENT_HEAP_POINTER)
         dataFields.add("current_to_space_pointer")
+        dataFields.add("scan")
         dataFields.add(VTABLE_POINTER)
         syntax.emitPrologue(builder, emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)
     }
@@ -72,6 +73,7 @@ abstract class Emitter(
             ExprTypeEnum.STRING -> "string"
             ExprTypeEnum.INT -> "int"
             ExprTypeEnum.BOOLEAN -> "string"
+            ExprTypeEnum.ARRAY -> "int"
             else -> throw Exception("Printing $enumType is invalid")
         }
 
