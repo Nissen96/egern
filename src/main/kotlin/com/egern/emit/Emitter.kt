@@ -25,7 +25,7 @@ abstract class Emitter(
         const val VARIABLE_SIZE = 8
         const val ADDRESSING_OFFSET = -8
 
-        val CALLER_SAVE_REGISTERS = listOf("rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11")
+        val CALLER_SAVE_REGISTERS = listOf("rdi", "rsi", "rdx", "rcx", "r8", "r9", "r10", "r11")
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
         const val VTABLE_POINTER = "vtable_pointer"
         const val HEAP_POINTER = "heap_pointer"
@@ -363,7 +363,8 @@ abstract class Emitter(
         // Move arguments to registers: size, current heap pointer, heap base pointer, heap size
         val args = listOf(
             ImmediateValue("$size"),
-            RBP
+            RBP,
+            RSP
         )
         args.forEachIndexed { index, arg ->
             emitInstruction(
