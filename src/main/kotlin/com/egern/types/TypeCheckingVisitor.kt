@@ -181,7 +181,7 @@ class TypeCheckingVisitor(
             if (exprType != returnType) {
                 ErrorLogger.log(
                     returnStmt,
-                    "Invalid return type: ${typeString(returnType)} - expected: ${typeString(exprType)}"
+                    "Invalid return type: ${typeString(exprType)} - expected: ${typeString(returnType)}"
                 )
             }
         }

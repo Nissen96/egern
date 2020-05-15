@@ -11,10 +11,6 @@ class WeedingVisitor : Visitor() {
         val children: MutableList<FunctionNode> = mutableListOf(),
         var calledBy: MutableSet<FunctionNode> = mutableSetOf()
     ) {
-        override fun toString(): String {
-            return "Function ${funcDecl?.id}: $calledBy"
-        }
-
         override fun equals(other: Any?): Boolean {
             if (other !is FunctionNode) return false
             return funcDecl == other.funcDecl
@@ -26,8 +22,6 @@ class WeedingVisitor : Visitor() {
     }
 
     private var functionTree = FunctionNode(null, null)  // Function hierarchy with caller info
-    private val confirmedCalled: MutableSet<FunctionNode> = mutableSetOf(functionTree)  // Memoize called functions
-    private var isInClass = false
 
     private fun allBranchesReturn(stmts: List<Statement>): Boolean {
         /**
@@ -40,8 +34,7 @@ class WeedingVisitor : Visitor() {
                     stmt.elseBlock != null &&
                     allBranchesReturn(stmt.ifBlock.stmts.filterIsInstance<Statement>()) &&  // if-part
                     allBranchesReturn(
-                        // Handle if-else as a singular list of the if-else statement (simplest)
-                        if (stmt.elseBlock is IfElse) listOf(stmt.elseBlock)
+                        if (stmt.elseBlock is IfElse) listOf(stmt.elseBlock)  // else-if
                         else (stmt.elseBlock as Block).stmts.filterIsInstance<Statement>()  // else-part
                     )
                 ) return true
@@ -52,7 +45,7 @@ class WeedingVisitor : Visitor() {
 
     private fun buildFunctionTree(funcDecls: List<FuncDecl>) {
         /**
-         * Build a hierarchy of functions for keeping track of which is called
+         * Build hierarchy of nested functions
          */
         funcDecls.forEach {
             functionTree = FunctionNode(it, functionTree)
@@ -69,14 +62,15 @@ class WeedingVisitor : Visitor() {
          * For each function, check it is part of a call chain starting from a previously confirmed used function
          * If not, remove it immediately to prevent it being visited, automatically removing its nested functions
          */
+        // Remove unsed functions
         val usedFunctions = functionTree.children.filter { functionIsUsed(it) }
-
         if (node is Program) {
             node.funcDecls = usedFunctions.map { it.funcDecl!! }
         } else if (node is FuncDecl) {
             node.funcDecls = usedFunctions.map { it.funcDecl!! }
         }
 
+        // Recursively check nested functions
         usedFunctions.forEach {
             functionTree = it
             sweepUnusedFunctions(it.funcDecl!!)
@@ -85,13 +79,13 @@ class WeedingVisitor : Visitor() {
     }
 
     private fun functionIsUsed(func: FunctionNode): Boolean {
-        // Function is used if any call chain involving it contains a previously confirmed used function
-        return if (func in confirmedCalled) {
-            confirmedCalled.add(func)
-            true
-        } else {
-            func.calledBy.any { functionIsUsed(it) }
-        }
+        /**
+         * Checks if the current function is the direct caller of the input function or any function in its call chain
+         * The functionTree is the current scope being checked and the input function one of its children (nested)
+         * The current function is already confirmed called, so if it starts a call chain containing the input function,
+         * this function is surely at some point called
+         */
+        return func.funcDecl == functionTree.funcDecl || func.calledBy.any { functionIsUsed(it) }
     }
 
     override fun preVisit(program: Program) {
@@ -102,24 +96,20 @@ class WeedingVisitor : Visitor() {
         sweepUnusedFunctions(program)
     }
 
-    override fun preVisit(classDecl: ClassDecl) {
-        isInClass = true
-    }
-
-    override fun postVisit(classDecl: ClassDecl) {
-        isInClass = false
-    }
-
     override fun preVisit(funcDecl: FuncDecl) {
-        if (isInClass) return  // Handle methods?
-        functionTree = functionTree.children.find { it.funcDecl == funcDecl }!!
+        if (!funcDecl.isMethod) {
+            // Find and set function node corresponding to this function
+            functionTree = functionTree.children.find { it.funcDecl == funcDecl }!!
+        }
+
+        // Check all branches of function returns
         if (!allBranchesReturn(funcDecl.stmts.filterIsInstance<Statement>())) {
             ErrorLogger.log(funcDecl, "Function must always return a value")
         }
     }
 
     override fun postVisit(funcDecl: FuncDecl) {
-        if (!isInClass) functionTree = functionTree.parent!!
+        if (!funcDecl.isMethod) functionTree = functionTree.parent!!
     }
 
     override fun postVisit(funcCall: FuncCall) {
@@ -128,6 +118,7 @@ class WeedingVisitor : Visitor() {
         while (currentFunc != null) {
             currentFunc.children.forEach {
                 if (it.funcDecl?.id == funcCall.id) {
+                    // Add the current function as a caller of the called, building a call tree
                     it.calledBy.add(functionTree)
                     return
                 }
