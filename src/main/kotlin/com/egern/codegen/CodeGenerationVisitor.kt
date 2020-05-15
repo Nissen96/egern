@@ -6,7 +6,7 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.Symbol
 import com.egern.symbols.SymbolTable
 import com.egern.symbols.SymbolType
-import com.egern.types.ExprTypeEnum
+import com.egern.types.*
 import com.egern.util.*
 import com.egern.visitor.SymbolAwareVisitor
 import kotlin.math.max
@@ -27,14 +27,25 @@ class CodeGenerationVisitor(
     )
     private val functionStack = stackOf<FuncDecl>()
     private var currentClassDefinition: ClassDefinition? = null
+    var vTableSize = 0
 
     companion object {
-        // CONSTANT OFFSETS FROM RBP
-        const val LOCAL_VAR_OFFSET = 1
+        // STACK FRAME - CONSTANT OFFSETS FROM RBP
+        const val LOCAL_VAR_OFFSET = 4
+        const val FUNCTION_BITMAP_OFFSET = 3
+        const val NUM_LOCAL_VARS_OFFSET = 2
+        const val NUM_PARAMETERS_OFFSET = 1
         const val STATIC_LINK_OFFSET = -2
         const val PARAM_OFFSET = -3
 
         const val PARAMS_IN_REGISTERS = 6
+
+        // OBJECT AND ARRAY INFO (admin info common to both)
+        const val SIZE_INFO_OFFSET = 0
+        const val BITMAP_OFFSET = 1
+        const val OBJECT_VTABLE_POINTER_OFFSET = 2
+        const val OBJECT_DATA_OFFSET = 3
+        const val ARRAY_DATA_OFFSET = 2
     }
 
     private fun add(instruction: Instruction) {
@@ -60,6 +71,63 @@ class CodeGenerationVisitor(
         }
     }
 
+    private fun toBitmap(pointerMap: List<Int>): String {
+        return "0b0" + pointerMap.joinToString("")
+    }
+
+    private fun getParamPointerMap(params: List<Pair<String, ExprType>>): List<Int> {
+        return params.map { isPointer(it.second) }
+    }
+
+    private fun getVariablePointerMap(stmts: List<ASTNode>): List<Int> {
+        return stmts.filterIsInstance<VarDecl>().map { isPointer(deriveType(it.expr)) }
+    }
+
+    private fun getFunctionPointerMap(funcDecl: FuncDecl): List<Int> {
+        val variables = getVariables(funcDecl.stmts)
+        return getVariablePointerMap(variables) + getParamPointerMap(funcDecl.params)
+    }
+
+    private fun getClassPointerMap(fields: List<Any>): List<Int> {
+        return fields.map {
+            when (it) {
+                is FieldDecl -> isPointer(deriveType(it.expr))
+                is Pair<*, *> -> isPointer(it.second as ExprType)
+                else -> throw Exception("Invalid field type")
+            }
+        }
+    }
+
+    private fun isPointer(exprType: ExprType): Int {
+        return when (exprType) {
+            is ARRAY -> 1
+            is CLASS -> 1
+            else -> 0
+        }
+    }
+
+    private fun getVariables(stmts: List<ASTNode>): List<VarDecl> {
+        return stmts.map {
+            when (it) {
+                is VarDecl -> listOf(it)
+                is WhileLoop -> getVariables(it.block.stmts)
+                is IfElse -> {
+                    val ifVariables = getVariables(it.ifBlock.stmts).toMutableList()
+                    var elseBlock = it.elseBlock
+                    while (elseBlock != null && elseBlock is IfElse) {
+                        ifVariables.addAll(getVariables(elseBlock.ifBlock.stmts))
+                        elseBlock = elseBlock.elseBlock
+                    }
+                    if (elseBlock != null) {
+                        ifVariables.addAll(getVariables((elseBlock as Block).stmts))
+                    }
+                    ifVariables
+                }
+                else -> emptyList()
+            }
+        }.flatten()
+    }
+
     override fun preVisit(program: Program) {
         functionStack.push(null)
         populateDataSection()
@@ -70,6 +138,23 @@ class CodeGenerationVisitor(
                 InstructionArg(MainLabel, Direct)
             )
         )
+        // Let program base pointer be null - save original pointer to restore later
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(RBP, Direct),
+                comment = "Save program base pointer"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue("0"), Direct),
+                InstructionArg(RBP, Direct),
+                comment = "Set program base pointer to 0"
+            )
+        )
+
         add(
             Instruction(
                 InstructionType.META,
@@ -82,6 +167,31 @@ class CodeGenerationVisitor(
                 MetaOperation.AllocateInternalHeap
             )
         )
+
+        // Insert number of parameters (0), local variables and a pointer bitmap (for garbage collection)
+        val pointerBitmap = toBitmap(getVariablePointerMap(program.stmts))
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("0"), Direct),
+                comment = "Push number of parameters (0)"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("${program.variableCount}"), Direct),
+                comment = "Push number of local variables"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue(pointerBitmap), Direct),
+                comment = "Push pointer bitmap"
+            )
+        )
+
         add(
             Instruction(
                 InstructionType.META,
@@ -122,6 +232,8 @@ class CodeGenerationVisitor(
 
         classDefinitions.forEach {
             it.vTableOffset = currentOffset
+
+            // Add methods
             it.getAllMethods().forEach { method ->
                 add(
                     Instruction(
@@ -142,6 +254,8 @@ class CodeGenerationVisitor(
                 currentOffset++
             }
         }
+
+        vTableSize = currentOffset
     }
 
     override fun midVisit(program: Program) {
@@ -193,11 +307,20 @@ class CodeGenerationVisitor(
                 MetaOperation.CalleeEpilogue
             )
         )
+        add(
+            Instruction(
+                InstructionType.POP,
+                InstructionArg(RBP, Direct),
+                comment = "Restore program base pointer"
+            )
+        )
     }
 
     override fun preVisit(funcDecl: FuncDecl) {
         symbolTable = funcDecl.symbolTable
         functionStack.push(funcDecl)
+        val pointerBitmap = toBitmap(getFunctionPointerMap(funcDecl))
+
         add(
             Instruction(
                 InstructionType.LABEL,
@@ -210,6 +333,30 @@ class CodeGenerationVisitor(
                 MetaOperation.CalleePrologue
             )
         )
+
+        // Insert number of parameters, local variables and a pointer bitmap (for garbage collection)
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("${funcDecl.params.size}"), Direct),
+                comment = "Push number of parameters"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue("${funcDecl.variableCount}"), Direct),
+                comment = "Push number of local variables"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.PUSH,
+                InstructionArg(ImmediateValue(pointerBitmap), Direct),
+                comment = "Push pointer bitmap"
+            )
+        )
+
         add(
             Instruction(
                 InstructionType.META,
@@ -448,7 +595,7 @@ class CodeGenerationVisitor(
 
     private fun getMethodFieldLocation(symbol: Symbol): InstructionArg {
         val fieldOffset = currentClassDefinition!!.getFieldOffset(symbol.id)
-        return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + 1)))
+        return InstructionArg(Register(ParamReg(0)), IndirectRelative(-(fieldOffset + OBJECT_DATA_OFFSET)))
     }
 
     private fun getConstructorArgLocation(param: String): InstructionArg? {
@@ -624,7 +771,7 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(arrayExpr.entries.size + 1)
+                MetaOperationArg(arrayExpr.entries.size + ARRAY_DATA_OFFSET)
             )
         )
 
@@ -633,8 +780,24 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(ImmediateValue(arrayLen.toString()), Direct),
-                InstructionArg(ReturnValue, Indirect),
+                InstructionArg(ReturnValue, IndirectRelative(-SIZE_INFO_OFFSET)),
                 comment = "Write size information before array"
+            )
+        )
+
+
+        val arrayType = deriveType(arrayExpr) as ARRAY
+        val elementType = if (arrayType.depth == 1)
+            arrayType.innerType
+        else
+            ARRAY(arrayType.depth - 1, arrayType.innerType)
+        val pointerBitmap = isPointer(elementType).toString().repeat(arrayLen)
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue("0b0$pointerBitmap"), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-BITMAP_OFFSET)),
+                comment = "Write whether elements are references or not as a bitmap"
             )
         )
 
@@ -650,7 +813,7 @@ class CodeGenerationVisitor(
                 Instruction(
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
-                    InstructionArg(ReturnValue, IndirectRelative(-(arrayLen - index))),
+                    InstructionArg(ReturnValue, IndirectRelative(-(ARRAY_DATA_OFFSET + arrayLen - index - 1))),
                     comment = "Move expression to array index $index"
                 )
             )
@@ -677,7 +840,7 @@ class CodeGenerationVisitor(
             add(
                 Instruction(
                     InstructionType.ADD,
-                    InstructionArg(ImmediateValue("8"), Direct),
+                    InstructionArg(ImmediateValue("${8 * ARRAY_DATA_OFFSET}"), Direct),
                     InstructionArg(Register(OpReg2), Direct),
                     comment = "Move past array info"
                 )
@@ -784,13 +947,51 @@ class CodeGenerationVisitor(
 
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
-        val totalFields = classDefinition.getNumFields()
+        val allFields = classDefinition.getAllFields()
+        val numFields = allFields.size
 
         add(
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(totalFields + 1)
+                MetaOperationArg(numFields + OBJECT_DATA_OFFSET)
+            )
+        )
+
+        // Insert information about number of fields - includes the VTable pointer field
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue((numFields + 1).toString()), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Store number of fields for class + 1 for the VTable pointer field"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-SIZE_INFO_OFFSET)),
+                comment = "Add size information to object"
+            )
+        )
+
+        // Add pointer bitmap
+        val pointerBitmap = toBitmap(getClassPointerMap(allFields))
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue(pointerBitmap), Direct),
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Store pointer bitmap of class fields"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-BITMAP_OFFSET)),
+                comment = "Add pointer bitmap to object"
             )
         )
 
@@ -816,13 +1017,14 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.MOV,
                 InstructionArg(Register(OpReg1), Direct),
-                InstructionArg(ReturnValue, Indirect),
+                InstructionArg(ReturnValue, IndirectRelative(-OBJECT_VTABLE_POINTER_OFFSET)),
                 comment = "Save class pointer at beginning of object in heap"
             )
         )
 
 
         // Visit all superclass args, pushing results to stack
+        var heapOffset = OBJECT_DATA_OFFSET
         currentClassDefinition = classDefinition
         while (currentClassDefinition != null) {
             // Save "base pointer" for current class constructor
@@ -841,12 +1043,11 @@ class CodeGenerationVisitor(
             currentClassDefinition = currentClassDefinition?.superclass
         }
 
-        // Move all constructor args to object
+        // Move constructor args and class fields to object per superclass
         val numArgs = classDefinition.getNumConstructorArgsPerClass()
         val fieldsPerClass = classDefinition.getLocalFieldsPerClass()
-        var heapOffset = 0
-        repeat(numArgs.size) { classNum ->
-            val numConstructorArgs = numArgs[classNum]
+        numArgs.zip(fieldsPerClass).forEach { (numConstructorArgs, localFields) ->
+            // Handle constructor args
             repeat(numConstructorArgs) { index ->
                 add(
                     Instruction(
@@ -859,18 +1060,16 @@ class CodeGenerationVisitor(
                     Instruction(
                         InstructionType.MOV,
                         InstructionArg(Register(OpReg1), Direct),
-                        InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + numConstructorArgs - index))),
-                        comment = "Save value at object's constructor field ${heapOffset + index + 1}"
+                        InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + numConstructorArgs - index - 1))),
+                        comment = "Save value at object's constructor field ${index + 1}"
                     )
                 )
             }
 
             heapOffset += numConstructorArgs
 
-            // Move local class fields to object
-            val localFields = fieldsPerClass[classNum]
-            var fieldOffset = 0
-            localFields.forEach { fieldDecl ->
+            // Handle local fields
+            localFields.forEachIndexed { index, fieldDecl ->
                 fieldDecl.ids.forEach { _ ->
                     add(
                         Instruction(
@@ -884,15 +1083,13 @@ class CodeGenerationVisitor(
                         Instruction(
                             InstructionType.MOV,
                             InstructionArg(Register(OpReg1), Direct),
-                            InstructionArg(ReturnValue, IndirectRelative(-(heapOffset + fieldOffset + 1))),
-                            comment = "Save value at object's constructor field ${fieldOffset + 1}"
+                            InstructionArg(ReturnValue, IndirectRelative(-heapOffset)),
+                            comment = "Save value at object's constructor field ${index + 1}"
                         )
                     )
-                    fieldOffset++
+                    heapOffset++
                 }
             }
-
-            heapOffset += fieldOffset
         }
 
         add(
@@ -962,7 +1159,7 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.ADD,
-                InstructionArg(ImmediateValue("${8 * (fieldOffset + 1)}"), Direct),
+                InstructionArg(ImmediateValue("${8 * (fieldOffset + OBJECT_DATA_OFFSET)}"), Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Store address of field"
             )
@@ -1024,9 +1221,7 @@ class CodeGenerationVisitor(
     }
 
     override fun postVisit(printStmt: PrintStmt) {
-        val type = if (printStmt.expr != null) deriveType(
-            printStmt.expr
-        ).type else ExprTypeEnum.VOID
+        val type = if (printStmt.expr != null) deriveType(printStmt.expr).type else ExprTypeEnum.VOID
 
         // Special case for booleans, we want to print 'true' or 'false'
         if (type == ExprTypeEnum.BOOLEAN) {
@@ -1300,7 +1495,7 @@ class CodeGenerationVisitor(
         for (id in arrayIds + classFields) {
             val name = when (id) {
                 is ClassField -> id.fieldId
-                is ArrayIndexExpr -> id.id
+                is ArrayIndexExpr -> id.id.toString()
                 else -> throw Exception("Invalid ID type")
             }
             add(
@@ -1315,7 +1510,7 @@ class CodeGenerationVisitor(
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
                     InstructionArg(Register(OpReg2), Indirect),
-                    comment = "Set value of $name at index to expression result"
+                    comment = "Set value of $name to expression result"
                 )
             )
         }

@@ -46,6 +46,10 @@ class ClassDefinition(
         return (superclass?.getAllLocalFields() ?: emptyList()) + getLocalFields()
     }
 
+    fun getAllFields(): List<Any> {
+        return (superclass?.getAllFields() ?: emptyList()) + getFields()
+    }
+
     fun getNumFields(): Int {
         return getNumLocalFields() + (superclass?.getNumFields() ?: 0)
     }

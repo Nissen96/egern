@@ -6,15 +6,16 @@ class MacOSEmitter(
     instructions: List<Instruction>,
     dataFields: MutableList<String>,
     staticStrings: Map<String, String>,
+    vTableSize: Int,
     syntax: SyntaxManager
-) : Emitter(instructions, dataFields, staticStrings, syntax) {
+) : Emitter(instructions, dataFields, staticStrings, vTableSize, syntax) {
 
     override fun addPlatformPrefix(symbol: String): String {
         return "_$symbol"
     }
 
     override fun emitProgramEpilogue() {
-        builder.addLine("format: db \"%d\", 10, 0")
+        builder.addLine("format: db \"%d\", 10, 0").newline()
     }
 
     override fun emitAllocateProgramHeap() {

@@ -53,6 +53,7 @@ class IntelSyntax : SyntaxManager() {
                 "${it.key}: db \"${it.value}\"${if (it.key.startsWith("format_")) ", 10" else ""}, 0"
             )
         }
+        asmStringBuilder.addLine("heap_size: db ${Emitter.HEAP_SIZE}")
         asmStringBuilder.newline()
     }
 
@@ -61,6 +62,10 @@ class IntelSyntax : SyntaxManager() {
         dataFields.forEach {
             asmStringBuilder.addLine(it, " resq 1")
         }
+    }
+
+    override fun emitRuntime(asmStringBuilder: AsmStringBuilder) {
+        emitRuntime(asmStringBuilder, "src/main/runtime/runtime_intel.asm")
     }
 
     override val ops = mapOf(

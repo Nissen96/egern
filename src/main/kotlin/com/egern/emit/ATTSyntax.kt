@@ -51,6 +51,7 @@ class ATTSyntax : SyntaxManager() {
                 "${it.key}: .asciz \"${it.value}${if (it.key.startsWith("format_")) "\\n" else ""}\""
             )
         }
+        asmStringBuilder.addLine("heap_size: .quad ${Emitter.HEAP_SIZE}")
         asmStringBuilder.newline()
     }
 
@@ -60,6 +61,10 @@ class ATTSyntax : SyntaxManager() {
             asmStringBuilder.addLine(".lcomm $it, 8")
         }
         asmStringBuilder.newline()
+    }
+
+    override fun emitRuntime(asmStringBuilder: AsmStringBuilder) {
+        emitRuntime(asmStringBuilder, "src/main/runtime/runtime_att.asm")
     }
 
     override val ops = mapOf(

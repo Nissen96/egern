@@ -7,8 +7,9 @@ class WindowsEmitter(
     instructions: List<Instruction>,
     dataFields: MutableList<String>,
     staticStrings: Map<String, String>,
+    vTableSize: Int,
     syntax: SyntaxManager
-) : Emitter(instructions, dataFields, staticStrings, syntax) {
+) : Emitter(instructions, dataFields, staticStrings, vTableSize, syntax) {
 
     override val paramPassingRegs: List<String> = listOf("rcx", "rdx", "r8", "r9")
 
@@ -18,6 +19,7 @@ class WindowsEmitter(
 
     override fun emitProgramEpilogue() {
         //builder.addLine("format: db \"%d\", 10, 0")
+        builder.newline()
     }
 
     private fun wrapCallInShadowSpace(call: () -> (Unit)) {
