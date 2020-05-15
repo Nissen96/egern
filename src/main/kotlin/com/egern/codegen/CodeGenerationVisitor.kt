@@ -9,7 +9,6 @@ import com.egern.symbols.SymbolType
 import com.egern.types.*
 import com.egern.util.*
 import com.egern.visitor.SymbolAwareVisitor
-import com.sun.xml.internal.ws.org.objectweb.asm.Label
 import kotlin.math.max
 import kotlin.math.min
 
@@ -769,15 +768,15 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(OpReg2), Direct),
-                comment = "Pop range end to register 2"
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Pop range end to register"
             )
         )
         add(
             Instruction(
                 InstructionType.POP,
-                InstructionArg(Register(OpReg1), Direct),
-                comment = "Pop range start to register 1"
+                InstructionArg(Register(OpReg2), Direct),
+                comment = "Pop range start to register"
             )
         )
 
@@ -785,8 +784,8 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.SUB,
-                InstructionArg(Register(OpReg1), Direct),
                 InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Calculate range size"
             )
         )
@@ -794,22 +793,23 @@ class CodeGenerationVisitor(
             add(
                 Instruction(
                     InstructionType.INC,
-                    InstructionArg(Register(OpReg2), Direct),
+                    InstructionArg(Register(OpReg1), Direct),
                     comment = "Range includes end index - add 1"
                 )
             )
         }
         add(
             Instruction(
-                InstructionType.INC,
-                InstructionArg(Register(OpReg2), Direct),
-                comment = "Add 1 to allocate room for size info"
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("$ARRAY_DATA_OFFSET"), Direct),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Add room for size info and bitmap"
             )
         )
         add(
             Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Push range size to allow heap allocation"
             )
         )
@@ -823,6 +823,13 @@ class CodeGenerationVisitor(
         )
         add(
             Instruction(
+                InstructionType.POP,
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Restore range size"
+            )
+        )
+        add(
+            Instruction(
                 InstructionType.PUSH,
                 InstructionArg(ReturnValue, Direct),
                 comment = "Push array address to stack"
@@ -830,8 +837,9 @@ class CodeGenerationVisitor(
         )
         add(
             Instruction(
-                InstructionType.DEC,
-                InstructionArg(Register(OpReg2), Direct),
+                InstructionType.SUB,
+                InstructionArg(ImmediateValue("$ARRAY_DATA_OFFSET"), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Restore array size"
             )
         )
@@ -839,9 +847,25 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(Register(OpReg2), Direct),
-                InstructionArg(ReturnValue, Indirect),
-                comment = "Write size information before array"
+                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-SIZE_INFO_OFFSET)),
+                comment = "Write size info before array"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(ImmediateValue(toBitmap(listOf(0))), Direct),
+                InstructionArg(ReturnValue, IndirectRelative(-BITMAP_OFFSET)),
+                comment = "Write bitmap info before array"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("16"), Direct),
+                InstructionArg(ReturnValue, Direct),
+                comment = "Store first array index address"
             )
         )
 
@@ -849,8 +873,8 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.ADD,
-                InstructionArg(Register(OpReg1), Direct),
                 InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Add back size to start index to get end index"
             )
         )
@@ -872,16 +896,8 @@ class CodeGenerationVisitor(
         )
         add(
             Instruction(
-                InstructionType.ADD,
-                InstructionArg(ImmediateValue("8"), Direct),
-                InstructionArg(ReturnValue, Direct),
-                comment = "Next array index address"
-            )
-        )
-        add(
-            Instruction(
                 InstructionType.MOV,
-                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 InstructionArg(ReturnValue, Indirect),
                 comment = "Move index to array"
             )
@@ -889,8 +905,16 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.INC,
-                InstructionArg(Register(OpReg1), Direct),
+                InstructionArg(Register(OpReg2), Direct),
                 comment = "Increment range value"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("8"), Direct),
+                InstructionArg(ReturnValue, Direct),
+                comment = "Next array index address"
             )
         )
 
@@ -903,8 +927,8 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.CMP,
-                InstructionArg(Register(OpReg1), Direct),
                 InstructionArg(Register(OpReg2), Direct),
+                InstructionArg(Register(OpReg1), Direct),
                 comment = "Check if end index is reached"
             )
         )
