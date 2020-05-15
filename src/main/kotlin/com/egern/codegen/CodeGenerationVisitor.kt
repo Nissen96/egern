@@ -771,7 +771,7 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(arrayExpr.entries.size + 2)
+                MetaOperationArg(arrayExpr.entries.size + ARRAY_DATA_OFFSET)
             )
         )
 
@@ -954,7 +954,7 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.META,
                 MetaOperation.AllocateHeapSpace,
-                MetaOperationArg(numFields + 3)
+                MetaOperationArg(numFields + OBJECT_DATA_OFFSET)
             )
         )
 
@@ -1495,7 +1495,7 @@ class CodeGenerationVisitor(
         for (id in arrayIds + classFields) {
             val name = when (id) {
                 is ClassField -> id.fieldId
-                is ArrayIndexExpr -> id.id
+                is ArrayIndexExpr -> id.id.toString()
                 else -> throw Exception("Invalid ID type")
             }
             add(
@@ -1510,7 +1510,7 @@ class CodeGenerationVisitor(
                     InstructionType.MOV,
                     InstructionArg(Register(OpReg1), Direct),
                     InstructionArg(Register(OpReg2), Indirect),
-                    comment = "Set value of $name at index to expression result"
+                    comment = "Set value of $name to expression result"
                 )
             )
         }
