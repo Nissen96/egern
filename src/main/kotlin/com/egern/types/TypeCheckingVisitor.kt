@@ -257,6 +257,16 @@ class TypeCheckingVisitor(
     }
 
     override fun postVisit(arrayExpr: ArrayExpr) {
+        arrayExpr.entries.forEach {
+            val elementType = deriveType(it)
+            if (it !is IdExpr && (elementType is ARRAY || elementType is CLASS)) {
+                ErrorLogger.log(
+                    it,
+                    "Instantiating reference elements directly in array is currently not supported"
+                )
+            }
+        }
+
         val arrayType = deriveType(arrayExpr) as ARRAY
 
         if (arrayType.depth > 1) {
