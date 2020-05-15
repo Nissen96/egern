@@ -28,7 +28,6 @@ class WeedingVisitor : Visitor() {
     private var functionTree = FunctionNode(null, null)  // Function hierarchy with caller info
     private val confirmedCalled: MutableSet<FunctionNode> = mutableSetOf(functionTree)  // Memoize called functions
     private var isInClass = false
-    private var programBefore: Int = 0
 
     private fun allBranchesReturn(stmts: List<Statement>): Boolean {
         /**
@@ -97,18 +96,10 @@ class WeedingVisitor : Visitor() {
 
     override fun preVisit(program: Program) {
         buildFunctionTree(program.funcDecls)
-
-        // Store program hash to check for changes
-        programBefore = program.hashCode()
     }
 
     override fun postVisit(program: Program) {
         sweepUnusedFunctions(program)
-
-        // Repeat weeding until no changes to program
-        if (program.hashCode() != programBefore) {
-            program.accept(this)
-        }
     }
 
     override fun preVisit(classDecl: ClassDecl) {
@@ -143,21 +134,6 @@ class WeedingVisitor : Visitor() {
             }
 
             currentFunc = currentFunc.parent
-        }
-    }
-
-    override fun postVisit(arithExpr: ArithExpr) {
-        // Constant folding
-        if (arithExpr.lhs is IntExpr && arithExpr.rhs is IntExpr) {
-            val (leftVal, rightVal) = Pair(arithExpr.lhs.value, arithExpr.rhs.value)
-            val result = when (arithExpr.op) {
-                ArithOp.PLUS -> leftVal + rightVal
-                ArithOp.MINUS -> leftVal - rightVal
-                ArithOp.TIMES -> leftVal * rightVal
-                ArithOp.DIVIDE -> leftVal / rightVal
-                ArithOp.MODULO -> leftVal % rightVal
-            }
-            println(result)
         }
     }
 }

@@ -10,7 +10,7 @@ class FuncDecl(
     val params: List<Pair<String, ExprType>>,
     val returnType: ExprType,
     val stmts: List<ASTNode>,
-    val funcDecls: List<FuncDecl>,
+    var funcDecls: List<FuncDecl>,
     val modifiers: EnumSet<Modifier>,
     val isMethod: Boolean,
     lineNumber: Int,
