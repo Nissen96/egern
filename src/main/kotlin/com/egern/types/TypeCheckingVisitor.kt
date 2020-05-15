@@ -101,6 +101,13 @@ class TypeCheckingVisitor(
                     "Argument ${index + 1} is of type ${typeString(argType)} but ${typeString(paramType)} was expected"
                 )
             }
+
+            if (arg !is IdExpr && (argType is ARRAY || argType is CLASS)) {
+                ErrorLogger.log(
+                    arg,
+                    "Passing references directly is currently not supported"
+                )
+            }
         }
     }
 

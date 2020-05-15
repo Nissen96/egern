@@ -346,7 +346,7 @@ abstract class Emitter(
 
     private fun emitModulo(inst: Instruction) {
         emitPerformDivision(inst)
-        val (arg1, arg2) = syntax.argOrder(emitInstructionTarget(ReturnValue), emitArg(inst.args[1]))
+        val (arg1, arg2) = syntax.argOrder(syntax.register("rdx"), emitArg(inst.args[1]))
         builder.addLine(syntax.ops.getValue(InstructionType.MOV), arg1, arg2, "Move resulting remainder")
     }
 
