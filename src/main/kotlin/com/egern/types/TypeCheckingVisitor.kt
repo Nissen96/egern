@@ -35,6 +35,11 @@ class TypeCheckingVisitor(
         }
     }
 
+    override fun postVisit(funcDecl: FuncDecl) {
+        symbolTable = symbolTable.parent ?: throw Exception("No more scopes -- please buy another")
+        functionStack.pop()
+    }
+
     private fun checkMethodDecl(methodDecl: FuncDecl) {
         // Check modifiers for the method itself
         val methodOverrides = Modifier.OVERRIDE in methodDecl.modifiers
