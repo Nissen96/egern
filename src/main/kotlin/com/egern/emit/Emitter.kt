@@ -358,7 +358,7 @@ abstract class Emitter(
     }
 
     private fun emitAllocateHeapSpace(size: Int) {
-        // Place size in register - if set to -1, it is on stack top
+        // If size is set to -1, it is on stack top - move to register
         if (size == -1) {
             emitInstruction(
                 Instruction(
@@ -368,21 +368,15 @@ abstract class Emitter(
                     comment = "Get array size from stack top"
                 )
             )
-        } else {
-            emitInstruction(
-                Instruction(
-                    InstructionType.MOV,
-                    InstructionArg(ImmediateValue("$size"), Direct),
-                    InstructionArg(Register(OpReg1), Direct),
-                    comment = "Move size to register"
-                )
-            )
         }
 
         emitCallerCallee(false, CALLER_SAVE_REGISTERS)
 
-        // Move arguments to param registers: size register, base pointer, and stack pointer
-        val args = listOf(Register(OpReg1), RBP, RSP)
+        // Move arguments to param registers: size, base pointer, and stack pointer
+        val args = listOf(
+            if (size == -1) Register(OpReg1) else ImmediateValue("$size"),
+            RBP, RSP
+        )
         args.forEachIndexed { index, arg ->
             emitInstruction(
                 Instruction(
@@ -401,7 +395,7 @@ abstract class Emitter(
                 comment = "Call heap allocator routine"
             )
         )
-        
+
         emitCallerCallee(true, CALLER_SAVE_REGISTERS)
     }
 
