@@ -32,7 +32,7 @@ abstract class Emitter(
         const val FROM_SPACE = "from_space"
         const val TO_SPACE = "to_space"
         const val CURRENT_HEAP_POINTER = "current_heap_pointer"
-        const val HEAP_SIZE = 32
+        const val HEAP_SIZE = 1024
         const val ALLOCATE_HEAP_ROUTINE = "allocate_heap"
     }
 
