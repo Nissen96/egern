@@ -368,28 +368,38 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     }
 
     override fun visitForInLoop(ctx: MainParser.ForInLoopContext): ASTNode {
-        // Syntactic sugar for a while loop
-        // Set starting index and length of iterable
+        // Syntactic sugar, replacing the for-in loop with the following block:
+        /*
+          {
+            var current-index = 0
+            while (current-index < len(ctx.indexable())) {
+              ctx.ID() = ctx.indexable()[current-index]
+              ctx.block()
+              current-index += 1
+            }
+          }
+
+         */
+
+        // Accept iterable and declare iterator index
         val iterable = ctx.indexable().accept(this) as Expr
-        val iterator = IdExpr("current-index")
-        val length = LenExpr(iterable)
+        val index = IdExpr("current-index")
+        val declareIterator = VarDecl(listOf(index.id), IntExpr(0))
 
-        // Expression testing index in bounds
-        val loopExpr = CompExpr(iterator, length, CompOp.LT)
-
-        // Assign a value to the iterator before all statements in the block and increment index after
-        val assignIterator = VarDecl(listOf(ctx.ID().text), ArrayIndexExpr(iterable, listOf(iterator)))
-
-        val incrementIndex = VarAssign(
-            listOf(iterator.id), emptyList(), emptyList(),
-            ArithExpr(iterator, IntExpr(1), op = ArithOp.PLUS)
-        )
-
+        // Accept loop body and prepend a line assigning the iterator to the value at the current index of the iterable
+        // plus append a line incrementing this index
         val block = ctx.block().accept(this) as Block
+        val assignIterator = VarDecl(listOf(ctx.ID().text), ArrayIndexExpr(iterable, listOf(index)))
+        val incrementIndex = VarAssign(
+            listOf(index.id), emptyList(), emptyList(),
+            ArithExpr(index, IntExpr(1), op = ArithOp.PLUS)
+        )
         block.stmts = listOf(assignIterator) + block.stmts + listOf(incrementIndex)
 
-        // Return a block of the iterator declaration and loop
-        val declareIterator = VarDecl(listOf(iterator.id), IntExpr(0))
+
+        // Build actual loop with a loop condition checking the index is in bounds + the newly built loop body
+        val length = LenExpr(iterable)
+        val loopExpr = CompExpr(index, length, CompOp.LT)
         val forInLoop = WhileLoop(
             loopExpr,
             block,
@@ -397,6 +407,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             charPosition = ctx.start.charPositionInLine
         )
 
+        // Return a block of the iterator declaration and loop
         return Block(listOf(declareIterator, forInLoop))
     }
 
