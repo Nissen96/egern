@@ -254,6 +254,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     private fun visitArrayIndexExpr(ctx: MainParser.ArrayIndexExprContext, reference: Boolean): ArrayIndexExpr {
         val expr = when {
+            ctx.indexable().arrayExpr() != null -> visitArrayExpr(ctx.indexable().arrayExpr())
+            ctx.indexable().arrayOfSizeExpr() != null -> visitArrayOfSizeExpr(ctx.indexable().arrayOfSizeExpr())
             ctx.indexable().idExpr() != null -> visitIdExpr(ctx.indexable().idExpr())
             ctx.indexable().classField() != null -> visitClassField(ctx.indexable().classField())
             ctx.indexable().funcCall() != null -> visitFuncCall(ctx.indexable().funcCall())
@@ -392,6 +394,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.parenExpr() != null -> visitParenExpr(ctx.parenExpr())
             ctx.funcCall() != null -> visitFuncCall(ctx.funcCall())
             ctx.arrayExpr() != null -> visitArrayExpr(ctx.arrayExpr())
+            ctx.arrayOfSizeExpr() != null -> visitArrayOfSizeExpr(ctx.arrayOfSizeExpr())
             ctx.arrayIndexExpr() != null -> visitArrayIndexExpr(ctx.arrayIndexExpr())
             ctx.lenExpr() != null -> LenExpr(
                 ctx.lenExpr().expr().accept(this) as Expr,
@@ -436,6 +439,15 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitArrayExpr(ctx: MainParser.ArrayExprContext): ASTNode {
         return ArrayExpr(
             ctx.expr().map { visitExpr(it) as Expr },
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitArrayOfSizeExpr(ctx: MainParser.ArrayOfSizeExprContext): ASTNode {
+        return ArrayOfSizeExpr(
+            getType(ctx.typeDecl()),
+            ctx.expr().accept(this) as Expr,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )

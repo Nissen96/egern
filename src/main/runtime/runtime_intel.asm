@@ -785,10 +785,10 @@ collect_garbage:
 allocate_heap:
         push    rbp
         mov     rbp, rsp
-        sub     rsp, 32
-        mov     QWORD PTR [rbp-8], rdi
-        mov     QWORD PTR [rbp-16], rsi
-        mov     QWORD PTR [rbp-24], rdx
+        sub     rsp, 48
+        mov     QWORD PTR [rbp-24], rdi
+        mov     QWORD PTR [rbp-32], rsi
+        mov     QWORD PTR [rbp-40], rdx
         mov     rax, QWORD PTR heap_pointer[rip]
         mov     QWORD PTR from_space[rip], rax
         mov     rax, QWORD PTR from_space[rip]
@@ -806,7 +806,7 @@ allocate_heap:
         mov     rax, QWORD PTR to_space[rip]
         mov     QWORD PTR current_to_space_pointer[rip], rax
         mov     rax, QWORD PTR current_heap_pointer[rip]
-        mov     rdx, QWORD PTR [rbp-8]
+        mov     rdx, QWORD PTR [rbp-24]
         sal     rdx, 3
         lea     rcx, [rax+rdx]
         mov     rax, QWORD PTR from_space[rip]
@@ -815,13 +815,13 @@ allocate_heap:
         add     rax, rdx
         cmp     rcx, rax
         jbe     .L60
-        mov     rdx, QWORD PTR [rbp-24]
-        mov     rax, QWORD PTR [rbp-16]
+        mov     rdx, QWORD PTR [rbp-40]
+        mov     rax, QWORD PTR [rbp-32]
         mov     rsi, rdx
         mov     rdi, rax
         call    collect_garbage
         mov     rax, QWORD PTR current_heap_pointer[rip]
-        mov     rdx, QWORD PTR [rbp-8]
+        mov     rdx, QWORD PTR [rbp-24]
         sal     rdx, 3
         lea     rcx, [rax+rdx]
         mov     rax, QWORD PTR to_space[rip]
@@ -840,5 +840,12 @@ allocate_heap:
         call    exit
 .L60:
         mov     rax, QWORD PTR current_heap_pointer[rip]
+        mov     QWORD PTR [rbp-8], rax
+        mov     rax, QWORD PTR current_heap_pointer[rip]
+        mov     rdx, QWORD PTR [rbp-24]
+        sal     rdx, 3
+        add     rax, rdx
+        mov     QWORD PTR current_heap_pointer[rip], rax
+        mov     rax, QWORD PTR [rbp-8]
         leave
         ret

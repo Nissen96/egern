@@ -296,6 +296,16 @@ class TypeCheckingVisitor(
         }
     }
 
+    override fun postVisit(arrayOfSizeExpr: ArrayOfSizeExpr) {
+        // Size must be integer
+        if (deriveType(arrayOfSizeExpr.size) != INT) {
+            ErrorLogger.log(
+                arrayOfSizeExpr,
+                "Array size must be an integer"
+            )
+        }
+    }
+
     override fun preVisit(classDecl: ClassDecl) {
         currentClass = classDefinitions.find { classDecl.id == it.className }!!
         symbolTable = currentClass!!.symbolTable

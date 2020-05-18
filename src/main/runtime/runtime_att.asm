@@ -785,10 +785,10 @@ collect_garbage:
 allocate_heap:
         pushq   %rbp
         movq    %rsp, %rbp
-        subq    $32, %rsp
-        movq    %rdi, -8(%rbp)
-        movq    %rsi, -16(%rbp)
-        movq    %rdx, -24(%rbp)
+        subq    $48, %rsp
+        movq    %rdi, -24(%rbp)
+        movq    %rsi, -32(%rbp)
+        movq    %rdx, -40(%rbp)
         movq    heap_pointer(%rip), %rax
         movq    %rax, from_space(%rip)
         movq    from_space(%rip), %rax
@@ -806,7 +806,7 @@ allocate_heap:
         movq    to_space(%rip), %rax
         movq    %rax, current_to_space_pointer(%rip)
         movq    current_heap_pointer(%rip), %rax
-        movq    -8(%rbp), %rdx
+        movq    -24(%rbp), %rdx
         salq    $3, %rdx
         leaq    (%rax,%rdx), %rcx
         movq    from_space(%rip), %rax
@@ -815,13 +815,13 @@ allocate_heap:
         addq    %rdx, %rax
         cmpq    %rax, %rcx
         jbe     .L60
-        movq    -24(%rbp), %rdx
-        movq    -16(%rbp), %rax
+        movq    -40(%rbp), %rdx
+        movq    -32(%rbp), %rax
         movq    %rdx, %rsi
         movq    %rax, %rdi
         call    collect_garbage
         movq    current_heap_pointer(%rip), %rax
-        movq    -8(%rbp), %rdx
+        movq    -24(%rbp), %rdx
         salq    $3, %rdx
         leaq    (%rax,%rdx), %rcx
         movq    to_space(%rip), %rax
@@ -840,5 +840,12 @@ allocate_heap:
         call    exit
 .L60:
         movq    current_heap_pointer(%rip), %rax
+        movq    %rax, -8(%rbp)
+        movq    current_heap_pointer(%rip), %rax
+        movq    -24(%rbp), %rdx
+        salq    $3, %rdx
+        addq    %rdx, %rax
+        movq    %rax, current_heap_pointer(%rip)
+        movq    -8(%rbp), %rax
         leave
         ret

@@ -213,5 +213,9 @@ long int* allocate_heap(long int size, long int* rbp, long int* rsp) {
         }
     }
 
-    return current_heap_pointer;
+    long int *heap_return_pointer = current_heap_pointer;
+
+    // Offset heap pointer by allocated bytes
+    current_heap_pointer += size;
+    return heap_return_pointer;
 }
