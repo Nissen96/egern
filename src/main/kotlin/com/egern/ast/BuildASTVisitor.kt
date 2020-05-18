@@ -429,6 +429,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.parenExpr() != null -> ctx.parenExpr().accept(this)
             ctx.funcCall() != null -> ctx.funcCall().accept(this)
             ctx.arrayExpr() != null -> ctx.arrayExpr().accept(this)
+            ctx.arrayOfSizeExpr() != null -> ctx.arrayOfSizeExpr().accept(this)
             ctx.arrayIndexExpr() != null -> ctx.arrayIndexExpr().accept(this)
             ctx.lenExpr() != null -> LenExpr(
                 ctx.lenExpr().expr().accept(this) as Expr,
