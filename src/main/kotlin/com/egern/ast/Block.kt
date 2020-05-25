@@ -4,7 +4,7 @@ import com.egern.symbols.SymbolTable
 import com.egern.visitor.Visitor
 
 class Block(
-    var stmts: List<ASTNode>,
+    val stmts: List<ASTNode>,
     lineNumber: Int = -1,
     charPosition: Int = -1
 ) : ASTNode(lineNumber, charPosition) {
