@@ -554,7 +554,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return RangeExpr(
             exprs[0].accept(this) as Expr,
             exprs[1].accept(this) as Expr,
-            excluding = op == "..",
+            inclusive = op == "...",
             lineNumber = exprs[0].start.line,
             charPosition = exprs[1].start.charPositionInLine
         )

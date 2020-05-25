@@ -789,7 +789,7 @@ class CodeGenerationVisitor(
                 comment = "Calculate range size"
             )
         )
-        if (!rangeExpr.excluding) {
+        if (rangeExpr.inclusive) {
             add(
                 Instruction(
                     InstructionType.INC,

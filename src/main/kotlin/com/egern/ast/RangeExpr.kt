@@ -5,7 +5,7 @@ import com.egern.visitor.Visitor
 class RangeExpr(
     val lhs: Expr,
     val rhs: Expr,
-    val excluding: Boolean,
+    val inclusive: Boolean,
     lineNumber: Int,
     charPosition: Int
 ) : Expr(lineNumber, charPosition) {

@@ -8,6 +8,7 @@ stmt:   varDecl ';'?
     |   returnStmt ';'?
     |   printStmt ';'?
     |   whileLoop
+    |   forInLoop
     |   funcCall ';'?
     |   methodCall ';'?
     |   continueStmt ';'?
@@ -27,6 +28,7 @@ returnStmt: 'return' expr? ;
 printStmt: 'print' '(' expr? ')' ;
 
 whileLoop: 'while' '(' expr ')' block ;
+forInLoop: 'for' '(' ID 'in' indexable ')' block ;
 continueStmt: 'continue' ;
 breakStmt: 'break' ;
 
