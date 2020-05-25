@@ -26,7 +26,7 @@ fun main(args: Array<String>) {
     val doPrint = "-p" in args
 
     if (quiet) {
-        println("Egern Compiler v0.1.0! Input something + CTRL+D to run")
+        println("Egern Compiler v1.0! Input something + CTRL+D to run")
     }
 
     val input = CharStreams.fromStream(System.`in`)
