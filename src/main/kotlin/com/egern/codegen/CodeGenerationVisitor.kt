@@ -814,7 +814,7 @@ class CodeGenerationVisitor(
             )
         )
 
-        // Allocate space for array - automatically pops size from stack
+        // Allocate space for array - automatically gets size from stack top
         add(
             Instruction(
                 InstructionType.META,
