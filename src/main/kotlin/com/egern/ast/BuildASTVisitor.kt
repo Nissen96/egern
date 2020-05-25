@@ -268,6 +268,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.idExpr() != null -> ctx.idExpr().accept(this)
             ctx.arrayExpr() != null -> ctx.arrayExpr().accept(this)
             ctx.arrayOfSizeExpr() != null -> ctx.arrayOfSizeExpr().accept(this)
+            ctx.rangeExpr() != null -> ctx.rangeExpr().accept(this)
             ctx.classField() != null -> ctx.classField().accept(this)
             ctx.funcCall() != null -> ctx.funcCall().accept(this)
             ctx.methodCall() != null -> ctx.methodCall().accept(this)
@@ -421,36 +422,21 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitExpr(ctx: MainParser.ExprContext): ASTNode {
         return when {
-            ctx.booleanExpr() != null -> BooleanExpr(
-                ctx.booleanExpr().BOOLEAN().text!!.toBoolean(),
-                lineNumber = ctx.start.line,
-                charPosition = ctx.start.charPositionInLine
-            )
-            ctx.intExpr() != null -> IntExpr(
-                ctx.intExpr().INT().text.toInt(),
-                lineNumber = ctx.start.line,
-                charPosition = ctx.start.charPositionInLine
-            )
-            ctx.stringExpr() != null -> StringExpr(
-                ctx.stringExpr().STRING().text,
-                lineNumber = ctx.start.line,
-                charPosition = ctx.start.charPositionInLine
-            )
+            ctx.booleanExpr() != null -> ctx.booleanExpr().accept(this)
+            ctx.intExpr() != null -> ctx.intExpr().accept(this)
+            ctx.stringExpr() != null -> ctx.stringExpr().accept(this)
             ctx.idExpr() != null -> ctx.idExpr().accept(this)
             ctx.parenExpr() != null -> ctx.parenExpr().accept(this)
             ctx.funcCall() != null -> ctx.funcCall().accept(this)
             ctx.arrayExpr() != null -> ctx.arrayExpr().accept(this)
             ctx.arrayOfSizeExpr() != null -> ctx.arrayOfSizeExpr().accept(this)
             ctx.arrayIndexExpr() != null -> ctx.arrayIndexExpr().accept(this)
-            ctx.lenExpr() != null -> LenExpr(
-                ctx.lenExpr().expr().accept(this) as Expr,
-                lineNumber = ctx.start.line,
-                charPosition = ctx.start.charPositionInLine
-            )
+            ctx.lenExpr() != null -> ctx.lenExpr().accept(this)
             ctx.classField() != null -> ctx.classField().accept(this)
             ctx.methodCall() != null -> ctx.methodCall().accept(this)
             ctx.objectInstantiation() != null -> ctx.objectInstantiation().accept(this)
             ctx.typeDecl() != null -> visitCastExpr(ctx.expr(0), ctx.typeDecl())
+            ctx.rangeExpr() != null -> ctx.rangeExpr().accept(this)
             ctx.expr().size < 2 -> when (ctx.op.text) {
                 ArithOp.MINUS.value -> ArithExpr(
                     IntExpr(-1, lineNumber = ctx.start.line),
@@ -470,14 +456,45 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             ctx.op.text in ArithOp.operators() -> visitArithExpr(ctx.expr(), ctx.op.text)
             ctx.op.text in CompOp.operators() -> visitCompExpr(ctx.expr(), ctx.op.text)
             ctx.op.text in BooleanOp.operators() -> visitBooleanExpr(ctx.expr(), ctx.op.text)
-            ctx.op.text in listOf("..", "...") -> visitRangeExpr(ctx.expr(), ctx.op.text)
             else -> throw Exception("Invalid Expression Type!")
         }
+    }
+
+    override fun visitIntExpr(ctx: MainParser.IntExprContext): ASTNode {
+        return IntExpr(
+            ctx.INT().text.toInt(),
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitBooleanExpr(ctx: MainParser.BooleanExprContext): ASTNode {
+        return BooleanExpr(
+            ctx.BOOLEAN().text!!.toBoolean(),
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitStringExpr(ctx: MainParser.StringExprContext): ASTNode {
+        return StringExpr(
+            ctx.STRING().text,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
     }
 
     override fun visitIdExpr(ctx: MainParser.IdExprContext): ASTNode {
         return IdExpr(
             ctx.ID().text,
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
+        )
+    }
+
+    override fun visitLenExpr(ctx: MainParser.LenExprContext): ASTNode {
+        return LenExpr(
+            ctx.expr().accept(this) as Expr,
             lineNumber = ctx.start.line,
             charPosition = ctx.start.charPositionInLine
         )
@@ -550,13 +567,26 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
-    private fun visitRangeExpr(exprs: List<MainParser.ExprContext>, op: String): ASTNode {
+    override fun visitRangeExpr(ctx: MainParser.RangeExprContext): ASTNode {
         return RangeExpr(
-            exprs[0].accept(this) as Expr,
-            exprs[1].accept(this) as Expr,
-            inclusive = op == "...",
-            lineNumber = exprs[0].start.line,
-            charPosition = exprs[1].start.charPositionInLine
+            ctx.rangeEndpoint(0).accept(this) as Expr,
+            ctx.rangeEndpoint(1).accept(this) as Expr,
+            inclusive = ctx.op.text == "...",
+            lineNumber = ctx.start.line,
+            charPosition = ctx.start.charPositionInLine
         )
+    }
+
+    override fun visitRangeEndpoint(ctx: MainParser.RangeEndpointContext): ASTNode {
+        return when {
+            ctx.idExpr() != null -> ctx.idExpr().accept(this)
+            ctx.classField() != null -> ctx.classField().accept(this)
+            ctx.funcCall() != null -> ctx.funcCall().accept(this)
+            ctx.methodCall() != null -> ctx.methodCall().accept(this)
+            ctx.intExpr() != null -> ctx.intExpr().accept(this)
+            ctx.lenExpr() != null -> ctx.lenExpr().accept(this)
+            ctx.parenExpr() != null -> ctx.parenExpr().accept(this)
+            else -> throw Exception("No expr found")
+        }
     }
 }

@@ -12,17 +12,11 @@ print(b[3])
 print(len(b))
 print()
 
-var n = len(a)
-var i = 0
-while (i < n) {
+for (i in 0..len(a)) {
     print(a[i])
-    i += 1
 }
 print()
 
-n = len(b)
-i = 0
-while (i < n) {
+for (i in 0..len(b)) {
     print(b[i])
-    i += 1
 }
