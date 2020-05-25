@@ -810,7 +810,7 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.PUSH,
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Push range size to allow heap allocation"
+                comment = "Push allocation size to allow heap allocation"
             )
         )
 
@@ -825,7 +825,7 @@ class CodeGenerationVisitor(
             Instruction(
                 InstructionType.POP,
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Restore range size"
+                comment = "Restore allocation size"
             )
         )
         add(
@@ -863,7 +863,7 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.ADD,
-                InstructionArg(ImmediateValue("16"), Direct),
+                InstructionArg(ImmediateValue("${8 * ARRAY_DATA_OFFSET}"), Direct),
                 InstructionArg(ReturnValue, Direct),
                 comment = "Store first array index address"
             )
