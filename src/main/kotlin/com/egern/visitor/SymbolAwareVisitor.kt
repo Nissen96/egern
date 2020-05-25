@@ -24,6 +24,7 @@ abstract class SymbolAwareVisitor(
             is BooleanOpExpr -> BOOLEAN
             is CompExpr -> BOOLEAN
             is ArithExpr -> INT
+            is RangeExpr -> ARRAY(1, INT)
             is IdExpr -> getVariableType(expr.id)
             is FuncCall -> (symbolTable.lookup(expr.id)!!.info["funcDecl"] as FuncDecl).returnType
             is ParenExpr -> deriveType(expr.expr)

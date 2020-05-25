@@ -105,6 +105,9 @@ abstract class Visitor {
     open fun midVisit(program: Program) {}
     open fun postVisit(program: Program) {}
 
+    open fun midVisit(rangeExpr: RangeExpr) {}
+    open fun postVisit(rangeExpr: RangeExpr) {}
+
     open fun preVisit(returnStmt: ReturnStmt) {}
     open fun postVisit(returnStmt: ReturnStmt) {}
 

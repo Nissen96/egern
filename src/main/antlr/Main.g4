@@ -55,7 +55,7 @@ methodSignature: 'func' ID '(' signatureParams ')' (':' typeDecl)? ;
 signatureParams: ((ID ':')? typeDecl ',')* ((ID ':')? typeDecl)? ;
 
 arrayIndexExpr: indexable ('[' expr ']')+ ;
-indexable: (arrayExpr | arrayOfSizeExpr | idExpr | classField | funcCall | methodCall) ;
+indexable: arrayExpr | arrayOfSizeExpr | rangeExpr | idExpr | classField | funcCall | methodCall ;
 
 expr: funcCall
     | objectInstantiation
@@ -78,6 +78,7 @@ expr: funcCall
     | parenExpr
     | lenExpr
     | expr 'as' typeDecl
+    | rangeExpr
     ;
 
 idExpr: ID ;
@@ -88,6 +89,8 @@ arrayExpr: '[' (expr ',')* expr? ']';
 arrayOfSizeExpr: typeDecl '[' expr ']' ;
 parenExpr: '(' expr ')';
 lenExpr: 'len' '(' expr ')';
+rangeExpr: rangeEndpoint op=('..' | '...') rangeEndpoint ;
+rangeEndpoint: funcCall | methodCall | classField | idExpr | intExpr | lenExpr | parenExpr ;
 
 typeDecl: VOID | PRIMITIVE | arrayType | CLASSNAME ;
 arrayType: '[' (arrayType | PRIMITIVE) ']';

@@ -327,7 +327,6 @@ abstract class Emitter(
         builder
             .newline()
             .addLabel(emitArg(instruction.args[0]))
-            .newline()
     }
 
     private fun emitPerformDivision(inst: Instruction) {

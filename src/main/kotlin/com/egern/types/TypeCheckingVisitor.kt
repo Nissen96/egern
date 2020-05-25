@@ -243,6 +243,19 @@ class TypeCheckingVisitor(
         }
     }
 
+    override fun postVisit(rangeExpr: RangeExpr) {
+        val exprType = deriveType(rangeExpr) as ARRAY
+        val lhsType = deriveType(rangeExpr.lhs)
+        val rhsType = deriveType(rangeExpr.rhs)
+
+        if (lhsType != exprType.innerType) {
+            ErrorLogger.log(rangeExpr, "Type mismatch on range operator - LHS: ${typeString(lhsType)}")
+        }
+        if (rhsType != exprType.innerType) {
+            ErrorLogger.log(rangeExpr, "Type mismatch on range operator - RHS: ${typeString(rhsType)}")
+        }
+    }
+
     override fun postVisit(arrayIndexExpr: ArrayIndexExpr) {
         val arrayType = deriveType(arrayIndexExpr.id) as ARRAY
         if (arrayIndexExpr.indices.size > arrayType.depth) {
