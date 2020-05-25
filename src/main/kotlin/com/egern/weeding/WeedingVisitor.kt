@@ -22,6 +22,7 @@ class WeedingVisitor : Visitor() {
     }
 
     private var functionTree = FunctionNode(null, null)  // Function hierarchy with caller info
+    private var loopLevel = 0
 
     private fun allBranchesReturn(stmts: List<Statement>): Boolean {
         /**
@@ -125,6 +126,26 @@ class WeedingVisitor : Visitor() {
             }
 
             currentFunc = currentFunc.parent
+        }
+    }
+
+    override fun preVisit(whileLoop: WhileLoop) {
+        loopLevel++
+    }
+
+    override fun postVisit(whileLoop: WhileLoop) {
+        loopLevel--
+    }
+
+    override fun visit(continueStmt: ContinueStmt) {
+        if (loopLevel <= 0) {
+            ErrorLogger.log(continueStmt, "Continue invalid outside loop")
+        }
+    }
+
+    override fun visit(breakStmt: BreakStmt) {
+        if (loopLevel <= 0) {
+            ErrorLogger.log(breakStmt, "Break invalid outside loop")
         }
     }
 }
