@@ -33,10 +33,14 @@ class LabelGenerationVisitor : Visitor() {
     }
 
     override fun visit(continueStmt: ContinueStmt) {
-        continueStmt.jumpLabel = loopStack.peek()!!.startLabel
+        if (loopStack.isNotEmpty()) {
+            continueStmt.jumpLabel = loopStack.peek()!!.startLabel
+        }
     }
 
     override fun visit(breakStmt: BreakStmt) {
-        breakStmt.jumpLabel = loopStack.peek()!!.endLabel
+        if (loopStack.isNotEmpty()) {
+            breakStmt.jumpLabel = loopStack.peek()!!.endLabel
+        }
     }
 }
