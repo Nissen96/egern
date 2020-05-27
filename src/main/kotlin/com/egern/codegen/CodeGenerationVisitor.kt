@@ -567,21 +567,34 @@ class CodeGenerationVisitor(
             else -> throw Exception("That's illegal - no higher order functions please")
         } as Int
 
-        // Symbol is a parameter (1-6) in current scope - value is in register
-        val scopeDiff = symbolTable.scope - symbol.scope
-        if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {
-            return InstructionArg(Register(ParamReg(symbolOffset)), Direct)
+        // Symbol is a parameter (1-6)
+        var scopeDiff = symbolTable.scope - symbol.scope
+
+        if (symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {
+            // Parameter in current scope is in register
+            if (scopeDiff == 0) {
+                return InstructionArg(Register(ParamReg(symbolOffset)), Direct)
+            }
+
+            // Parameter in some enclosing scope is caller-saved above its temporary variables
+            // making it more easily accessible from the first nested scope before the containing
+            // Decrement scope difference to follow the static link pointer one fewer times
+            scopeDiff -= 1
         }
 
         // Get base pointer of scope containing symbol and find offset for symbol location
         followStaticLink(scopeDiff)
-        val container = functionStack.peek(scopeDiff)
         val offset = when (symbol.type) {
             SymbolType.Variable -> symbolOffset + LOCAL_VAR_OFFSET
             SymbolType.Parameter -> when {
-                // Param saved by caller after its local variables
-                symbolOffset < PARAMS_IN_REGISTERS -> symbolOffset + LOCAL_VAR_OFFSET + container!!.variableCount
-                // Calculate offset for params on stack (in non-reversed order)
+                // Offset for caller-saved param on stack (1st to 6th param, offset from nested scope)
+                // Should skip all stored params and caller-saved registers before offsetting back into these
+                symbolOffset < PARAMS_IN_REGISTERS -> {
+                    val allContainerParams = functionStack.peek(scopeDiff)!!.params.size
+                    val stackContainerParams = max(allContainerParams - PARAMS_IN_REGISTERS, 0)
+                    PARAM_OFFSET - stackContainerParams - allContainerParams - 8 + (symbolOffset + 1)
+                }
+                // Offset for param on stack (contains 7th to last in non-reversed order)
                 else -> PARAM_OFFSET - (symbolOffset - PARAMS_IN_REGISTERS)
             }
             else -> throw Exception("Invalid id ${symbol.id}")
