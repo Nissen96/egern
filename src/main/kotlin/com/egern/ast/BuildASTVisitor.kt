@@ -374,8 +374,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
           {
             var current-index = 0
             while (current-index < len(ctx.indexable())) {
-              ctx.ID() = ctx.indexable()[current-index]
-              ctx.block()
+              var ctx.ID() = ctx.indexable()[current-index]
+              ctx.block().stmt()
               current-index += 1
             }
           }
