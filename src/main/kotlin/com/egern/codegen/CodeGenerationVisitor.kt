@@ -224,7 +224,7 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Indirect),
+                InstructionArg(VTable, Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Store Vtable base address in register"
             )

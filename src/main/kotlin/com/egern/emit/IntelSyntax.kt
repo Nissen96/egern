@@ -41,6 +41,9 @@ class IntelSyntax : SyntaxManager() {
             .addLine("extern", "${platformPrefix}printf")
             .addLine("extern", "${platformPrefix}malloc")
             .addLine("extern", "${platformPrefix}free")
+            .addLine("extern", "${platformPrefix}memcpy")
+            .addLine("extern", "${platformPrefix}memset")
+            .addLine("extern", "${platformPrefix}exit")
         emitDataSection(asmStringBuilder, staticStrings)
         emitUninitializedDataSection(asmStringBuilder, dataFields)
         asmStringBuilder.addLine("segment", ".text")
@@ -53,7 +56,7 @@ class IntelSyntax : SyntaxManager() {
                 "${it.key}: db \"${it.value}\"${if (it.key.startsWith("format_")) ", 10" else ""}, 0"
             )
         }
-        asmStringBuilder.addLine("heap_size: db ${Emitter.HEAP_SIZE}")
+        asmStringBuilder.addLine("heap_size: dd ${Emitter.HEAP_SIZE}")
         asmStringBuilder.newline()
     }
 
