@@ -29,8 +29,8 @@ abstract class Emitter(
         val CALLEE_SAVE_REGISTERS = listOf("rbx", "r12", "r13", "r14", "r15")
         const val VTABLE_POINTER = "vtable_pointer"
         const val HEAP_POINTER = "heap_pointer"
-        const val FROM_SPACE = "from_space"
-        const val TO_SPACE = "to_space"
+        const val FROM_SPACE = "fromspace"
+        const val TO_SPACE = "tospace"
         const val CURRENT_HEAP_POINTER = "current_heap_pointer"
         const val HEAP_SIZE = 1024
         const val ALLOCATE_HEAP_ROUTINE = "allocate_heap"
@@ -52,7 +52,7 @@ abstract class Emitter(
         dataFields.add(FROM_SPACE)  // Starting points of each heap half for garbage collection
         dataFields.add(TO_SPACE)
         dataFields.add(CURRENT_HEAP_POINTER)
-        dataFields.add("current_to_space_pointer")
+        dataFields.add("current_tospace_pointer")
         dataFields.add("scan")
         dataFields.add(VTABLE_POINTER)
         syntax.emitPrologue(builder, emitMainLabel(), addPlatformPrefix(""), dataFields, staticStrings)

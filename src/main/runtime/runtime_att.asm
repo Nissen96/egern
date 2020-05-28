@@ -66,12 +66,12 @@ set_bitmap:
 swap_spaces:
         pushq   %rbp
         movq    %rsp, %rbp
-        movq    to_space(%rip), %rax
+        movq    tospace(%rip), %rax
         movq    %rax, -8(%rbp)
-        movq    from_space(%rip), %rax
-        movq    %rax, to_space(%rip)
+        movq    fromspace(%rip), %rax
+        movq    %rax, tospace(%rip)
         movq    -8(%rbp), %rax
-        movq    %rax, from_space(%rip)
+        movq    %rax, fromspace(%rip)
         nop
         popq    %rbp
         ret
@@ -111,10 +111,10 @@ in_to_space:
         movq    %rdi, -8(%rbp)
         cmpq    $0, -8(%rbp)
         je      .L14
-        movq    to_space(%rip), %rax
+        movq    tospace(%rip), %rax
         cmpq    %rax, -8(%rbp)
         jb      .L14
-        movq    to_space(%rip), %rax
+        movq    tospace(%rip), %rax
         movq    heap_size(%rip), %rdx
         salq    $3, %rdx
         addq    %rdx, %rax
@@ -133,10 +133,10 @@ in_from_space:
         movq    %rdi, -8(%rbp)
         cmpq    $0, -8(%rbp)
         je      .L18
-        movq    from_space(%rip), %rax
+        movq    fromspace(%rip), %rax
         cmpq    %rax, -8(%rbp)
         jb      .L18
-        movq    from_space(%rip), %rax
+        movq    fromspace(%rip), %rax
         movq    heap_size(%rip), %rdx
         salq    $3, %rdx
         addq    %rdx, %rax
@@ -200,7 +200,7 @@ forward:
         addq    %rdx, %rax
         salq    $3, %rax
         movq    %rax, %rdx
-        movq    current_to_space_pointer(%rip), %rax
+        movq    current_tospace_pointer(%rip), %rax
         movq    -280(%rbp), %rcx
         movq    %rcx, %rsi
         movq    %rax, %rdi
@@ -210,20 +210,20 @@ forward:
         movq    -280(%rbp), %rax
         addq    %rdx, %rax
         movq    $-1, (%rax)
-        movq    current_to_space_pointer(%rip), %rdx
+        movq    current_tospace_pointer(%rip), %rdx
         movl    $1, %eax
         leaq    0(,%rax,8), %rcx
         movq    -280(%rbp), %rax
         addq    %rcx, %rax
         movq    %rdx, (%rax)
-        movq    current_to_space_pointer(%rip), %rax
+        movq    current_tospace_pointer(%rip), %rax
         movl    -4(%rbp), %edx
         movslq  %edx, %rdx
         movl    $2, %ecx
         addq    %rcx, %rdx
         salq    $3, %rdx
         addq    %rdx, %rax
-        movq    %rax, current_to_space_pointer(%rip)
+        movq    %rax, current_tospace_pointer(%rip)
         movl    $1, %eax
         leaq    0(,%rax,8), %rdx
         movq    -280(%rbp), %rax
@@ -295,7 +295,7 @@ forward_heap_fields:
         movq    %rax, scan(%rip)
 .L27:
         movq    scan(%rip), %rdx
-        movq    current_to_space_pointer(%rip), %rax
+        movq    current_tospace_pointer(%rip), %rax
         cmpq    %rax, %rdx
         jb      .L31
         nop
@@ -351,6 +351,153 @@ visit_params:
         nop
         leave
         ret
+visit_caller_saved_params:
+        pushq   %rbp
+        movq    %rsp, %rbp
+        pushq   %r15
+        pushq   %r14
+        pushq   %r13
+        pushq   %r12
+        pushq   %rbx
+        subq    $344, %rsp
+        movq    %rdi, -376(%rbp)
+        movq    %rsp, %rax
+        movq    %rax, %rbx
+        movq    -376(%rbp), %rax
+        movq    (%rax), %rax
+        movq    %rax, -64(%rbp)
+        cmpq    $0, -64(%rbp)
+        jne     .L37
+        movq    %rbx, %rsp
+        jmp     .L36
+.L37:
+        movl    $1, %eax
+        movq    %rax, %rdx
+        movl    $0, %eax
+        subq    %rdx, %rax
+        salq    $3, %rax
+        movq    %rax, %rdx
+        movq    -64(%rbp), %rax
+        addq    %rdx, %rax
+        movq    (%rax), %rax
+        movl    %eax, -68(%rbp)
+        movl    $3, %eax
+        salq    $3, %rax
+        negq    %rax
+        movq    %rax, %rdx
+        movq    -64(%rbp), %rax
+        addq    %rax, %rdx
+        leaq    -368(%rbp), %rax
+        movq    %rax, %rsi
+        movq    %rdx, %rdi
+        call    set_bitmap
+        movl    -68(%rbp), %eax
+        movl    $6, %edx
+        subl    %edx, %eax
+        movl    $0, %esi
+        movl    %eax, %edi
+        call    max
+        movl    %eax, -72(%rbp)
+        movl    $6, %eax
+        movl    %eax, %edx
+        movl    -68(%rbp), %eax
+        movl    %edx, %esi
+        movl    %eax, %edi
+        call    min
+        movl    %eax, -76(%rbp)
+        movl    -76(%rbp), %eax
+        movslq  %eax, %rdx
+        subq    $1, %rdx
+        movq    %rdx, -88(%rbp)
+        movslq  %eax, %rdx
+        movq    %rdx, %r14
+        movl    $0, %r15d
+        movslq  %eax, %rdx
+        movq    %rdx, %r12
+        movl    $0, %r13d
+        cltq
+        leaq    0(,%rax,4), %rdx
+        movl    $16, %eax
+        subq    $1, %rax
+        addq    %rdx, %rax
+        movl    $16, %esi
+        movl    $0, %edx
+        divq    %rsi
+        imulq   $16, %rax, %rax
+        subq    %rax, %rsp
+        movq    %rsp, %rax
+        addq    $3, %rax
+        shrq    $2, %rax
+        salq    $2, %rax
+        movq    %rax, -96(%rbp)
+        movl    $0, -52(%rbp)
+        jmp     .L39
+.L40:
+        movl    -72(%rbp), %edx
+        movl    -52(%rbp), %eax
+        leal    (%rdx,%rax), %ecx
+        movl    -76(%rbp), %eax
+        subl    -52(%rbp), %eax
+        leal    -1(%rax), %edx
+        movslq  %ecx, %rax
+        movl    -368(%rbp,%rax,4), %ecx
+        movq    -96(%rbp), %rax
+        movslq  %edx, %rdx
+        movl    %ecx, (%rax,%rdx,4)
+        addl    $1, -52(%rbp)
+.L39:
+        movl    -52(%rbp), %eax
+        cmpl    -76(%rbp), %eax
+        jl      .L40
+        movl    $1, %eax
+        movq    %rax, %rdx
+        movl    $0, %eax
+        subq    %rdx, %rax
+        salq    $3, %rax
+        movq    %rax, %rdx
+        movq    -376(%rbp), %rax
+        addq    %rdx, %rax
+        movq    (%rax), %rax
+        movl    %eax, -100(%rbp)
+        movl    -100(%rbp), %eax
+        movl    $6, %edx
+        subl    %edx, %eax
+        movl    $0, %esi
+        movl    %eax, %edi
+        call    max
+        movl    %eax, -104(%rbp)
+        movq    $-3, %rax
+        movl    %eax, %edx
+        movl    -104(%rbp), %eax
+        subl    %eax, %edx
+        movl    -100(%rbp), %eax
+        subl    %eax, %edx
+        movl    %edx, %eax
+        subl    $2, %eax
+        movl    %eax, -108(%rbp)
+        movl    -108(%rbp), %eax
+        cltq
+        salq    $3, %rax
+        negq    %rax
+        movq    %rax, %rdx
+        movq    -376(%rbp), %rax
+        addq    %rax, %rdx
+        movq    -96(%rbp), %rcx
+        movl    -76(%rbp), %eax
+        cltq
+        movq    %rcx, %rsi
+        movq    %rax, %rdi
+        call    visit_params
+        movq    %rbx, %rsp
+.L36:
+        leaq    -40(%rbp), %rsp
+        popq    %rbx
+        popq    %r12
+        popq    %r13
+        popq    %r14
+        popq    %r15
+        popq    %rbp
+        ret
 visit_variables:
         pushq   %rbp
         movq    %rsp, %rbp
@@ -359,8 +506,8 @@ visit_variables:
         movq    %rsi, -32(%rbp)
         movq    %rdx, -40(%rbp)
         movl    $0, -4(%rbp)
-        jmp     .L37
-.L41:
+        jmp     .L42
+.L46:
         movl    -4(%rbp), %eax
         cltq
         movq    -24(%rbp), %rdx
@@ -373,7 +520,7 @@ visit_variables:
         movl    (%rax), %eax
         movl    %eax, -8(%rbp)
         cmpl    $0, -8(%rbp)
-        je      .L38
+        je      .L43
         movl    -4(%rbp), %eax
         negl    %eax
         cltq
@@ -386,7 +533,7 @@ visit_variables:
         movq    %rax, %rdi
         call    in_from_space
         testl   %eax, %eax
-        je      .L42
+        je      .L47
         movq    -16(%rbp), %rax
         movq    %rax, %rdi
         call    forward
@@ -397,17 +544,17 @@ visit_variables:
         movq    -40(%rbp), %rdx
         addq    %rcx, %rdx
         movq    %rax, (%rdx)
-.L38:
+.L43:
         addl    $1, -4(%rbp)
-.L37:
+.L42:
         movl    -4(%rbp), %eax
         cltq
         cmpq    %rax, -24(%rbp)
-        jg      .L41
-        jmp     .L40
-.L42:
+        jg      .L46
+        jmp     .L45
+.L47:
         nop
-.L40:
+.L45:
         movl    $0, %eax
         call    forward_heap_fields
         nop
@@ -418,52 +565,46 @@ scan_stack_frame:
         movq    %rsp, %rbp
         pushq   %r15
         pushq   %r14
+        pushq   %r13
         pushq   %r12
         pushq   %rbx
-        subq    $784, %rsp
-        movq    %rdi, -680(%rbp)
-        movq    %rsi, -688(%rbp)
-        movl    %edx, -692(%rbp)
+        subq    $472, %rsp
+        movq    %rdi, -408(%rbp)
+        movq    %rsi, -416(%rbp)
+        movl    %edx, -420(%rbp)
         movq    %rsp, %rax
-        movq    %rax, %r12
+        movq    %rax, %r13
         movl    $1, %eax
         movq    %rax, %rdx
         movl    $0, %eax
         subq    %rdx, %rax
         salq    $3, %rax
         movq    %rax, %rdx
-        movq    -680(%rbp), %rax
+        movq    -408(%rbp), %rax
         addq    %rdx, %rax
         movq    (%rax), %rax
-        movq    %rax, -48(%rbp)
+        movq    %rax, -56(%rbp)
         movl    $2, %eax
         movq    %rax, %rdx
         movl    $0, %eax
         subq    %rdx, %rax
         salq    $3, %rax
         movq    %rax, %rdx
-        movq    -680(%rbp), %rax
+        movq    -408(%rbp), %rax
         addq    %rdx, %rax
         movq    (%rax), %rax
-        movq    %rax, -40(%rbp)
+        movq    %rax, -72(%rbp)
         movl    $3, %eax
         salq    $3, %rax
         negq    %rax
         movq    %rax, %rdx
-        movq    -680(%rbp), %rax
+        movq    -408(%rbp), %rax
         addq    %rax, %rdx
-        leaq    -416(%rbp), %rax
+        leaq    -400(%rbp), %rax
         movq    %rax, %rsi
         movq    %rdx, %rdi
         call    set_bitmap
-        movl    $6, %eax
-        movl    %eax, %edx
-        movq    -48(%rbp), %rax
-        movl    %edx, %esi
-        movl    %eax, %edi
-        call    min
-        movl    %eax, -60(%rbp)
-        movq    -48(%rbp), %rax
+        movq    -56(%rbp), %rax
         movl    %eax, %edx
         movl    $6, %eax
         subl    %eax, %edx
@@ -471,42 +612,17 @@ scan_stack_frame:
         movl    $0, %esi
         movl    %eax, %edi
         call    max
-        movl    %eax, -64(%rbp)
-        movl    -60(%rbp), %edx
-        movslq  %edx, %rax
-        subq    $1, %rax
-        movq    %rax, -72(%rbp)
-        movslq  %edx, %rax
-        movq    %rax, %r14
-        movl    $0, %r15d
-        movslq  %edx, %rax
-        movq    %rax, -720(%rbp)
-        movq    $0, -712(%rbp)
-        movslq  %edx, %rax
-        leaq    0(,%rax,4), %rdx
-        movl    $16, %eax
-        subq    $1, %rax
-        addq    %rdx, %rax
-        movl    $16, %ebx
-        movl    $0, %edx
-        divq    %rbx
-        imulq   $16, %rax, %rax
-        subq    %rax, %rsp
-        movq    %rsp, %rax
-        addq    $3, %rax
-        shrq    $2, %rax
-        salq    $2, %rax
-        movq    %rax, -80(%rbp)
-        movl    -64(%rbp), %edx
+        movl    %eax, -76(%rbp)
+        movl    -76(%rbp), %edx
         movslq  %edx, %rax
         subq    $1, %rax
         movq    %rax, -88(%rbp)
         movslq  %edx, %rax
-        movq    %rax, -736(%rbp)
-        movq    $0, -728(%rbp)
+        movq    %rax, -448(%rbp)
+        movq    $0, -440(%rbp)
         movslq  %edx, %rax
-        movq    %rax, -752(%rbp)
-        movq    $0, -744(%rbp)
+        movq    %rax, -464(%rbp)
+        movq    $0, -456(%rbp)
         movslq  %edx, %rax
         leaq    0(,%rax,4), %rdx
         movl    $16, %eax
@@ -522,156 +638,40 @@ scan_stack_frame:
         shrq    $2, %rax
         salq    $2, %rax
         movq    %rax, -96(%rbp)
-        movq    -40(%rbp), %rax
-        leaq    -1(%rax), %rdx
-        movq    %rdx, -104(%rbp)
-        movq    %rax, %rdx
-        movq    %rdx, -768(%rbp)
-        movq    $0, -760(%rbp)
-        movq    %rax, %rdx
-        movq    %rdx, -784(%rbp)
-        movq    $0, -776(%rbp)
-        leaq    0(,%rax,4), %rdx
-        movl    $16, %eax
-        subq    $1, %rax
-        addq    %rdx, %rax
-        movl    $16, %ebx
-        movl    $0, %edx
-        divq    %rbx
-        imulq   $16, %rax, %rax
-        subq    %rax, %rsp
-        movq    %rsp, %rax
-        addq    $3, %rax
-        shrq    $2, %rax
-        salq    $2, %rax
-        movq    %rax, -112(%rbp)
-        movl    $0, -56(%rbp)
-        jmp     .L44
-.L45:
-        movl    -56(%rbp), %eax
-        cltq
-        movl    -416(%rbp,%rax,4), %ecx
-        movq    -96(%rbp), %rax
-        movl    -56(%rbp), %edx
-        movslq  %edx, %rdx
-        movl    %ecx, (%rax,%rdx,4)
-        addl    $1, -56(%rbp)
-.L44:
-        movl    -56(%rbp), %eax
-        cmpl    -64(%rbp), %eax
-        jl      .L45
-        movl    $0, -52(%rbp)
-        jmp     .L46
-.L47:
-        movl    -56(%rbp), %eax
-        leal    1(%rax), %edx
-        movl    %edx, -56(%rbp)
-        movl    -60(%rbp), %edx
-        subl    -52(%rbp), %edx
-        subl    $1, %edx
-        cltq
-        movl    -416(%rbp,%rax,4), %ecx
-        movq    -80(%rbp), %rax
-        movslq  %edx, %rdx
-        movl    %ecx, (%rax,%rdx,4)
-        addl    $1, -52(%rbp)
-.L46:
-        movl    -52(%rbp), %eax
-        cmpl    -60(%rbp), %eax
-        jl      .L47
-        movl    $0, -52(%rbp)
-        jmp     .L48
-.L49:
-        movl    -56(%rbp), %eax
-        leal    1(%rax), %edx
-        movl    %edx, -56(%rbp)
-        cltq
-        movl    -416(%rbp,%rax,4), %ecx
-        movq    -112(%rbp), %rax
-        movl    -52(%rbp), %edx
-        movslq  %edx, %rdx
-        movl    %ecx, (%rax,%rdx,4)
-        addl    $1, -52(%rbp)
-.L48:
-        movl    -52(%rbp), %eax
-        cltq
-        cmpq    %rax, -40(%rbp)
-        jg      .L49
-        movl    $4, %eax
-        salq    $3, %rax
-        negq    %rax
-        movq    %rax, %rdx
-        movq    -680(%rbp), %rax
-        addq    %rax, %rdx
-        movq    -112(%rbp), %rcx
-        movq    -40(%rbp), %rax
-        movq    %rcx, %rsi
-        movq    %rax, %rdi
-        call    visit_variables
-        cmpl    $0, -692(%rbp)
-        je      .L50
-        movq    -688(%rbp), %rax
-        leaq    16(%rax), %rdx
-        movq    -80(%rbp), %rcx
-        movl    -60(%rbp), %eax
-        cltq
-        movq    %rcx, %rsi
-        movq    %rax, %rdi
-        call    visit_params
+        movl    $0, -64(%rbp)
+        jmp     .L49
 .L50:
-        movq    -680(%rbp), %rax
-        movq    (%rax), %rax
-        movq    %rax, -120(%rbp)
-        cmpq    $0, -120(%rbp)
-        je      .L51
-        movq    %rsp, %rax
-        movq    %rax, %rbx
-        movl    $1, %eax
-        movq    %rax, %rdx
-        movl    $0, %eax
-        subq    %rdx, %rax
-        salq    $3, %rax
-        movq    %rax, %rdx
-        movq    -120(%rbp), %rax
-        addq    %rdx, %rax
-        movq    (%rax), %rax
-        movq    %rax, -128(%rbp)
-        movl    $3, %eax
-        salq    $3, %rax
-        negq    %rax
-        movq    %rax, %rdx
-        movq    -120(%rbp), %rax
-        addq    %rax, %rdx
-        leaq    -672(%rbp), %rax
-        movq    %rax, %rsi
-        movq    %rdx, %rdi
-        call    set_bitmap
-        movq    -128(%rbp), %rax
-        movl    %eax, %edx
-        movl    $6, %eax
-        subl    %eax, %edx
-        movl    %edx, %eax
-        movl    $0, %esi
-        movl    %eax, %edi
-        call    max
-        movl    %eax, -132(%rbp)
+        movl    -64(%rbp), %eax
+        cltq
+        movl    -400(%rbp,%rax,4), %ecx
+        movq    -96(%rbp), %rax
+        movl    -64(%rbp), %edx
+        movslq  %edx, %rdx
+        movl    %ecx, (%rax,%rdx,4)
+        addl    $1, -64(%rbp)
+.L49:
+        movl    -64(%rbp), %eax
+        cmpl    -76(%rbp), %eax
+        jl      .L50
         movl    $6, %eax
         movl    %eax, %edx
-        movq    -48(%rbp), %rax
+        movq    -56(%rbp), %rax
         movl    %edx, %esi
         movl    %eax, %edi
         call    min
-        movl    %eax, -136(%rbp)
-        movl    -136(%rbp), %eax
+        movl    %eax, -100(%rbp)
+        movl    -100(%rbp), %eax
+        movq    %rsp, %rdx
+        movq    %rdx, %rbx
         movslq  %eax, %rdx
         subq    $1, %rdx
-        movq    %rdx, -144(%rbp)
+        movq    %rdx, -112(%rbp)
         movslq  %eax, %rdx
-        movq    %rdx, -800(%rbp)
-        movq    $0, -792(%rbp)
+        movq    %rdx, -480(%rbp)
+        movq    $0, -472(%rbp)
         movslq  %eax, %rdx
-        movq    %rdx, -816(%rbp)
-        movq    $0, -808(%rbp)
+        movq    %rdx, -496(%rbp)
+        movq    $0, -488(%rbp)
         cltq
         leaq    0(,%rax,4), %rdx
         movl    $16, %eax
@@ -686,60 +686,118 @@ scan_stack_frame:
         addq    $3, %rax
         shrq    $2, %rax
         salq    $2, %rax
-        movq    %rax, -152(%rbp)
-        movl    $0, -56(%rbp)
-        jmp     .L52
-.L53:
-        movl    -132(%rbp), %edx
-        movl    -56(%rbp), %eax
-        addl    %edx, %eax
+        movq    %rax, -120(%rbp)
+        movl    $0, -60(%rbp)
+        jmp     .L51
+.L52:
+        movl    -64(%rbp), %eax
+        leal    1(%rax), %edx
+        movl    %edx, -64(%rbp)
+        movl    -100(%rbp), %edx
+        subl    -60(%rbp), %edx
+        subl    $1, %edx
         cltq
-        movl    -672(%rbp,%rax,4), %ecx
-        movq    -152(%rbp), %rax
-        movl    -56(%rbp), %edx
+        movl    -400(%rbp,%rax,4), %ecx
+        movq    -120(%rbp), %rax
         movslq  %edx, %rdx
         movl    %ecx, (%rax,%rdx,4)
-        addl    $1, -56(%rbp)
-.L52:
-        movl    -56(%rbp), %eax
-        cmpl    -136(%rbp), %eax
-        jl      .L53
-        movl    -132(%rbp), %eax
+        addl    $1, -60(%rbp)
+.L51:
+        movl    -60(%rbp), %eax
+        cmpl    -100(%rbp), %eax
+        jl      .L52
+        movq    -72(%rbp), %rax
+        movq    %rsp, %rdx
+        movq    %rdx, %r12
+        leaq    -1(%rax), %rdx
+        movq    %rdx, -128(%rbp)
+        movq    %rax, %rdx
+        movq    %rdx, -512(%rbp)
+        movq    $0, -504(%rbp)
+        movq    %rax, %rdx
+        movq    %rdx, %r14
+        movl    $0, %r15d
+        leaq    0(,%rax,4), %rdx
+        movl    $16, %eax
+        subq    $1, %rax
+        addq    %rdx, %rax
+        movl    $16, %edi
+        movl    $0, %edx
+        divq    %rdi
+        imulq   $16, %rax, %rax
+        subq    %rax, %rsp
+        movq    %rsp, %rax
+        addq    $3, %rax
+        shrq    $2, %rax
+        salq    $2, %rax
+        movq    %rax, -136(%rbp)
+        movl    $0, -60(%rbp)
+        jmp     .L53
+.L54:
+        movl    -64(%rbp), %eax
+        leal    1(%rax), %edx
+        movl    %edx, -64(%rbp)
         cltq
-        movq    $-3, %rdx
-        subq    %rdx, %rax
-        leaq    0(,%rax,8), %rdx
-        movq    -680(%rbp), %rax
+        movl    -400(%rbp,%rax,4), %ecx
+        movq    -136(%rbp), %rax
+        movl    -60(%rbp), %edx
+        movslq  %edx, %rdx
+        movl    %ecx, (%rax,%rdx,4)
+        addl    $1, -60(%rbp)
+.L53:
+        movl    -60(%rbp), %eax
+        cltq
+        cmpq    %rax, -72(%rbp)
+        jg      .L54
+        movl    $4, %eax
+        salq    $3, %rax
+        negq    %rax
+        movq    %rax, %rdx
+        movq    -408(%rbp), %rax
         addq    %rax, %rdx
-        movq    -152(%rbp), %rcx
-        movl    -136(%rbp), %eax
+        movq    -136(%rbp), %rcx
+        movq    -72(%rbp), %rax
+        movq    %rcx, %rsi
+        movq    %rax, %rdi
+        call    visit_variables
+        cmpl    $0, -420(%rbp)
+        je      .L55
+        movq    -416(%rbp), %rax
+        leaq    16(%rax), %rdx
+        movq    -120(%rbp), %rcx
+        movl    -100(%rbp), %eax
         cltq
         movq    %rcx, %rsi
         movq    %rax, %rdi
         call    visit_params
-        movq    %rbx, %rsp
-.L51:
+.L55:
+        movq    -408(%rbp), %rax
+        movq    %rax, %rdi
+        call    visit_caller_saved_params
         movl    $6, %eax
-        cmpq    %rax, -48(%rbp)
-        jl      .L54
+        cmpq    %rax, -56(%rbp)
+        jl      .L56
         movq    $-3, %rax
         salq    $3, %rax
         negq    %rax
         movq    %rax, %rdx
-        movq    -680(%rbp), %rax
+        movq    -408(%rbp), %rax
         addq    %rax, %rdx
         movq    -96(%rbp), %rcx
-        movl    -64(%rbp), %eax
+        movl    -76(%rbp), %eax
         cltq
         movq    %rcx, %rsi
         movq    %rax, %rdi
         call    visit_params
-.L54:
+.L56:
         movq    %r12, %rsp
+        movq    %rbx, %rsp
+        movq    %r13, %rsp
         nop
-        leaq    -32(%rbp), %rsp
+        leaq    -40(%rbp), %rsp
         popq    %rbx
         popq    %r12
+        popq    %r13
         popq    %r14
         popq    %r15
         popq    %rbp
@@ -750,11 +808,11 @@ collect_garbage:
         subq    $32, %rsp
         movq    %rdi, -24(%rbp)
         movq    %rsi, -32(%rbp)
-        movq    to_space(%rip), %rax
+        movq    tospace(%rip), %rax
         movq    %rax, scan(%rip)
         movl    $1, -4(%rbp)
-        jmp     .L56
-.L57:
+        jmp     .L58
+.L59:
         movl    -4(%rbp), %edx
         movq    -32(%rbp), %rcx
         movq    -24(%rbp), %rax
@@ -765,17 +823,17 @@ collect_garbage:
         movq    (%rax), %rax
         movq    %rax, -24(%rbp)
         movl    $0, -4(%rbp)
-.L56:
+.L58:
         cmpq    $0, -24(%rbp)
-        jne     .L57
+        jne     .L59
         movq    heap_size(%rip), %rax
         salq    $3, %rax
         movq    %rax, %rdx
-        movq    from_space(%rip), %rax
+        movq    fromspace(%rip), %rax
         movl    $0, %esi
         movq    %rax, %rdi
         call    memset
-        movq    current_to_space_pointer(%rip), %rax
+        movq    current_tospace_pointer(%rip), %rax
         movq    %rax, current_heap_pointer(%rip)
         nop
         leave
@@ -790,31 +848,31 @@ allocate_heap:
         movq    %rsi, -32(%rbp)
         movq    %rdx, -40(%rbp)
         movq    heap_pointer(%rip), %rax
-        movq    %rax, from_space(%rip)
-        movq    from_space(%rip), %rax
+        movq    %rax, fromspace(%rip)
+        movq    fromspace(%rip), %rax
         movq    heap_size(%rip), %rdx
         salq    $3, %rdx
         addq    %rdx, %rax
-        movq    %rax, to_space(%rip)
+        movq    %rax, tospace(%rip)
         movq    current_heap_pointer(%rip), %rdx
-        movq    to_space(%rip), %rax
+        movq    tospace(%rip), %rax
         cmpq    %rax, %rdx
-        jbe     .L59
+        jbe     .L61
         movl    $0, %eax
         call    swap_spaces
-.L59:
-        movq    to_space(%rip), %rax
-        movq    %rax, current_to_space_pointer(%rip)
+.L61:
+        movq    tospace(%rip), %rax
+        movq    %rax, current_tospace_pointer(%rip)
         movq    current_heap_pointer(%rip), %rax
         movq    -24(%rbp), %rdx
         salq    $3, %rdx
         leaq    (%rax,%rdx), %rcx
-        movq    from_space(%rip), %rax
+        movq    fromspace(%rip), %rax
         movq    heap_size(%rip), %rdx
         salq    $3, %rdx
         addq    %rdx, %rax
         cmpq    %rax, %rcx
-        jbe     .L60
+        jbe     .L62
         movq    -40(%rbp), %rdx
         movq    -32(%rbp), %rax
         movq    %rdx, %rsi
@@ -824,12 +882,12 @@ allocate_heap:
         movq    -24(%rbp), %rdx
         salq    $3, %rdx
         leaq    (%rax,%rdx), %rcx
-        movq    to_space(%rip), %rax
+        movq    tospace(%rip), %rax
         movq    heap_size(%rip), %rdx
         salq    $3, %rdx
         addq    %rdx, %rax
         cmpq    %rax, %rcx
-        jbe     .L60
+        jbe     .L62
         movq    stderr(%rip), %rax
         movq    %rax, %rcx
         movl    $14, %edx
@@ -838,7 +896,7 @@ allocate_heap:
         call    fwrite
         movl    $1, %edi
         call    exit
-.L60:
+.L62:
         movq    current_heap_pointer(%rip), %rax
         movq    %rax, -8(%rbp)
         movq    current_heap_pointer(%rip), %rax
