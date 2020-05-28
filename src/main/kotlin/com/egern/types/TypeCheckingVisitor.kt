@@ -442,6 +442,39 @@ class TypeCheckingVisitor(
         }
     }
 
+    override fun postVisit(objectInstantiation: ObjectInstantiation) {
+        // Check arguments fit the constructor parameters in number and types
+        val nArgs = objectInstantiation.args.size
+        val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
+        val constructorFields = classDefinition.getConstructorFields()
+        val nParams = constructorFields.size
+        if (nArgs != nParams) {
+            ErrorLogger.log(
+                objectInstantiation,
+                "Wrong number of arguments to constructor of class ${objectInstantiation.classId}" +
+                        " - $nArgs passed, $nParams expected"
+            )
+        }
+
+        objectInstantiation.args.take(nParams).forEachIndexed { index, arg ->
+            val argType = deriveType(arg)
+            val paramType = constructorFields[index].second
+            if (argType != paramType) {
+                ErrorLogger.log(
+                    arg,
+                    "Argument ${index + 1} is of type ${typeString(argType)} but ${typeString(paramType)} was expected"
+                )
+            }
+
+            if (arg !is IdExpr && (argType is ARRAY || argType is CLASS)) {
+                ErrorLogger.log(
+                    arg,
+                    "Passing references directly is currently not supported"
+                )
+            }
+        }
+    }
+
     override fun postVisit(castExpr: CastExpr) {
         val castTo = (castExpr.type as CLASS).className
         val castFrom = (deriveType(castExpr.expr) as CLASS).className
