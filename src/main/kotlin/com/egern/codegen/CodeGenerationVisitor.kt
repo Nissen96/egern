@@ -1306,8 +1306,8 @@ class CodeGenerationVisitor(
         )
         add(
             Instruction(
-                InstructionType.MOV,
-                InstructionArg(Register(OpReg1), IndirectRelative(-vTableOffset)),
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("${vTableOffset * 8}"), Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Get pointer to entry for class '${objectInstantiation.classId}' in vtable"
             )
@@ -1405,32 +1405,39 @@ class CodeGenerationVisitor(
     }
 
     override fun postVisit(methodCall: MethodCall) {
+        val numArgs = methodCall.args.size
+        passFunctionArgs(numArgs)
+
         // VTable lookup
         val objectClass = getObjectClass(methodCall.objectId)
         val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
-        val vTablePointer = classDefinition.vTableOffset
-
-        // Find latest override of method
-        val methodOffset = classDefinition.getAllMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
-            it.id == methodCall.methodId
-        }
-        val numArgs = methodCall.args.size
-
-        passFunctionArgs(numArgs)
-
+        val objectPointer = getIdLocation(methodCall.objectId)
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Indirect),
+                objectPointer,
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Move Vtable pointer to register"
+                comment = "Store object pointer in register"
             )
         )
         add(
             Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), IndirectRelative(-OBJECT_VTABLE_POINTER_OFFSET)),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Get VTable pointer from object"
+            )
+        )
+
+        // Find latest override of method to get method offset
+        val methodOffset = classDefinition.getAllMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
+            it.id == methodCall.methodId
+        }
+        add(
+            Instruction(
                 InstructionType.CALL,
-                InstructionArg(Register(OpReg1), IndirectRelative(-(vTablePointer + methodOffset))),
-                comment = "Call method"
+                InstructionArg(Register(OpReg1), IndirectRelative(-methodOffset)),
+                comment = "Call dynamically located method"
             )
         )
         functionEpilogue(numArgs)
