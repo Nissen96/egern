@@ -843,7 +843,7 @@ class CodeGenerationVisitor(
                 comment = "Restore array size"
             )
         )
-        
+
         add(
             Instruction(
                 InstructionType.MOV,
@@ -1393,9 +1393,9 @@ class CodeGenerationVisitor(
 
     override fun postVisit(methodCall: MethodCall) {
         // VTable lookup
+        val objectLocation = getIdLocation(methodCall.objectId, true);
         val objectClass = getObjectClass(methodCall.objectId)
         val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
-        val vTablePointer = classDefinition.vTableOffset
 
         // Find latest override of method
         val methodOffset = classDefinition.getAllMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
@@ -1404,19 +1404,27 @@ class CodeGenerationVisitor(
         val numArgs = methodCall.args.size
 
         passFunctionArgs(numArgs)
-
+        
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Indirect),
+                objectLocation,
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Move Vtable pointer to register"
+                comment = "Move object pointer to register"
+            )
+        )
+        add(
+            Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), IndirectRelative(OBJECT_VTABLE_POINTER_OFFSET)),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Find VTable pointer"
             )
         )
         add(
             Instruction(
                 InstructionType.CALL,
-                InstructionArg(Register(OpReg1), IndirectRelative(-(vTablePointer + methodOffset))),
+                InstructionArg(Register(OpReg1), IndirectRelative(-(methodOffset))),
                 comment = "Call method"
             )
         )
