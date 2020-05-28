@@ -1424,7 +1424,7 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.CALL,
-                InstructionArg(Register(OpReg1), IndirectRelative(methodOffset)),
+                InstructionArg(Register(OpReg1), IndirectRelative(-methodOffset)),
                 comment = "Call method"
             )
         )
