@@ -1404,7 +1404,7 @@ class CodeGenerationVisitor(
         val numArgs = methodCall.args.size
 
         passFunctionArgs(numArgs)
-        
+
         add(
             Instruction(
                 InstructionType.MOV,
@@ -1416,7 +1416,7 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(Register(OpReg1), IndirectRelative(OBJECT_VTABLE_POINTER_OFFSET)),
+                InstructionArg(Register(OpReg1), IndirectRelative(-OBJECT_VTABLE_POINTER_OFFSET)),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Find VTable pointer"
             )
@@ -1424,7 +1424,7 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.CALL,
-                InstructionArg(Register(OpReg1), IndirectRelative(-(methodOffset))),
+                InstructionArg(Register(OpReg1), IndirectRelative(methodOffset)),
                 comment = "Call method"
             )
         )
