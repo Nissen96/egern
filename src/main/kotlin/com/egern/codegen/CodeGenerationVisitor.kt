@@ -14,8 +14,9 @@ import kotlin.math.min
 
 class CodeGenerationVisitor(
     symbolTable: SymbolTable,
-    classDefinitions: List<ClassDefinition>
-) : SymbolAwareVisitor(symbolTable, classDefinitions) {
+    classDefinitions: List<ClassDefinition>,
+    interfaces: List<InterfaceDecl>
+) : SymbolAwareVisitor(symbolTable, classDefinitions, interfaces) {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
     val staticStrings = mutableMapOf(
@@ -234,7 +235,7 @@ class CodeGenerationVisitor(
             it.vTableOffset = currentOffset
 
             // Add methods
-            it.getAllMethods().forEach { method ->
+            it.vTable.forEach { method ->
                 add(
                     Instruction(
                         InstructionType.MOV,
@@ -1408,9 +1409,15 @@ class CodeGenerationVisitor(
         val numArgs = methodCall.args.size
         passFunctionArgs(numArgs)
 
-        // VTable lookup
+        // VTable lookup to find method offset (found in corresponding class or interface)
         val objectClass = getObjectClass(methodCall.objectId)
-        val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
+        val classDefinition = classDefinitions.find { objectClass.className == it.className }
+        val methodOffset = if (classDefinition == null) {
+            val interfaceDecl = interfaces.find { objectClass.className == it.id }!!
+            interfaceDecl.methodSignatures.indexOfFirst { it.id == methodCall.methodId }
+        } else {
+            classDefinition.vTable.indexOfFirst { it.id == methodCall.methodId }
+        }
         val objectPointer = getIdLocation(methodCall.objectId)
         add(
             Instruction(
@@ -1429,10 +1436,6 @@ class CodeGenerationVisitor(
             )
         )
 
-        // Find latest override of method to get method offset
-        val methodOffset = classDefinition.getAllMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
-            it.id == methodCall.methodId
-        }
         add(
             Instruction(
                 InstructionType.CALL,
@@ -1501,9 +1504,7 @@ class CodeGenerationVisitor(
         val vTablePointer = classDefinition.vTableOffset
 
         // Find latest override of method
-        val methodOffset = classDefinition.getAllMethods().indexOfLast {
-            it.id == staticMethodCall.methodId
-        }
+        val methodOffset = classDefinition.vTable.indexOfFirst { it.id == staticMethodCall.methodId }
         val numArgs = staticMethodCall.args.size
 
         passFunctionArgs(numArgs)

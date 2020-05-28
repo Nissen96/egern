@@ -78,7 +78,11 @@ fun main(args: Array<String>) {
 
     val platform = PlatformManager()
 
-    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.symbolTable, classVisitor.classDefinitions)
+    val codeGenVisitor = CodeGenerationVisitor(
+        symbolVisitor.symbolTable,
+        classVisitor.classDefinitions,
+        classVisitor.interfaces
+    )
     ast.accept(codeGenVisitor)
 
     val emitter: Emitter = when (platform.platform) {

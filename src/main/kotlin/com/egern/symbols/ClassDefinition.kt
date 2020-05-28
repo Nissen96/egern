@@ -12,6 +12,29 @@ class ClassDefinition(
 ) {
     var vTableOffset: Int = -1
     lateinit var symbolTable: SymbolTable
+    val vTable: List<FuncDecl>
+
+    init {
+        // Get relevant methods for the VTable of the current class
+        // Always references latest override of each method
+        val methodsPerClass = getMethodsPerClass()
+        val allMethods = methodsPerClass[0].toMutableList()
+
+        // For every subclass, add all new methods and replace all overridden
+        methodsPerClass.drop(1).forEach { methods ->
+            val allMethodNames = allMethods.map { it.id }
+            methods.forEach { method ->
+                val overrideIndex = allMethodNames.indexOf(method.id)
+                if (overrideIndex == -1) {
+                    allMethods.add(method)
+                } else {
+                    allMethods[overrideIndex] = method
+                }
+            }
+        }
+
+        vTable = allMethods
+    }
 
     fun getSuperclasses(): List<String> {
         // Insert interface before Base class
@@ -22,8 +45,8 @@ class ClassDefinition(
         return listOf(className) + (superclass?.getSuperclasses() ?: emptyList())
     }
 
-    fun getAllMethods(): List<FuncDecl> {
-        return (superclass?.getAllMethods() ?: emptyList()) + classDecl.methods
+    private fun getMethodsPerClass(): List<List<FuncDecl>> {
+        return (superclass?.getMethodsPerClass() ?: emptyList()) + listOf(classDecl.methods)
     }
 
     fun getConstructor(): List<Pair<String, ExprType>> {

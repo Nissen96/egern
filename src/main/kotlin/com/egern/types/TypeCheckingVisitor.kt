@@ -277,31 +277,39 @@ class TypeCheckingVisitor(
             }
         }
 
+        // Ensure all array elements match the array type
         val arrayType = deriveType(arrayExpr) as ARRAY
+        val arrayInnerType = arrayType.innerType
+        arrayExpr.entries.forEachIndexed { index, element ->
+            var logError = false
+            var elementType = deriveType(element)
 
-        if (arrayType.depth > 1) {
-            arrayExpr.entries.forEachIndexed { index, element ->
-                val elementType = deriveType(element) as ARRAY
-                if (elementType.depth != arrayType.depth - 1 ||
-                    (elementType.innerType != arrayType.innerType && elementType.innerType != VOID && arrayType.innerType != VOID)
-                ) {
-                    ErrorLogger.log(
-                        element,
-                        "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
-                                "expected type: ${typeString(arrayType.innerType)}"
-                    )
+            // Nested arrays must match on depth
+            if (arrayType.depth > 1) {
+                if (elementType !is ARRAY || elementType.depth != arrayType.depth - 1) {
+                    logError = true
                 }
+                elementType = (elementType as ARRAY).innerType
             }
-        } else {
-            arrayExpr.entries.forEachIndexed { index, element ->
-                val elementType = deriveType(element)
-                if (elementType != arrayType.innerType) {
-                    ErrorLogger.log(
-                        element,
-                        "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
-                                "expected type: ${typeString(arrayType.innerType)}"
-                    )
+
+            // Elements of object arrays must just share a common superclass
+            if (arrayInnerType is CLASS) {
+                val elementClass = (elementType as CLASS).className
+                val elementSuperclasses = classDefinitions.find { it.className == elementClass }!!.getSuperclasses()
+                if (arrayInnerType.className !in elementSuperclasses) {
+                    logError = true
                 }
+            } else if (elementType != arrayInnerType && elementType != VOID && arrayInnerType != VOID) {
+                // Element inner type and array inner type must match or one of them be void (empty list)
+                logError = true
+            }
+
+            if (logError) {
+                ErrorLogger.log(
+                    element,
+                    "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
+                            "expected type: ${typeString(arrayType.innerType)}"
+                )
             }
         }
     }
