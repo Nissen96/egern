@@ -110,8 +110,6 @@ class TypeCheckingVisitor(
 
     override fun preVisit(varAssign: VarAssign) {
         // Check variable ids
-        // TODO check types on varAssign classFields
-        // TODO Fix type checking for arrays
         val allIds = varAssign.ids
         allIds.forEach { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field)) }
 
@@ -120,7 +118,7 @@ class TypeCheckingVisitor(
             ErrorLogger.log(varAssign, "Assigning void is invalid")
         }
 
-        // Expression type must match declared variable
+        // For normal IDs, expression type must match declared variable
         varAssign.ids.forEach {
             val varType = getVariableType(it)
             if (varType != exprType) {
@@ -132,7 +130,7 @@ class TypeCheckingVisitor(
             }
         }
 
-        // Expression type must match type of element at array index
+        // For inserting into arrays, expression type must match type of element at array index
         varAssign.indexExprs.forEach {
             val elementType = deriveType(it)
             if (elementType != exprType) {
@@ -143,12 +141,42 @@ class TypeCheckingVisitor(
                 )
             }
         }
+
+        // For class fields, expression type must match declared field
+        varAssign.classFields.forEach { classField ->
+            val fieldType = deriveType(classField)
+            if (fieldType != exprType) {
+                ErrorLogger.log(
+                    varAssign,
+                    "Assigning expression of type ${typeString(exprType)} " +
+                            "to class field of type ${typeString(fieldType)} is invalid"
+                )
+            }
+        }
     }
 
     override fun postVisit(varDecl: VarDecl) {
         val type = deriveType(varDecl.expr)
         if (type == VOID) {
             ErrorLogger.log(varDecl, "Declaring a variable of type void is invalid")
+        }
+    }
+
+    override fun visit(classField: ClassField) {
+        // Check no static field is referenced directly by instances - only classes
+        if (classField is StaticClassField) {
+            return
+        }
+
+        val callerClass = getObjectClass(classField.objectId)
+        val classDefinition = classDefinitions.find { it.className == callerClass.className }
+            ?: throw Exception("Class ${callerClass.className} not defined")
+        val fieldDecl = classDefinition.lookupField(classField.fieldId)!!
+        if (fieldDecl.second != null && Modifier.STATIC in fieldDecl.second!!.modifiers) {
+            ErrorLogger.log(
+                classField,
+                "Invalid reference of static class field by instance"
+            )
         }
     }
 
@@ -382,28 +410,29 @@ class TypeCheckingVisitor(
         // Check modifiers for the field itself
         val fieldOverrides = Modifier.OVERRIDE in fieldDecl.modifiers
         if (fieldOverrides && Modifier.STATIC in fieldDecl.modifiers) {
-            ErrorLogger.log(fieldDecl, "Static fields cannot be overridden")
+            ErrorLogger.log(fieldDecl, "A field cannot be declared both static and overridden")
         }
 
         // For each field id, check if it overrides any static field or constructor param
         // or overrides a field without the override modifier
         fieldDecl.ids.forEach {
+            // Check if any superclass contains a field of the same name
             val foundField = currentClass!!.superclass!!.lookupField(it)
             if (foundField != null) {
                 val (className, superField) = foundField
-                if (superField != null) {
-                    if (Modifier.STATIC in superField.modifiers) {
+                if (superField != null) {  // Local field
+                    if (Modifier.STATIC in superField.modifiers) {  // Attempt override of static super field
                         ErrorLogger.log(
                             fieldDecl,
                             "Override in class ${currentClass!!.className} of static field $it from class $className"
                         )
-                    } else if (!fieldOverrides) {
+                    } else if (!fieldOverrides) {  // Attempt override without override modifier
                         ErrorLogger.log(
                             fieldDecl,
                             "Override in class ${currentClass!!.className} of field $it from class $className without override modifier"
                         )
                     }
-                } else if (!fieldOverrides) {
+                } else if (fieldOverrides) {  // Constructor field
                     ErrorLogger.log(
                         fieldDecl,
                         "Constructor parameter $it from class $className cannot be overridden"

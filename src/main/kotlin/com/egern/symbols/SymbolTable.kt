@@ -33,7 +33,7 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
         return lookupCurrentScope(id, checkDeclared) ?: parent?.lookup(id, checkDeclared)
     }
 
-    private fun lookupType(key: Pair<String, SymbolType>, checkDeclared: Boolean = false): Symbol? {
+    fun lookupType(key: Pair<String, SymbolType>, checkDeclared: Boolean = false): Symbol? {
         // Lookup symbol - and check if symbol has been declared yet if specified
         return if (key in symbols && (!checkDeclared || isDeclared(key))) symbols[key]
         else null

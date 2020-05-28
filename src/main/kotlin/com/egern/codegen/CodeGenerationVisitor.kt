@@ -232,6 +232,7 @@ class CodeGenerationVisitor(
         )
 
         classDefinitions.forEach {
+            it.setVTable()
             it.vTableOffset = currentOffset
 
             // Add methods
@@ -611,10 +612,10 @@ class CodeGenerationVisitor(
 
     private fun getConstructorArgLocation(param: String): InstructionArg? {
         // All constructor args from all superclasses are on stack - get offset in this
-        val constructor = currentClassDefinition?.getConstructor() ?: return null
-        val paramOffset = constructor.indexOfFirst { it.first == param }
+        val constructorFields = currentClassDefinition?.getConstructorFields() ?: return null
+        val paramOffset = constructorFields.indexOfFirst { it.first == param }
 
-        return InstructionArg(Register(OpReg1), IndirectRelative(-(constructor.size - paramOffset - 1)))
+        return InstructionArg(Register(OpReg1), IndirectRelative(-(constructorFields.size - paramOffset - 1)))
     }
 
     override fun postVisit(compExpr: CompExpr) {
@@ -1488,8 +1489,9 @@ class CodeGenerationVisitor(
         add(
             Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Memory(fieldDecl.staticDataField), if (staticClassField.reference) Direct else Indirect),
-                comment = "Push field ${if (staticClassField.reference) "reference" else "value"} to stack"
+                if (staticClassField.reference) InstructionArg(ImmediateValue(fieldDecl.staticDataField), Direct)
+                else InstructionArg(Memory(fieldDecl.staticDataField), Indirect),
+                comment = "Push static field ${if (staticClassField.reference) "reference" else "value"} to stack"
             )
         )
     }
@@ -1505,6 +1507,10 @@ class CodeGenerationVisitor(
 
         // Find latest override of method
         val methodOffset = classDefinition.vTable.indexOfFirst { it.id == staticMethodCall.methodId }
+        if (methodOffset == -1) {
+            throw Exception("Method ${staticMethodCall.methodId} not found in class ${staticMethodCall.classId}")
+        }
+
         val numArgs = staticMethodCall.args.size
 
         passFunctionArgs(numArgs)
@@ -1791,6 +1797,8 @@ class CodeGenerationVisitor(
                 )
             )
         }
+
+        // Reference to array elements and class fields are pushed to the stack and can be popped
         for (id in arrayIds + classFields) {
             val name = when (id) {
                 is ClassField -> id.fieldId

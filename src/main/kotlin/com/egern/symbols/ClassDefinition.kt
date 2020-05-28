@@ -12,9 +12,9 @@ class ClassDefinition(
 ) {
     var vTableOffset: Int = -1
     lateinit var symbolTable: SymbolTable
-    val vTable: List<FuncDecl>
+    lateinit var vTable: List<FuncDecl>
 
-    init {
+    fun setVTable() {
         // Get relevant methods for the VTable of the current class
         // Always references latest override of each method
         val methodsPerClass = getMethodsPerClass()
@@ -49,7 +49,7 @@ class ClassDefinition(
         return (superclass?.getMethodsPerClass() ?: emptyList()) + listOf(classDecl.methods)
     }
 
-    fun getConstructor(): List<Pair<String, ExprType>> {
+    fun getConstructorFields(): List<Pair<String, ExprType>> {
         return classDecl.constructor
     }
 
