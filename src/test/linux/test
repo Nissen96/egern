@@ -6,7 +6,7 @@ expected="expected/${filename%.*}"
 
 # Compile and run
 linux/compile $1 > ko.s || exit 1
-gcc -no-pie ko.s || exit 1
+gcc -no-pie -Wa,-W ko.s || exit 1
 rm ko.s >/dev/null 2>&1
 ./a.out > result 2>&1 || exit 1
 rm a.out >/dev/null 2>&1
