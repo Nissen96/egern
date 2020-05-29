@@ -375,8 +375,8 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             var current-index = 0
             while (current-index < len(ctx.indexable())) {
               var ctx.ID() = ctx.indexable()[current-index]
-              ctx.block().stmt()
               current-index += 1
+              ctx.block().stmt()
             }
           }
 
@@ -388,14 +388,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         val declareIterator = VarDecl(listOf(index.id), IntExpr(0))
 
         // Accept loop body and prepend a line assigning the iterator to the value at the current index of the iterable
-        // plus append a line incrementing this index
+        // followed by a line incrementing this index
         val block = ctx.block().accept(this) as Block
         val assignIterator = VarDecl(listOf(ctx.ID().text), ArrayIndexExpr(iterable, listOf(index)))
         val incrementIndex = VarAssign(
             listOf(index.id), emptyList(), emptyList(),
             ArithExpr(index, IntExpr(1), op = ArithOp.PLUS)
         )
-        block.stmts = listOf(assignIterator) + block.stmts + listOf(incrementIndex)
+        block.stmts = listOf(assignIterator, incrementIndex) + block.stmts
 
 
         // Build actual loop with a loop condition checking the index is in bounds + the newly built loop body
