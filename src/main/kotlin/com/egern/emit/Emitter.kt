@@ -73,7 +73,6 @@ abstract class Emitter(
             ExprTypeEnum.STRING -> "string"
             ExprTypeEnum.INT -> "int"
             ExprTypeEnum.BOOLEAN -> "string"
-            ExprTypeEnum.ARRAY -> "int"
             else -> throw Exception("Printing $enumType is invalid")
         }
 
