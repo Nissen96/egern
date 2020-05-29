@@ -10,11 +10,8 @@ class SymbolTable(val scope: Int, val parent: SymbolTable?) {
         // Symbol is inserted in table with (id, type) key - allowing shadowing of same id in same scope
         val key = Pair(sym.id, sym.type)
 
-        // Check if any symbol with the same id exists
-        val checkKeys = SymbolType.values().map { Pair(sym.id, it) }
-        val foundSymbol = checkKeys.asSequence().map { symbols[it] }.firstOrNull { it != null }
-
-        // Add symbol if none already exists or if symbol is a variable shadowing a parameter
+        // Add symbol if none of the same name exists in the current scope or is a variable shadowing a parameter
+        val foundSymbol = lookupCurrentScope(sym.id)
         if (foundSymbol == null || (sym.type == SymbolType.Variable && foundSymbol.type == SymbolType.Parameter)) {
             symbols[key] = sym
         } else {
