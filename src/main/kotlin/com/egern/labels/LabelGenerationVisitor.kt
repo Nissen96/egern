@@ -35,16 +35,12 @@ class LabelGenerationVisitor : Visitor() {
     override fun visit(continueStmt: ContinueStmt) {
         if (loopStack.isNotEmpty()) {
             continueStmt.jumpLabel = loopStack.peek()!!.startLabel
-        } else {
-            ErrorLogger.log(continueStmt, "Continue invalid outside loop")
         }
     }
 
     override fun visit(breakStmt: BreakStmt) {
         if (loopStack.isNotEmpty()) {
             breakStmt.jumpLabel = loopStack.peek()!!.endLabel
-        } else {
-            ErrorLogger.log(breakStmt, "Break invalid outside loop")
         }
     }
 }

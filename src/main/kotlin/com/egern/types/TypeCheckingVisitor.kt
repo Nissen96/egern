@@ -38,9 +38,6 @@ class TypeCheckingVisitor(
     override fun postVisit(funcDecl: FuncDecl) {
         symbolTable = symbolTable.parent ?: throw Exception("No more scopes -- please buy another")
         functionStack.pop()
-        if (!funcDecl.stmts.any { it is ReturnStmt }) {
-            ErrorLogger.log(funcDecl, "No return statement found in function declaration")
-        }
     }
 
     private fun checkMethodDecl(methodDecl: FuncDecl) {
@@ -189,7 +186,7 @@ class TypeCheckingVisitor(
             if (exprType != returnType) {
                 ErrorLogger.log(
                     returnStmt,
-                    "Invalid return type: ${typeString(returnType)} - expected: ${typeString(exprType)}"
+                    "Invalid return type: ${typeString(exprType)} - expected: ${typeString(returnType)}"
                 )
             }
         }
