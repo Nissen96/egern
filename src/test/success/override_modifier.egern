@@ -1,38 +1,25 @@
-class Dog() {
-    var legs = 2
-    var friends = 3
-    func bark() {
-        print("woof")
+class Person(age: int) {
+    var state = "bored"
+
+    func getAge(): int {
+        return this.age
+    }
+
+    func getState(): string {
+        return this.state
     }
 }
 
-
-class Labrador(): Dog() {
-    override var legs = 4
-    var age = 3
-    override func bark() {
-        print("broel") // note Windows likely won't work with non-ascii encodings
-    }
-
-    func getLegs(): int {
-        return legs
+class Student(override age: int): Person(age + 1) {
+    override var state = "discombobulated"
+    override func getAge(): int {
+        return this.age + 5
     }
 }
 
-var buller = Dog()
-var ibrahim = Labrador()
-print(buller.legs)
-buller.bark()
-print(ibrahim.legs)
-ibrahim.bark()
+var bob = Student(22)
 
-var jens = ibrahim as Dog
-print(jens.legs)
-print(jens.friends)
-jens.bark()
-
-var brutus = Dog()
-brutus = ibrahim as Dog
-print(brutus.legs)
-print(brutus.friends)
-brutus.bark()
+print(bob.age)  // age from Student
+print(bob.state)  // state from Student
+print(bob.getAge())  // getAge() from Student, age from Student
+print(bob.getState())  // getState() from Person, state from Person

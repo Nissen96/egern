@@ -87,7 +87,9 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
     override fun preVisit(classDecl: ClassDecl) {
         printIndented("class ${classDecl.id}")
         if (classDecl.constructor.isNotEmpty()) {
-            print("(${classDecl.constructor.joinToString(", ") { "${it.first}: ${typeString(it.second)}" }})")
+            print("(${classDecl.constructor.joinToString(", ") {
+                "${if (it.third != null) it.third?.modifier + " " else ""}${it.first}: ${typeString(it.second)}"
+            }})")
         }
         print(": ${classDecl.superclass}(")
         classDecl.superclassArgs?.forEach({ it.accept(this) }, { print(", ") })

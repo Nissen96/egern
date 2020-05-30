@@ -181,7 +181,11 @@ class TypeCheckingVisitor(
         val callerClass = getObjectClass(classField.objectId)
         val classDefinition = classDefinitions.find { it.className == callerClass.className }
             ?: throw Exception("Class ${callerClass.className} not defined")
-        val fieldDecl = classDefinition.lookupField(classField.fieldId)!!
+        val fieldDecl = classDefinition.lookupField(classField.fieldId)
+            ?: throw Exception(
+                "Field '${classField.fieldId}' not defined for instance '${classField.objectId}' " +
+                        "of class ${callerClass.className}"
+            )
         if (fieldDecl.second != null && Modifier.STATIC in fieldDecl.second!!.modifiers) {
             ErrorLogger.log(
                 classField,

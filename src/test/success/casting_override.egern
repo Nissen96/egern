@@ -1,0 +1,46 @@
+class Dog(age: int) {
+    var size = 5
+    func bark() {
+        print("woof")
+    }
+}
+
+class Chihuahua(age: int): Dog(age * 7) {
+    var size = 0
+    override func bark() {
+        print("piv")
+    }
+}
+
+
+class Labrador(override age: int): Dog(age * 7) {
+    override var size = 10
+    override func bark() {
+        print("WOOF!")
+    }
+}
+
+var jerry = Chihuahua(3)
+print(jerry.age)
+print(jerry.size)
+jerry.bark()
+print()
+
+var ibrahim = Labrador(12)
+print(ibrahim.age)
+print(ibrahim.size)
+ibrahim.bark()
+print()
+
+// Labrador cast to Dog - all fields are overridden and refers to those in Labrador
+var jens = ibrahim as Dog
+print(jens.age)
+print(jens.size)
+jens.bark()
+print()
+
+// Chihuahua cast to Dog - no fields overridden, all refers to those in Dog
+var buller = jerry as Dog
+print(buller.age)
+print(buller.size)
+buller.bark()
