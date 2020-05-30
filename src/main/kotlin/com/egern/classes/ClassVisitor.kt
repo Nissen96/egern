@@ -5,7 +5,6 @@ import com.egern.symbols.ClassDefinition
 import com.egern.symbols.SymbolTable
 import com.egern.types.CLASS
 import com.egern.visitor.SymbolAwareVisitor
-import com.egern.visitor.Visitor
 
 class ClassVisitor(
     symbolTable: SymbolTable,

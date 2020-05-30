@@ -86,7 +86,9 @@ class ClassDefinition(
     }
 
     fun getFieldOffset(fieldId: String, castToClass: String? = null): Int {
-        val (classWithField, fieldSymbol) = lookupField(fieldId, castToClass ?: className)!!
+        val (classWithField, fieldSymbol) = lookupField(fieldId, castToClass ?: className) ?: throw Exception(
+            "Field $fieldId does not exist in class ${castToClass ?: className}"
+        )
         val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
 
         return (classWithField.superclass?.getNumFields() ?: 0) + fieldOffset
