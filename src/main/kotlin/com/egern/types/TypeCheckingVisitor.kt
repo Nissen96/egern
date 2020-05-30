@@ -68,7 +68,7 @@ class TypeCheckingVisitor(
         } else if (!methodOverrides) {
             ErrorLogger.log(
                 methodDecl,
-                "Override in class ${currentClass!!.className} of field ${methodDecl.id} from class $className without override modifier"
+                "Override in class ${currentClass!!.className} of method ${methodDecl.id} from class $className without override modifier"
             )
         }
     }
@@ -92,7 +92,17 @@ class TypeCheckingVisitor(
         funcCall.args.take(nParams).forEachIndexed { index, arg ->
             val argType = deriveType(arg)
             val paramType = funcDecl.params[index].second
-            if (argType != paramType) {
+            if (paramType is CLASS) {
+                val elementClass = (argType as CLASS).className
+                val elementSuperclasses = classDefinitions.find { it.className == elementClass }!!.getSuperclasses()
+                if (paramType.className !in elementSuperclasses) {
+                    ErrorLogger.log(
+                        arg,
+                        "Argument ${index + 1} is of type ${typeString(argType)} is not a subclass " +
+                                "of expected type ${typeString(paramType)}"
+                    )
+                }
+            } else if (argType != paramType) {
                 ErrorLogger.log(
                     arg,
                     "Argument ${index + 1} is of type ${typeString(argType)} but ${typeString(paramType)} was expected"
@@ -358,6 +368,16 @@ class TypeCheckingVisitor(
     }
 
     override fun postVisit(classDecl: ClassDecl) {
+        // Check constructor fields only has override modifier
+        classDecl.constructor.forEach {
+            if (it.third != null && it.third != Modifier.OVERRIDE) {
+                ErrorLogger.log(
+                    classDecl,
+                    "Invalid modifier for constructor field. Only override allowed"
+                )
+            }
+        }
+
         // Check class overrides all interface methods
         val classInterface = currentClass!!.interfaceDecl
         classInterface?.methodSignatures?.forEach {
@@ -414,28 +434,22 @@ class TypeCheckingVisitor(
         }
 
         // For each field id, check if it overrides any static field or constructor param
-        // or overrides a field without the override modifier
         fieldDecl.ids.forEach {
             // Check if any superclass contains a field of the same name
             val foundField = currentClass!!.superclass!!.lookupField(it)
             if (foundField != null) {
                 val (className, superField) = foundField
-                if (superField != null) {  // Local field
-                    if (Modifier.STATIC in superField.modifiers) {  // Attempt override of static super field
-                        ErrorLogger.log(
-                            fieldDecl,
-                            "Override in class ${currentClass!!.className} of static field $it from class $className"
-                        )
-                    } else if (!fieldOverrides) {  // Attempt override without override modifier
-                        ErrorLogger.log(
-                            fieldDecl,
-                            "Override in class ${currentClass!!.className} of field $it from class $className without override modifier"
-                        )
-                    }
-                } else if (fieldOverrides) {  // Constructor field
+                if (superField == null && fieldOverrides) {
+                    // Attempt override of constructor field with local field
                     ErrorLogger.log(
                         fieldDecl,
-                        "Constructor parameter $it from class $className cannot be overridden"
+                        "Constructor field $it from class $className cannot be overridden"
+                    )
+                } else if (superField != null && Modifier.STATIC in superField.modifiers) {
+                    // Attempt override of static super field
+                    ErrorLogger.log(
+                        fieldDecl,
+                        "Override in class ${currentClass!!.className} of static field $it from class $className"
                     )
                 }
             }

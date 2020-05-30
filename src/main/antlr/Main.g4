@@ -41,7 +41,8 @@ funcBody:   ( stmt | funcDecl )* ;
 
 block:  '{' stmt* '}' ;
 
-classDecl: 'class' CLASSNAME ('(' paramList ')')? (':' CLASSNAME ('(' argList ')')?)? '{' classBody '}' ;
+classDecl: 'class' CLASSNAME constructor? (':' CLASSNAME ('(' argList ')')?)? '{' classBody '}' ;
+constructor: '(' (MODIFIER? ID ':' typeDecl ',')* (MODIFIER? ID ':' typeDecl)? ')'  ;
 classBody: ( methodDecl | fieldDecl )* ;
 
 methodDecl: MODIFIER* funcDecl ;

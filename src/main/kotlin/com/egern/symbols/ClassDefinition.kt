@@ -49,7 +49,7 @@ class ClassDefinition(
         return (superclass?.getMethodsPerClass() ?: emptyList()) + listOf(classDecl.methods)
     }
 
-    fun getConstructorFields(): List<Pair<String, ExprType>> {
+    fun getConstructorFields(): List<Triple<String, ExprType, Modifier?>> {
         return classDecl.constructor
     }
 
@@ -85,8 +85,8 @@ class ClassDefinition(
         return (superclass?.getLocalFieldsPerClass() ?: emptyList()) + listOf(classDecl.fieldDecls)
     }
 
-    fun getFieldOffset(fieldId: String, actualClass: String? = null): Int {
-        val (classWithField, fieldSymbol) = lookupField(fieldId, actualClass ?: className)!!
+    fun getFieldOffset(fieldId: String, castToClass: String? = null): Int {
+        val (classWithField, fieldSymbol) = lookupField(fieldId, castToClass ?: className)!!
         val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
 
         return (classWithField.superclass?.getNumFields() ?: 0) + fieldOffset
@@ -101,17 +101,26 @@ class ClassDefinition(
 
     fun lookupField(
         id: String,
-        actualClass: String,
-        actualClassReached: Boolean = false
+        castToClass: String,
+        castToClassReached: Boolean = false
     ): Pair<ClassDefinition, Symbol>? {
-        // Find symbol in class hierarchy for class cast to some supertype
-        val classReached = actualClass == className || actualClassReached
-        val symbol = symbolTable.lookupCurrentScope(id) ?: return superclass?.lookupField(id, actualClass, classReached)
-        val field = getLocalFields().find { symbol.id in it.ids }  // Null for constructor fields
-        if (classReached || field == null || Modifier.OVERRIDE in field.modifiers) {
+        /** Find symbol in class hierarchy for class cast to some supertype - stop at first overridden field */
+        // Check if class cast to or class cast from is reached
+        val classReached = castToClass == className || castToClassReached
+        // Find symbol in class - if null, recursively lookup superclass
+        val symbol = symbolTable.lookupCurrentScope(id) ?: return superclass?.lookupField(id, castToClass, classReached)
+
+        // Find corresponding local field or constructor field to check if it overrides
+        val localField = getLocalFields().find { id in it.ids }
+        val constructorField = getConstructorFields().find { id == it.first }
+        val fieldOverrides = localField != null && Modifier.OVERRIDE in localField.modifiers ||
+                constructorField != null && Modifier.OVERRIDE == constructorField.third
+
+        // Result is found if class has been reached or if an overridden field is found first
+        if (classReached || fieldOverrides) {
             return Pair(this, symbol)
         }
-        return superclass?.lookupField(id, actualClass, classReached)
+        return superclass?.lookupField(id, castToClass, classReached)
     }
 
     fun lookupMethod(id: String): Pair<String, FuncDecl>? {

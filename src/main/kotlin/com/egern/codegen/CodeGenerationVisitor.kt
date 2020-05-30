@@ -93,7 +93,7 @@ class CodeGenerationVisitor(
         return fields.map {
             when (it) {
                 is FieldDecl -> isPointer(deriveType(it.expr))
-                is Pair<*, *> -> isPointer(it.second as ExprType)
+                is Triple<*, *, *> -> isPointer(it.second as ExprType)
                 else -> throw Exception("Invalid field type")
             }
         }

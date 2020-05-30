@@ -20,14 +20,28 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
+    private fun getConstructor(ctx: MainParser.ConstructorContext?): List<Triple<String, ExprType, Modifier?>> {
+        val constructor = mutableListOf<Triple<String, ExprType, Modifier?>>()
+        if (ctx != null) {
+            constructor.addAll(
+                ctx.ID().mapIndexed { index, it ->
+                    Triple(
+                        it.text,
+                        getType(ctx.typeDecl(index)),
+                        ctx.MODIFIER(index)?.let { modifier -> Modifier.fromString(modifier.text) }
+                    )
+                }
+            )
+        }
+        return constructor
+    }
+
     override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
         val classId = ctx.CLASSNAME(0).text
         val hasSuperclass = ctx.CLASSNAME(1) != null
         return ClassDecl(
             classId,
-            if (ctx.paramList() != null) ctx.paramList().ID().mapIndexed { index, it ->
-                it.text to getType(ctx.paramList().typeDecl(index))
-            } else emptyList(),
+            getConstructor(ctx.constructor()),
             if (hasSuperclass) ctx.CLASSNAME(1).text else "Base",
             if (ctx.argList() != null) ctx.argList().expr().map { it.accept(this) as Expr } else emptyList(),
             ctx.classBody().fieldDecl().map { it.accept(this) as FieldDecl },
