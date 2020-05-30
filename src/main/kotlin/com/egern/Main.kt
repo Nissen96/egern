@@ -89,13 +89,6 @@ fun main(args: Array<String>) {
             codeGenVisitor.vTableSize,
             IntelSyntax()
         )
-        Platform.MacOS -> MacOSEmitter(
-            codeGenVisitor.instructions,
-            codeGenVisitor.dataFields,
-            codeGenVisitor.staticStrings,
-            codeGenVisitor.vTableSize,
-            IntelSyntax()
-        )
         Platform.Linux -> LinuxEmitter(
             codeGenVisitor.instructions,
             codeGenVisitor.dataFields,
