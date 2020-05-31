@@ -22,10 +22,10 @@ import org.antlr.v4.runtime.CommonTokenStream
 import java.lang.Exception
 
 fun main(args: Array<String>) {
-    val quiet = "-q" !in args
+    val quiet = "-q" in args
     val doPrint = "-p" in args
 
-    if (quiet) {
+    if (!quiet) {
         println("Egern Compiler v1.0! Input something + CTRL+D to run")
     }
 

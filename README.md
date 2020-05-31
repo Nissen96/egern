@@ -8,7 +8,9 @@ Created by: Alexander Køllund Nissen, Jacob V. M. Nielsen, Frederik Vogt Boldin
 - GCC
 
 ## Instructions
-A number of useful scripts can be found in the `/src/test/` directory. They are separated into platform specific subdirectories, `/src/test/%PLATFORM%`. Bash scripts are available in `/src/test/linux`. All scripts are run from the `/src/test/` directory, such as running `./linux/run`. Available Bash scripts include: 
+The project is built with the Gradle build script `gradlew` found in the root directory of the project. The compiler may be run by invoking this script with the `run` argument, i.e. `./gradlew run`. 
+
+A number of useful scripts can additionally be found in the `/src/test/` directory. They are separated into platform specific subdirectories, `/src/test/%PLATFORM%`. Bash scripts are available in `/src/test/linux`. All scripts are run from the `/src/test/` directory, such as running `./linux/run`. Available Bash scripts include: 
 
 - `compile` can be used to compile a custom file and outputs Assembly
 - `run` both compiles and runs a custom file
