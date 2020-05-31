@@ -1,0 +1,20 @@
+func f() {
+  func g() {
+    func h() {
+      a = 0
+      print(a)
+    }
+
+    var a = 2
+    print(a)
+    h()
+    print(a)
+  }
+  g()
+  print(a)
+}
+
+var a = 1
+print(a)
+f()
+print(a)

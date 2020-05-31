@@ -1,0 +1,2 @@
+func empty() { }
+print(empty())

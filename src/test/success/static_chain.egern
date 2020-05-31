@@ -1,0 +1,18 @@
+func test(a: int, b: int, c: int, d: int, e: int, f: int, g: int) {
+    print(a)  // 8
+    print(g)  // 4
+    a += 1
+    g += 1
+    print(a)  // 9
+    print(g)  // 5
+    inner()
+    print(a)  // 10
+    print(g)  // 6
+
+    func inner() {
+        a += 1
+        g += 1
+    }
+}
+
+test(8, 0, 0, 0, 0, 0, 4)

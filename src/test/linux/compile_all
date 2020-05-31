@@ -1,0 +1,15 @@
+#!/bin/sh
+
+echo "Should succeed:"
+for i in success/*.egern; do
+    echo $i
+    linux/compile $i 2>&1 | grep -o "FAILED"
+done
+
+echo "\nShould fail:"
+for i in fail/*.egern; do
+    echo $i
+    linux/compile $i 2>&1 | grep -o "FAILED"
+done
+
+exit 0

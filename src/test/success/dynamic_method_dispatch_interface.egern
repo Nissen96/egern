@@ -1,0 +1,42 @@
+interface Cake {
+    func eat(int)
+}
+
+class Brownie(piecesLeft: int): Cake {
+    override func eat(pieces: int) {
+        print("Eating brownie")
+        piecesLeft -= pieces
+    }
+}
+
+class Cupcake(): Cake {
+    var isEaten = false
+    override func eat(pieces: int) {
+        print("Eating cupcake")
+        isEaten = true
+    }
+}
+
+
+var b1 = Brownie(4)
+var b2 = Brownie(7)
+var c1 = Cupcake()
+var c2 = Cupcake()
+
+var cakes = [b1, c1, b2, c2]
+
+print(b1.piecesLeft)
+print(b2.piecesLeft)
+print(c1.isEaten)
+print(c2.isEaten)
+print()
+
+for (cake in cakes) {
+    cake.eat(2)
+}
+
+print()
+print(b1.piecesLeft)
+print(b2.piecesLeft)
+print(c1.isEaten)
+print(c2.isEaten)

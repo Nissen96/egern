@@ -1,0 +1,7 @@
+func square(n: int): int {
+    while (2 == 2)
+        return n * n
+    }
+}
+
+square(4);

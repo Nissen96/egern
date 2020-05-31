@@ -1,0 +1,5 @@
+func square(n: int) {
+    return n * n
+}
+
+square(4)

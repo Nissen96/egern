@@ -1,0 +1,35 @@
+var array = int[10]
+for (i in 0..len(array)) {
+    array[i] = i
+}
+
+print(array[4])
+print(len(array))
+print(len(int[5]))
+print(int[3][1])
+print()
+
+
+func concat(a: [int], b: [int]): [int] {
+    var aLen = len(a)
+    var c = int[aLen + len(b)]
+    move(a, c, 0)
+    move(b, c, aLen)
+    return c
+}
+
+func move(src: [int], dest: [int], offset: int) {
+    var i = 0
+    while (i < len(src)) {
+        dest[i + offset] = src[i]
+        i += 1
+    }
+}
+
+var a = [1, 2, 3]
+var b = [4, 5, 6]
+var c = concat(a, b)
+print(len(c))
+for (val in c) {
+    print(val)
+}

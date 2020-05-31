@@ -1,0 +1,4 @@
+func apply(f: int, a: int) {
+    return f(a)
+}
+print(apply(4, 5))

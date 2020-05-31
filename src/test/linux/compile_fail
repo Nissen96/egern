@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo "\nShould fail:"
+for i in fail/*.egern; do
+    echo $i
+    linux/compile $i 2>&1 | grep -o "FAILED"
+done
+
+exit 0

@@ -1,0 +1,4 @@
+var a = 4
+print(a)
+a = 6
+print(a)

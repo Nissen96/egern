@@ -1,0 +1,8 @@
+func test(a: int, b: int): boolean {
+    return a > 5 || b > 1
+}
+
+print(test(6, 2))
+print(test(6, 1))
+print(test(5, 2))
+print(test(5, 1))

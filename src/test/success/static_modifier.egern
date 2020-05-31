@@ -1,0 +1,29 @@
+class Cake(layers: Int) {
+    static var tastesGood = true
+    var piecesLeft = 8
+
+    static func isSweet(): boolean {
+        return Cake.tastesGood
+    }
+}
+
+class Cupcake(): Cake(1) { }
+
+print(Cake.tastesGood)
+print(Cake.isSweet())
+print(Cupcake.tastesGood)
+print(Cupcake.isSweet())
+print()
+
+Cake.tastesGood = false
+print(Cake.tastesGood)
+print(Cake.isSweet())
+print(Cupcake.tastesGood)
+print(Cupcake.isSweet())
+print()
+
+Cupcake.tastesGood = true
+print(Cake.tastesGood)
+print(Cake.isSweet())
+print(Cupcake.tastesGood)
+print(Cupcake.isSweet())

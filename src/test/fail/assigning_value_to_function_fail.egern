@@ -1,0 +1,6 @@
+func hello() {
+    return
+}
+
+hello = 3
+print(hello)

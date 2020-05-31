@@ -1,0 +1,5 @@
+func nothing(n: int): int {
+    return
+}
+
+nothing(4)

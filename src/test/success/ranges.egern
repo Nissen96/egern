@@ -1,0 +1,22 @@
+var a = 1..7
+var b = 2...5
+
+print(a[0])
+print(a[3])
+print(a[5])
+print(len(a))
+print()
+
+print(b[0])
+print(b[3])
+print(len(b))
+print()
+
+for (i in 0..len(a)) {
+    print(a[i])
+}
+print()
+
+for (i in 0..len(b)) {
+    print(b[i])
+}

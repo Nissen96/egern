@@ -1,0 +1,10 @@
+func hello(): int {
+    print(x)
+    var x = 3
+    print(x)
+    return x
+}
+
+var x = 2
+print(x)
+print(hello())

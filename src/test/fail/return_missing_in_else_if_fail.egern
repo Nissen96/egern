@@ -1,0 +1,13 @@
+func square(n: int): int {
+    if (n > 3) {
+        return 0
+    } else if (n < 0) {
+        return n * n
+    } else if (n > 2) {
+        print(0)
+    } else {
+        return 0
+    }
+}
+
+square(4);

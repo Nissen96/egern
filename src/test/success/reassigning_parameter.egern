@@ -1,0 +1,5 @@
+func hello(a: int, b: int): int {
+    a = b
+    return a
+}
+print(hello(3, 4))

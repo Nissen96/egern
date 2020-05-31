@@ -1,0 +1,13 @@
+class Person(name: string) {}
+class Student(name: string): Person("alice") {}
+class Teacher(override name: string): Person("eve") {}
+
+func getName(p: Person): string {
+    return p.name
+}
+
+var s = Student("bob")
+print(getName(s))
+
+var t = Teacher("john")
+print(getName(t))

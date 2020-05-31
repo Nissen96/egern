@@ -1,0 +1,4 @@
+func hello(a: int): int {
+    return a
+}
+print(hello(3))

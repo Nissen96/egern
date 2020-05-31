@@ -1,0 +1,9 @@
+var aa = [0, 1]
+var ab = [1, 2]
+var a = [aa, ab]
+print(a[0][0])
+print(a[0][1])
+a[0] = [3, 4, 5]
+print(a[0][0])
+print(a[0][1])
+print(a[0][2])

@@ -1,0 +1,44 @@
+var a = [1, 2, 4]
+print(len(a))
+print(len(a) == 3)
+
+var b = [true, false, true]
+print(len(b))
+
+var ca = [1]
+var cb = [3, 4, 5]
+var cc = [6]
+var cd = []
+var c = [ca, cb, cc, cd]
+print(len(c))
+print(len(c[0]))
+print(len(c[1]))
+print(len(c[2]))
+print(len(c[3]))
+
+var daa = [1, 2, 3]
+var dab = [4, 5]
+var da = [daa, dab]
+
+var dba = [6, 7]
+var db = [dba]
+
+var dca = []
+var dcb = [0]
+var dc = [dca, dcb]
+
+var dda = []
+var dd = [dda]
+var d = [da, db, dc, dd]
+
+print(len(d))
+print(len(d[0]))
+print(len(d[0][0]))
+print(len(d[0][1]))
+print(len(d[1]))
+print(len(d[1][0]))
+print(len(d[2]))
+print(len(d[2][0]))
+print(len(d[2][1]))
+print(len(d[3]))
+print(len(d[3][0]))

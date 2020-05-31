@@ -1,0 +1,8 @@
+func abc(a: int): int {
+    print(a)
+    var a = 4
+    print(a)
+    return a
+}
+
+print(abc(3))

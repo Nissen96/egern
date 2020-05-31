@@ -1,0 +1,8 @@
+func abc(a: int, b: int, c: int): int {
+    print(a)
+    var x = b
+    return c
+}
+
+var x = y = 3
+print(abc(2, x, y, 4))

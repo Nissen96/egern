@@ -1,0 +1,6 @@
+func test(arg: boolean): boolean {
+    return arg
+}
+
+print(test(true))
+print(test(false))

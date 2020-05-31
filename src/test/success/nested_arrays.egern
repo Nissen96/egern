@@ -1,0 +1,52 @@
+var aa = [1]
+var ab = [3, 4, 5]
+var ac = [6]
+var a = [aa, ab, ac]
+print(a[0][0])
+print(a[1][0])
+print(a[1][1])
+print(a[1][2])
+print(a[2][0])
+
+var baa = [1, 2, 3]
+var bab = [4, 5, 6]
+var ba = [baa, bab]
+
+var bba = [7, 8, 9]
+var bbb = [9, 8, 7]
+var bb = [bba, bbb]
+
+var bca = []
+var bcb = [0]
+var bc = [bca, bcb]
+var b = [ba, bb, bc]
+print(b[0][0][0])
+print(b[0][0][1])
+print(b[0][0][2])
+
+print(b[0][1][0])
+print(b[0][1][1])
+print(b[0][1][2])
+
+print(b[1][0][0])
+print(b[1][0][1])
+print(b[1][0][2])
+
+print(b[1][1][0])
+print(b[1][1][1])
+print(b[1][1][2])
+
+print(b[2][1][0])
+
+a[0][0] = 2
+print(a[0][0])
+
+var ca = [3, 2, 1]
+var cb = []
+var cc = [10, 20]
+b[2] = [ca, cb, cc]
+print(b[2][0][0])
+print(b[2][0][1])
+print(b[2][0][2])
+print(b[2][2][0])
+print(b[2][2][1])

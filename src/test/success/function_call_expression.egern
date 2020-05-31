@@ -1,0 +1,5 @@
+func test(): int {
+    return 4
+}
+var a = test()
+print(a)

@@ -1,0 +1,17 @@
+func recursiveA(n: int): int {
+    print(n)
+    if (n < 1) {
+        return n
+    }
+    return recursiveB(n - 1)
+}
+
+func recursiveB(m: int): int {
+    print(m)
+    if (m < 1) {
+        return m
+    }
+    return recursiveA(m - 1)
+}
+
+recursiveA(5)

@@ -1,0 +1,163 @@
+List of tests to implement
+N - Implemented
+Y - Not Implemented
+p - Partially Implemented (or does not work as expected)
+
+
+SHOULD SUCCEED:
+--------------------------------------------------------
+VARIABLES:
+Y - Variable declaration
+Y - Multiple variable declaration
+Y - Variable assignment
+Y - Multiple variable assignment
+Y - Redeclare variable as parameter
+Y - Redeclaring variable inside function
+Y - Declaring variable in function with function name
+
+
+FUNCTIONS:
+Y - Function with no parameters
+Y - Function with one parameter
+Y - Function with multiple parameters
+Y - Function with empty body
+Y - Function with no return
+Y - Function with empty return
+Y - Function returning value (done in many of the above)
+Y - Nested functions
+
+Y - Function call
+Y - Recursive function call
+Y - Mutually recursive function calls
+Y - Nested function call
+
+Y - Reassigning value to parameter
+Y - Redeclare function as parameter
+Y - Redeclare parameter as variable
+
+
+CONDITIONALS:
+Y - If statement without else block
+Y - If-else statement
+Y - Nested if-else statements
+
+
+EXPRESSIONS:
+Y - Assign int to variable
+Y - Assign id to variable
+Y - Parenthesize expressions and check it overrides precedence
+Y - Use each possible arithmetic operator to combine two expressions (check precedence)
+Y - Use each possible comparison operator in if-statement
+Y - Assign result of function call to variable
+Y - Producing negative value
+
+
+ARRAYS:
+Y - Declare empty array
+Y - Declare array of same typed values
+Y - Declare multidimensional array
+Y - Compare two arrays (==, !=) - reference comparison
+Y - Get array element at index
+Y - Index into multidimensional array
+Y - Set array element at index
+Y - Update array element at index with assignment operators
+Y - Get length of array
+Y - Pass array as parameter to function
+Y - Return array from function
+Y - Set array element in multidimensional array to new array of different size
+
+
+OTHER TESTS:
+Y - Empty program
+Y - Print integer
+Y - Print variable
+Y - Print function call
+Y - Print empty
+Y - DOS end-of-line files
+
+
+SHOULD SUCCEED/FAIL?
+-----------------------------------------------------
+EXPRESSIONS:
+P - Non-integer division
+P - Division by zero
+N - Surpassing max integer value
+N - Surpassing min integer value
+
+
+SHOULD FAIL
+-----------------------------------------------------
+PARSING:
+Y - Use illegal character
+Y - Missing end brace
+Y - Unicode characters
+
+WEEDING:
+Y - Return nothing from function with non-void return type
+Y - Return only within if-block with no else-block
+Y - Return only in one branch of if-else
+Y - Return missing in one if-else-if branch
+Y - Return missing in a nested execution branch
+Y - Return only in while
+
+TYPECHECKING:
+Y - Calling undeclared function
+Y - Calling nested function from outside scope
+Y - Using undeclared parameter in function
+Y - Using undeclared variable
+Y - Assigning value to undeclared variable
+Y - Assigning function name to variable
+Y - Assigning value to function name
+Y - Calling a variable as a function
+Y - Calling a parameter as a function
+
+Y - Declare variable before use
+Y - Redeclare variable
+P - Redeclare variable as function (not possible - functions are declared first)
+
+Y - Redeclare parameter (two parameters of same name in same function)
+P - Redeclare parameter as function
+
+Y - Redeclare function
+Y - Redeclare function as variable
+
+Y - Call function with fewer arguments than parameters
+Y - Call function with more arguments than parameters
+
+Y - Assign boolean to declared integer variable
+Y - Assign integer to declared boolean variable
+Y - Assign function call with integer return type to declared boolean variable
+Y - Assign function call with boolean return type to declared integer variable
+Y - Print result of void function
+Y - Assign result of void function
+Y - Pass argument of wrong type
+Y - Return value from function with void return type
+Y - Return value of different type than return type
+
+Y - Use arithmetic operators on booleans
+Y - Use boolean operators on arithmetic expressions
+Y - Compare operands of different types
+Y - Compare booleans with invalid comparison operators (<, >, <=, >=)
+
+Y - Compare arrays with invalid comparison operators (<, >, <=, >=)
+Y - Compare array with different type
+Y - Compare array with array of different dimensions
+Y - Use arithmetic operators on arrays
+Y - Use boolean operators on arrays
+Y - Index too deeply into array with fewer dimensions
+Y - Use non-integer index
+P - Array index out of bounds
+P - Negative array index
+Y - Return deeper array than return type
+Y - Return more shallow array than return type
+Y - Return array of different inner type than return type
+Y - Pass deeper array than parameter type
+Y - Pass more shallow array than parameter type
+Y - Pass array of different inner type than parameter type
+Y - Update array element to value of different type
+Y - Update array in multidimensional array to array of lower dimensions
+Y - Update array in multidimensional array to array of higher dimensions
+Y - Update array in multidimensional array to array of different inner type
+
+Y - Get length of int
+Y - Get length of boolean

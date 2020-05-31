@@ -1,0 +1,5 @@
+func callme(n: int): int {
+    return n
+
+var a = 3
+print(callme(3))

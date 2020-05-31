@@ -1,0 +1,31 @@
+class Person(age: int) {
+    var state = "bored"
+
+    func getAge(): int {
+        return age
+    }
+
+    func getState(): string {
+        return state
+    }
+}
+
+class Student(age: int): Person(age + 1) {
+    var state = "discombobulated"
+    override func getAge(): int {
+        return age + 5
+    }
+}
+
+var bob = Student(22)
+print(bob.age)  // age from Student
+print(bob.getAge())  // getAge() from Student, age from Student
+print(bob.state)  // state from Student
+print(bob.getState())  // getState() from Person, state from Person
+print()
+
+var alice = bob as Person
+print(alice.age)  // age from Person
+print(alice.getAge())  // getAge() from Student, age from Student
+print(alice.state)  // state from Person
+print(alice.getState())  // getState() from Person, state from Person

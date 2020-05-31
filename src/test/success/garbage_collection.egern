@@ -1,0 +1,37 @@
+class Q(q: int) {
+    var qq = 4
+}
+
+func outer(l: [int], w: int) {
+    var a = [10, 11, 12]
+    var b = [13, 14]
+    var c = [16, 17]
+    var d = [a, b, c]
+    
+    for (i in 0..10) {
+        inner(d, i)
+    }
+    
+    print(l[2])
+    print(d[2][0])
+
+    func inner(m: [[int]], n: int) {
+        //print(n)
+        var o = 42
+        var p = [3, 2, 1]
+        var q = Q(13)
+    }
+}
+
+var list = [1, 3, 5, 7]
+for (e in list) {
+    print(e)
+}
+
+for (i in 0..10) {
+    outer(list, 67)
+}
+
+for (e in list) {
+    print(e)
+}

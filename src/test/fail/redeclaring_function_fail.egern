@@ -1,0 +1,10 @@
+func abc(a: int, b: int, c: int): int {
+    print(a)
+    var x = b
+    return c
+}
+
+func abc(a: int, b: int): int {
+    print(a)
+    return b
+}

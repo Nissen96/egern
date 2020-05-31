@@ -1,0 +1,33 @@
+var a = 4
+print(a)
+var b = true
+print(b)
+var c = false
+print(c)
+
+var d = []
+var e = [1, 2, 3]
+print(e[1])
+var f = [true, false, true]
+print(f[2])
+
+var ga = [1]
+var gb = [3, 4, 5]
+var gc = [6]
+var gd = []
+var g = [ga, gb, gc, gd]
+print(g[1][2])
+
+var haa = [1, 2, 3]
+var hab = [4, 5, 6]
+var ha = [haa, hab]
+
+var hba = [7, 8, 9]
+var hbb = [9, 8, 7]
+var hb = [hba, hbb]
+
+var hca = []
+var hcb = [0]
+var hc = [hca, hcb]
+var h = [ha, hb, hc]
+print(h[0][1][2])

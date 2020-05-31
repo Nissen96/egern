@@ -1,0 +1,9 @@
+func square(n: int): int {
+    if (n > 3) {
+        print(0)
+    } else {
+        return n * n
+    }
+}
+
+square(4);

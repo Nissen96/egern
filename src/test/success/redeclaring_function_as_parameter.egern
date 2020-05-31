@@ -1,0 +1,5 @@
+func abc(abc: int): int {
+    return abc
+}
+
+print(abc(4))

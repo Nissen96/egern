@@ -1,0 +1,5 @@
+func square(arg: int): boolean {
+    return arg * arg
+}
+
+print(square(4))

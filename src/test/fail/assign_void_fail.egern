@@ -1,0 +1,4 @@
+func empty() {
+    return
+}
+var a = empty()

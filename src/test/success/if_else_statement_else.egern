@@ -1,0 +1,8 @@
+var a = 4
+print(a)
+if (a == 3) {
+    print(1)
+} else {
+    print(0)
+}
+print(a)

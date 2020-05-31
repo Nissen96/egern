@@ -1,0 +1,2 @@
+var blåbærgrød = 3
+print(blåbærgrød)
