@@ -24,10 +24,6 @@ class SymbolVisitor : Visitor() {
         symbolTable = SymbolTable(currentScopeLevel, symbolTable)
     }
 
-    override fun preVisit(program: Program) {
-        baseClass.symbolTable = symbolTable
-    }
-
     override fun postVisit(program: Program) {
         program.variableCount = varCountStack.pop()!!
     }
