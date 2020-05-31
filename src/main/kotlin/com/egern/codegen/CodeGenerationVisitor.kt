@@ -1248,7 +1248,7 @@ class CodeGenerationVisitor(
 
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
-        val allFields = classDefinition.getAllFields()
+        val allFields = classDefinition.getInheritedFields()
         val numFields = allFields.size
 
         add(
@@ -1485,7 +1485,9 @@ class CodeGenerationVisitor(
 
     override fun visit(staticClassField: StaticClassField) {
         val classDefinition = classDefinitions.find { staticClassField.classId == it.className }!!
-        val fieldDecl = classDefinition.getAllLocalFields().findLast { staticClassField.fieldId in it.ids }!!
+        val fieldDecl = classDefinition.lookupLocalField(staticClassField.fieldId) ?: throw Exception(
+            "Static field ${staticClassField.fieldId} not found"
+        )
         add(
             Instruction(
                 InstructionType.PUSH,

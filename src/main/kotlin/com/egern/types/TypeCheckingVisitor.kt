@@ -173,20 +173,22 @@ class TypeCheckingVisitor(
     }
 
     override fun visit(classField: ClassField) {
-        // Check no static field is referenced directly by instances - only classes
-        if (classField is StaticClassField) {
-            return
-        }
-
         val callerClass = getObjectClass(classField.objectId)
         val classDefinition = classDefinitions.find { it.className == callerClass.className }
             ?: throw Exception("Class ${callerClass.className} not defined")
-        val fieldDecl = classDefinition.lookupField(classField.fieldId)
-            ?: throw Exception(
+
+        // Check if field exists
+        val fieldDecl = classDefinition.lookupLocalField(classField.fieldId)
+        val constructorField = classDefinition.lookupConstructorField(classField.fieldId)
+
+        if (fieldDecl == null && constructorField == null) {
+            ErrorLogger.log(
+                classField,
                 "Field '${classField.fieldId}' not defined for instance '${classField.objectId}' " +
                         "of class ${callerClass.className}"
             )
-        if (fieldDecl.second != null && Modifier.STATIC in fieldDecl.second!!.modifiers) {
+            // Check no static field is referenced directly by instances - only classes
+        } else if (classField is StaticClassField && fieldDecl != null && Modifier.STATIC in fieldDecl.modifiers) {
             ErrorLogger.log(
                 classField,
                 "Invalid reference of static class field by instance"
@@ -440,22 +442,19 @@ class TypeCheckingVisitor(
         // For each field id, check if it overrides any static field or constructor param
         fieldDecl.ids.forEach {
             // Check if any superclass contains a field of the same name
-            val foundField = currentClass!!.superclass!!.lookupField(it)
-            if (foundField != null) {
-                val (className, superField) = foundField
-                if (superField == null && fieldOverrides) {
-                    // Attempt override of constructor field with local field
-                    ErrorLogger.log(
-                        fieldDecl,
-                        "Constructor field $it from class $className cannot be overridden"
-                    )
-                } else if (superField != null && Modifier.STATIC in superField.modifiers) {
-                    // Attempt override of static super field
-                    ErrorLogger.log(
-                        fieldDecl,
-                        "Override in class ${currentClass!!.className} of static field $it from class $className"
-                    )
-                }
+            val superField = currentClass!!.superclass!!.lookupLocalField(it)
+            if (superField == null && fieldOverrides) {
+                // Attempt override of constructor field with local field
+                ErrorLogger.log(
+                    fieldDecl,
+                    "Constructor field $it cannot be overridden"
+                )
+            } else if (superField != null && Modifier.STATIC in superField.modifiers) {
+                // Attempt override of static super field
+                ErrorLogger.log(
+                    fieldDecl,
+                    "Override in class ${currentClass!!.className} of static field $it"
+                )
             }
         }
     }
@@ -494,15 +493,14 @@ class TypeCheckingVisitor(
     }
 
     override fun postVisit(castExpr: CastExpr) {
-        val castTo = (castExpr.type as CLASS).className
-        val castFrom = (deriveType(castExpr.expr) as CLASS).className
-        var classDefinition = classDefinitions.find { castFrom == it.className }
-        while (classDefinition != null) {
-            if (castTo == classDefinition.className) {
-                return
-            }
-            classDefinition = classDefinition.superclass
+        val objectClass = castExpr.type as CLASS
+        val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
+        val superclasses = classDefinition.getSuperclasses(includeInterface = false)
+        if (objectClass.castTo !in superclasses) {
+            ErrorLogger.log(
+                castExpr,
+                "Invalid cast! ${objectClass.castTo} is not a superclass of ${objectClass.className}"
+            )
         }
-        ErrorLogger.log(castExpr, "Invalid cast!")
     }
 }

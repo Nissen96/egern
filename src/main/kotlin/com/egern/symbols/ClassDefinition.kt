@@ -36,17 +36,21 @@ class ClassDefinition(
         vTable = allMethods
     }
 
-    fun getSuperclasses(): List<String> {
+    private fun getMethodsPerClass(): List<List<FuncDecl>> {
+        return (superclass?.getMethodsPerClass() ?: emptyList()) + listOf(classDecl.methods)
+    }
+
+    fun getSuperclasses(includeInterface: Boolean = true): List<String> {
         // Insert interface before Base class
-        if (interfaceDecl != null) {
+        if (includeInterface && interfaceDecl != null) {
             return listOf(className, interfaceDecl!!.id, "Base")
         }
 
-        return listOf(className) + (superclass?.getSuperclasses() ?: emptyList())
+        return listOf(className) + (superclass?.getSuperclasses(includeInterface) ?: emptyList())
     }
 
-    private fun getMethodsPerClass(): List<List<FuncDecl>> {
-        return (superclass?.getMethodsPerClass() ?: emptyList()) + listOf(classDecl.methods)
+    fun getInterface(): InterfaceDecl? {
+        return interfaceDecl ?: superclass?.getInterface()
     }
 
     fun getConstructorFields(): List<Triple<String, ExprType, Modifier?>> {
@@ -58,23 +62,11 @@ class ClassDefinition(
     }
 
     private fun getFields(): List<Any> {
-        return classDecl.fieldDecls + classDecl.constructor
+        return getConstructorFields() + getLocalFields()
     }
 
-    private fun getNumLocalFields(): Int {
-        return getFields().size
-    }
-
-    fun getAllLocalFields(): List<FieldDecl> {
-        return (superclass?.getAllLocalFields() ?: emptyList()) + getLocalFields()
-    }
-
-    fun getAllFields(): List<Any> {
-        return (superclass?.getAllFields() ?: emptyList()) + getFields()
-    }
-
-    fun getNumFields(): Int {
-        return getNumLocalFields() + (superclass?.getNumFields() ?: 0)
+    fun getInheritedFields(): List<Any> {
+        return (superclass?.getInheritedFields() ?: emptyList()) + getFields()
     }
 
     fun getNumConstructorArgsPerClass(): List<Int> {
@@ -91,14 +83,16 @@ class ClassDefinition(
         )
         val fieldOffset = fieldSymbol.info["fieldOffset"] as Int
 
-        return (classWithField.superclass?.getNumFields() ?: 0) + fieldOffset
+        // Return field offset in all fields inherited from superclasses
+        return (classWithField.superclass?.getInheritedFields()?.size ?: 0) + fieldOffset
     }
 
-    fun lookupField(id: String): Pair<String, FieldDecl?>? {
-        // Find symbol recursively in class hierarchy
-        val symbol = symbolTable.lookupCurrentScope(id) ?: return superclass?.lookupField(id)
-        val fieldDecl = getLocalFields().find { symbol.id in it.ids }
-        return Pair(className, fieldDecl)
+    fun lookupLocalField(id: String): FieldDecl? {
+        return getLocalFields().find { id in it.ids } ?: superclass?.lookupLocalField(id)
+    }
+
+    fun lookupConstructorField(id: String): Triple<String, ExprType, Modifier?>? {
+        return getConstructorFields().find { id == it.first } ?: superclass?.lookupConstructorField(id)
     }
 
     fun lookupField(
@@ -135,9 +129,5 @@ class ClassDefinition(
         val classReached = actualClass == className || actualClassReached
         if (!classReached) relevantMethods = relevantMethods.filter { Modifier.OVERRIDE in it.modifiers }
         return (superclass?.getAllMethods(actualClass, classReached) ?: emptyList()) + relevantMethods
-    }
-
-    fun getInterface(): InterfaceDecl? {
-        return interfaceDecl ?: superclass?.getInterface()
     }
 }

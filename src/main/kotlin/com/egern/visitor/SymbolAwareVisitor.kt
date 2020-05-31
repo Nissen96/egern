@@ -111,7 +111,7 @@ abstract class SymbolAwareVisitor(
         val callerClass =
             if (classField is StaticClassField) CLASS(classField.classId)
             else getObjectClass(classField.objectId)
-        val classDefinition = classDefinitions.find { it.className == callerClass.className }
+        val classDefinition = classDefinitions.find { it.className == (callerClass.castTo ?: callerClass.className) }
             ?: throw Exception("Class ${callerClass.className} not defined")
         val field = classDefinition.lookupField(
             classField.fieldId,
