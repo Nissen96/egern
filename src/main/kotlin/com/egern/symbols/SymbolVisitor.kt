@@ -7,6 +7,7 @@ import com.egern.visitor.Visitor
 class SymbolVisitor : Visitor() {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
+    private var fieldOffset = 0
     private val baseClass = ClassDefinition(
         "Base",
         ClassDecl("Base", emptyList(), null, null, emptyList(), emptyList())
@@ -54,10 +55,10 @@ class SymbolVisitor : Visitor() {
         for ((paramOffset, param) in funcDecl.params.withIndex()) {
             symbolTable.insert(
                 Symbol(
-                    param.first,
+                    param.id,
                     SymbolType.Parameter,
                     currentScopeLevel,
-                    mutableMapOf("paramOffset" to paramOffset, "type" to param.second)
+                    mutableMapOf("paramOffset" to paramOffset, "type" to param.type)
                 )
             )
         }
@@ -97,12 +98,12 @@ class SymbolVisitor : Visitor() {
             symbolTable.insert(
                 Symbol(
                     id, SymbolType.Field, currentScopeLevel, mutableMapOf(
-                        "fieldOffset" to varCountStack.peek(),
+                        "fieldOffset" to fieldOffset,
                         "expr" to fieldDecl.expr
                     )
                 )
             )
-            varCountStack.apply { it + 1 }
+            fieldOffset++
         }
         fieldDecl.symbolTable = symbolTable
     }
@@ -120,17 +121,17 @@ class SymbolVisitor : Visitor() {
         for ((index, field) in classDecl.constructor.withIndex()) {
             symbolTable.insert(
                 Symbol(
-                    field.first,
+                    field.id,
                     SymbolType.Field,
                     currentScopeLevel,
-                    mutableMapOf("fieldOffset" to index, "type" to field.second)
+                    mutableMapOf("fieldOffset" to index, "type" to field.type)
                 )
             )
         }
-        val classDefinition = ClassDefinition(classDecl.id, classDecl, baseClass, classDecl.superclassArgs)
+        val classDefinition = ClassDefinition(classDecl.id, classDecl, baseClass)
         classDefinition.symbolTable = symbolTable
         classDefinitions.add(classDefinition)
-        varCountStack.push(classDecl.constructor.size)
+        fieldOffset = classDecl.constructor.size
     }
 
     override fun postVisit(classDecl: ClassDecl) {

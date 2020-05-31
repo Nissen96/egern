@@ -7,7 +7,7 @@ import java.util.EnumSet
 
 class FuncDecl(
     val id: String,
-    val params: List<Pair<String, ExprType>>,
+    val params: List<Parameter>,
     val returnType: ExprType,
     val stmts: List<ASTNode>,
     val funcDecls: List<FuncDecl>,

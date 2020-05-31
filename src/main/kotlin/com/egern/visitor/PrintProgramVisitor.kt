@@ -87,7 +87,9 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
     override fun preVisit(classDecl: ClassDecl) {
         printIndented("class ${classDecl.id}")
         if (classDecl.constructor.isNotEmpty()) {
-            print("(${classDecl.constructor.joinToString(", ") { "${it.first}: ${typeString(it.second)}" }})")
+            print("(${classDecl.constructor.joinToString(", ") {
+                "${if (it.modifier != null) it.modifier.modifier + " " else ""}${it.id}: ${typeString(it.type)}"
+            }})")
         }
         print(": ${classDecl.superclass}(")
         classDecl.superclassArgs?.forEach({ it.accept(this) }, { print(", ") })
@@ -134,7 +136,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         printIndented()
         funcDecl.modifiers.forEach { print("${it.modifier} ") }
         print("func ${funcDecl.id}(")
-        print(funcDecl.params.joinToString(", ") { "${it.first}: ${typeString(it.second)}" }) // Params
+        print(funcDecl.params.joinToString(", ") { "${it.id}: ${typeString(it.type)}" }) // Params
         println("): ${typeString(funcDecl.returnType)} {")
         level++
     }

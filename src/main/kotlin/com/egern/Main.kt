@@ -55,7 +55,11 @@ fun main(args: Array<String>) {
     val labelGenerationVisitor = LabelGenerationVisitor()
     ast.accept(labelGenerationVisitor)
 
-    val classVisitor = ClassVisitor(symbolVisitor.classDefinitions, symbolVisitor.interfaces)
+    val classVisitor = ClassVisitor(
+        symbolVisitor.symbolTable,
+        symbolVisitor.classDefinitions,
+        symbolVisitor.interfaces
+    )
     ast.accept(classVisitor)
 
     if (doPrint) {
@@ -78,7 +82,11 @@ fun main(args: Array<String>) {
 
     val platform = PlatformManager()
 
-    val codeGenVisitor = CodeGenerationVisitor(symbolVisitor.symbolTable, classVisitor.classDefinitions)
+    val codeGenVisitor = CodeGenerationVisitor(
+        symbolVisitor.symbolTable,
+        classVisitor.classDefinitions,
+        classVisitor.interfaces
+    )
     ast.accept(codeGenVisitor)
 
     val emitter: Emitter = when (platform.platform) {

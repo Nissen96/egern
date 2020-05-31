@@ -68,7 +68,7 @@ class TypeCheckingVisitor(
         } else if (!methodOverrides) {
             ErrorLogger.log(
                 methodDecl,
-                "Override in class ${currentClass!!.className} of field ${methodDecl.id} from class $className without override modifier"
+                "Override in class ${currentClass!!.className} of method ${methodDecl.id} from class $className without override modifier"
             )
         }
     }
@@ -91,8 +91,18 @@ class TypeCheckingVisitor(
         }
         funcCall.args.take(nParams).forEachIndexed { index, arg ->
             val argType = deriveType(arg)
-            val paramType = funcDecl.params[index].second
-            if (argType != paramType) {
+            val paramType = funcDecl.params[index].type
+            if (paramType is CLASS) {
+                val elementClass = (argType as CLASS).className
+                val elementSuperclasses = classDefinitions.find { it.className == elementClass }!!.getSuperclasses()
+                if (paramType.className !in elementSuperclasses) {
+                    ErrorLogger.log(
+                        arg,
+                        "Argument ${index + 1} is of type ${typeString(argType)} is not a subclass " +
+                                "of expected type ${typeString(paramType)}"
+                    )
+                }
+            } else if (argType != paramType) {
                 ErrorLogger.log(
                     arg,
                     "Argument ${index + 1} is of type ${typeString(argType)} but ${typeString(paramType)} was expected"
@@ -110,8 +120,6 @@ class TypeCheckingVisitor(
 
     override fun preVisit(varAssign: VarAssign) {
         // Check variable ids
-        // TODO check types on varAssign classFields
-        // TODO Fix type checking for arrays
         val allIds = varAssign.ids
         allIds.forEach { lookupSymbol(it, listOf(SymbolType.Variable, SymbolType.Parameter, SymbolType.Field)) }
 
@@ -120,7 +128,7 @@ class TypeCheckingVisitor(
             ErrorLogger.log(varAssign, "Assigning void is invalid")
         }
 
-        // Expression type must match declared variable
+        // For normal IDs, expression type must match declared variable
         varAssign.ids.forEach {
             val varType = getVariableType(it)
             if (varType != exprType) {
@@ -132,7 +140,7 @@ class TypeCheckingVisitor(
             }
         }
 
-        // Expression type must match type of element at array index
+        // For inserting into arrays, expression type must match type of element at array index
         varAssign.indexExprs.forEach {
             val elementType = deriveType(it)
             if (elementType != exprType) {
@@ -143,12 +151,48 @@ class TypeCheckingVisitor(
                 )
             }
         }
+
+        // For class fields, expression type must match declared field
+        varAssign.classFields.forEach { classField ->
+            val fieldType = deriveType(classField)
+            if (fieldType != exprType) {
+                ErrorLogger.log(
+                    varAssign,
+                    "Assigning expression of type ${typeString(exprType)} " +
+                            "to class field of type ${typeString(fieldType)} is invalid"
+                )
+            }
+        }
     }
 
     override fun postVisit(varDecl: VarDecl) {
         val type = deriveType(varDecl.expr)
         if (type == VOID) {
             ErrorLogger.log(varDecl, "Declaring a variable of type void is invalid")
+        }
+    }
+
+    override fun visit(classField: ClassField) {
+        val callerClass = getObjectClass(classField.objectId)
+        val classDefinition = classDefinitions.find { it.className == callerClass.className }
+            ?: throw Exception("Class ${callerClass.className} not defined")
+
+        // Check if field exists
+        val fieldDecl = classDefinition.lookupLocalField(classField.fieldId)
+        val constructorField = classDefinition.lookupConstructorField(classField.fieldId)
+
+        if (fieldDecl == null && constructorField == null) {
+            ErrorLogger.log(
+                classField,
+                "Field '${classField.fieldId}' not defined for instance '${classField.objectId}' " +
+                        "of class ${callerClass.className}"
+            )
+            // Check no static field is referenced directly by instances - only classes
+        } else if (classField is StaticClassField && fieldDecl != null && Modifier.STATIC in fieldDecl.modifiers) {
+            ErrorLogger.log(
+                classField,
+                "Invalid reference of static class field by instance"
+            )
         }
     }
 
@@ -277,31 +321,39 @@ class TypeCheckingVisitor(
             }
         }
 
+        // Ensure all array elements match the array type
         val arrayType = deriveType(arrayExpr) as ARRAY
+        val arrayInnerType = arrayType.innerType
+        arrayExpr.entries.forEachIndexed { index, element ->
+            var logError = false
+            var elementType = deriveType(element)
 
-        if (arrayType.depth > 1) {
-            arrayExpr.entries.forEachIndexed { index, element ->
-                val elementType = deriveType(element) as ARRAY
-                if (elementType.depth != arrayType.depth - 1 ||
-                    (elementType.innerType != arrayType.innerType && elementType.innerType != VOID && arrayType.innerType != VOID)
-                ) {
-                    ErrorLogger.log(
-                        element,
-                        "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
-                                "expected type: ${typeString(arrayType.innerType)}"
-                    )
+            // Nested arrays must match on depth
+            if (arrayType.depth > 1) {
+                if (elementType !is ARRAY || elementType.depth != arrayType.depth - 1) {
+                    logError = true
                 }
+                elementType = (elementType as ARRAY).innerType
             }
-        } else {
-            arrayExpr.entries.forEachIndexed { index, element ->
-                val elementType = deriveType(element)
-                if (elementType != arrayType.innerType) {
-                    ErrorLogger.log(
-                        element,
-                        "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
-                                "expected type: ${typeString(arrayType.innerType)}"
-                    )
+
+            // Elements of object arrays must just share a common superclass
+            if (arrayInnerType is CLASS) {
+                val elementClass = (elementType as CLASS).className
+                val elementSuperclasses = classDefinitions.find { it.className == elementClass }!!.getSuperclasses()
+                if (arrayInnerType.className !in elementSuperclasses) {
+                    logError = true
                 }
+            } else if (elementType != arrayInnerType && elementType != VOID && arrayInnerType != VOID) {
+                // Element inner type and array inner type must match or one of them be void (empty list)
+                logError = true
+            }
+
+            if (logError) {
+                ErrorLogger.log(
+                    element,
+                    "Type mismatch in array at position $index - element type: ${typeString(elementType)}, " +
+                            "expected type: ${typeString(arrayType.innerType)}"
+                )
             }
         }
     }
@@ -322,6 +374,16 @@ class TypeCheckingVisitor(
     }
 
     override fun postVisit(classDecl: ClassDecl) {
+        // Check constructor fields only has override modifier
+        classDecl.constructor.forEach {
+            if (it.modifier != null && it.modifier != Modifier.OVERRIDE) {
+                ErrorLogger.log(
+                    classDecl,
+                    "Invalid modifier for constructor field. Only override allowed"
+                )
+            }
+        }
+
         // Check class overrides all interface methods
         val classInterface = currentClass!!.interfaceDecl
         classInterface?.methodSignatures?.forEach {
@@ -332,7 +394,7 @@ class TypeCheckingVisitor(
                     foundMethod = method
 
                     // Check signature (parameter and return types)
-                    val methodParams = method.params.drop(1).map { param -> param.second }
+                    val methodParams = method.params.drop(1).map { param -> param.type }
 
                     if (it.params.size != methodParams.size) {
                         ErrorLogger.log(
@@ -374,47 +436,71 @@ class TypeCheckingVisitor(
         // Check modifiers for the field itself
         val fieldOverrides = Modifier.OVERRIDE in fieldDecl.modifiers
         if (fieldOverrides && Modifier.STATIC in fieldDecl.modifiers) {
-            ErrorLogger.log(fieldDecl, "Static fields cannot be overridden")
+            ErrorLogger.log(fieldDecl, "A field cannot be declared both static and overridden")
         }
 
         // For each field id, check if it overrides any static field or constructor param
-        // or overrides a field without the override modifier
         fieldDecl.ids.forEach {
-            val foundField = currentClass!!.superclass!!.lookupField(it)
-            if (foundField != null) {
-                val (className, superField) = foundField
-                if (superField != null) {
-                    if (Modifier.STATIC in superField.modifiers) {
-                        ErrorLogger.log(
-                            fieldDecl,
-                            "Override in class ${currentClass!!.className} of static field $it from class $className"
-                        )
-                    } else if (!fieldOverrides) {
-                        ErrorLogger.log(
-                            fieldDecl,
-                            "Override in class ${currentClass!!.className} of field $it from class $className without override modifier"
-                        )
-                    }
-                } else if (!fieldOverrides) {
-                    ErrorLogger.log(
-                        fieldDecl,
-                        "Constructor parameter $it from class $className cannot be overridden"
-                    )
-                }
+            // Check if any superclass contains a field of the same name
+            val superField = currentClass!!.superclass!!.lookupLocalField(it)
+            if (superField == null && fieldOverrides) {
+                // Attempt override of constructor field with local field
+                ErrorLogger.log(
+                    fieldDecl,
+                    "Constructor field $it cannot be overridden"
+                )
+            } else if (superField != null && Modifier.STATIC in superField.modifiers) {
+                // Attempt override of static super field
+                ErrorLogger.log(
+                    fieldDecl,
+                    "Override in class ${currentClass!!.className} of static field $it"
+                )
+            }
+        }
+    }
+
+    override fun postVisit(objectInstantiation: ObjectInstantiation) {
+        // Check arguments fit the constructor parameters in number and types
+        val nArgs = objectInstantiation.args.size
+        val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
+        val constructorFields = classDefinition.getConstructorFields()
+        val nParams = constructorFields.size
+        if (nArgs != nParams) {
+            ErrorLogger.log(
+                objectInstantiation,
+                "Wrong number of arguments to constructor of class ${objectInstantiation.classId}" +
+                        " - $nArgs passed, $nParams expected"
+            )
+        }
+
+        objectInstantiation.args.take(nParams).forEachIndexed { index, arg ->
+            val argType = deriveType(arg)
+            val paramType = constructorFields[index].type
+            if (argType != paramType) {
+                ErrorLogger.log(
+                    arg,
+                    "Argument ${index + 1} is of type ${typeString(argType)} but ${typeString(paramType)} was expected"
+                )
+            }
+
+            if (arg !is IdExpr && (argType is ARRAY || argType is CLASS)) {
+                ErrorLogger.log(
+                    arg,
+                    "Passing references directly is currently not supported"
+                )
             }
         }
     }
 
     override fun postVisit(castExpr: CastExpr) {
-        val castTo = (castExpr.type as CLASS).className
-        val castFrom = (deriveType(castExpr.expr) as CLASS).className
-        var classDefinition = classDefinitions.find { castFrom == it.className }
-        while (classDefinition != null) {
-            if (castTo == classDefinition.className) {
-                return
-            }
-            classDefinition = classDefinition.superclass
+        val objectClass = castExpr.type as CLASS
+        val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
+        val superclasses = classDefinition.getSuperclasses(includeInterface = false)
+        if (objectClass.castTo !in superclasses) {
+            ErrorLogger.log(
+                castExpr,
+                "Invalid cast! ${objectClass.castTo} is not a superclass of ${objectClass.className}"
+            )
         }
-        ErrorLogger.log(castExpr, "Invalid cast!")
     }
 }

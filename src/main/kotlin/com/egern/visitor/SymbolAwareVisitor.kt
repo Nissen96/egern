@@ -60,10 +60,7 @@ abstract class SymbolAwareVisitor(
                 }
                 return when (instance) {
                     is ObjectInstantiation -> CLASS(instance.classId)
-                    is CastExpr -> CLASS(
-                        (deriveType(instance.expr) as CLASS).className,
-                        (instance.type as CLASS).className
-                    )
+                    is CastExpr -> instance.type as CLASS
                     is ArrayIndexExpr -> deriveType(instance) as CLASS
                     else -> throw Error("Invalid instance type")
                 }
@@ -114,12 +111,15 @@ abstract class SymbolAwareVisitor(
         val callerClass =
             if (classField is StaticClassField) CLASS(classField.classId)
             else getObjectClass(classField.objectId)
-        val classDefinition = classDefinitions.find { it.className == callerClass.className }
+        val classDefinition = classDefinitions.find { it.className == (callerClass.castTo ?: callerClass.className) }
             ?: throw Exception("Class ${callerClass.className} not defined")
         val field = classDefinition.lookupField(
             classField.fieldId,
             callerClass.castTo ?: callerClass.className
-        )!!
+        ) ?: throw Exception(
+            "Field '${classField.fieldId}' not found in class ${callerClass.castTo ?: callerClass.className}"
+        )
+
         return if (field.second.info.containsKey("expr"))
             deriveType(field.second.info["expr"] as Expr)
         else

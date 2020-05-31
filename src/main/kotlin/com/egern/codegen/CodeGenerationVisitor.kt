@@ -14,8 +14,9 @@ import kotlin.math.min
 
 class CodeGenerationVisitor(
     symbolTable: SymbolTable,
-    classDefinitions: List<ClassDefinition>
-) : SymbolAwareVisitor(symbolTable, classDefinitions) {
+    classDefinitions: List<ClassDefinition>,
+    interfaces: List<InterfaceDecl>
+) : SymbolAwareVisitor(symbolTable, classDefinitions, interfaces) {
     val instructions = mutableListOf<Instruction>()
     val dataFields = mutableListOf<String>()
     val staticStrings = mutableMapOf(
@@ -75,24 +76,37 @@ class CodeGenerationVisitor(
         return "0b0" + pointerMap.joinToString("")
     }
 
-    private fun getParamPointerMap(params: List<Pair<String, ExprType>>): List<Int> {
-        return params.map { isPointer(it.second) }
+    private fun getParamPointerMap(params: List<Parameter>): List<Int> {
+        return params.map { isPointer(it.type) }
     }
 
     private fun getVariablePointerMap(stmts: List<ASTNode>): List<Int> {
-        return stmts.filterIsInstance<VarDecl>().map { isPointer(deriveType(it.expr)) }
+        return stmts.flatMap {
+            when (it) {
+                is VarDecl -> listOf(isPointer(deriveType(it.expr)))
+                is WhileLoop -> getVariablePointerMap(it.block.stmts)
+                is Block -> getVariablePointerMap(it.stmts)
+                is IfElse -> {
+                    getVariablePointerMap(it.ifBlock.stmts) + when (it.elseBlock) {
+                        is IfElse -> getVariablePointerMap(listOf(it.elseBlock))
+                        is Block -> getVariablePointerMap(it.elseBlock.stmts)
+                        else -> emptyList()
+                    }
+                }
+                else -> emptyList()
+            }
+        }
     }
 
     private fun getFunctionPointerMap(funcDecl: FuncDecl): List<Int> {
-        val variables = getVariables(funcDecl.stmts)
-        return getVariablePointerMap(variables) + getParamPointerMap(funcDecl.params)
+        return getVariablePointerMap(funcDecl.stmts) + getParamPointerMap(funcDecl.params)
     }
 
     private fun getClassPointerMap(fields: List<Any>): List<Int> {
         return fields.map {
             when (it) {
                 is FieldDecl -> isPointer(deriveType(it.expr))
-                is Pair<*, *> -> isPointer(it.second as ExprType)
+                is Parameter -> isPointer(it.type)
                 else -> throw Exception("Invalid field type")
             }
         }
@@ -104,28 +118,6 @@ class CodeGenerationVisitor(
             is CLASS -> 1
             else -> 0
         }
-    }
-
-    private fun getVariables(stmts: List<ASTNode>): List<VarDecl> {
-        return stmts.map {
-            when (it) {
-                is VarDecl -> listOf(it)
-                is WhileLoop -> getVariables(it.block.stmts)
-                is IfElse -> {
-                    val ifVariables = getVariables(it.ifBlock.stmts).toMutableList()
-                    var elseBlock = it.elseBlock
-                    while (elseBlock != null && elseBlock is IfElse) {
-                        ifVariables.addAll(getVariables(elseBlock.ifBlock.stmts))
-                        elseBlock = elseBlock.elseBlock
-                    }
-                    if (elseBlock != null) {
-                        ifVariables.addAll(getVariables((elseBlock as Block).stmts))
-                    }
-                    ifVariables
-                }
-                else -> emptyList()
-            }
-        }.flatten()
     }
 
     override fun preVisit(program: Program) {
@@ -231,10 +223,11 @@ class CodeGenerationVisitor(
         )
 
         classDefinitions.forEach {
+            it.setVTable()
             it.vTableOffset = currentOffset
 
             // Add methods
-            it.getAllMethods().forEach { method ->
+            it.vTable.forEach { method ->
                 add(
                     Instruction(
                         InstructionType.MOV,
@@ -567,21 +560,34 @@ class CodeGenerationVisitor(
             else -> throw Exception("That's illegal - no higher order functions please")
         } as Int
 
-        // Symbol is a parameter (1-6) in current scope - value is in register
-        val scopeDiff = symbolTable.scope - symbol.scope
-        if (scopeDiff == 0 && symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {
-            return InstructionArg(Register(ParamReg(symbolOffset)), Direct)
+        // Symbol is a parameter (1-6)
+        var scopeDiff = symbolTable.scope - symbol.scope
+
+        if (symbol.type == SymbolType.Parameter && symbolOffset < PARAMS_IN_REGISTERS) {
+            // Parameter in current scope is in register
+            if (scopeDiff == 0) {
+                return InstructionArg(Register(ParamReg(symbolOffset)), Direct)
+            }
+
+            // Parameter in some enclosing scope is caller-saved above its temporary variables
+            // making it more easily accessible from the first nested scope before the containing
+            // Decrement scope difference to follow the static link pointer one fewer times
+            scopeDiff -= 1
         }
 
         // Get base pointer of scope containing symbol and find offset for symbol location
         followStaticLink(scopeDiff)
-        val container = functionStack.peek(scopeDiff)
         val offset = when (symbol.type) {
             SymbolType.Variable -> symbolOffset + LOCAL_VAR_OFFSET
             SymbolType.Parameter -> when {
-                // Param saved by caller after its local variables
-                symbolOffset < PARAMS_IN_REGISTERS -> symbolOffset + LOCAL_VAR_OFFSET + container!!.variableCount
-                // Calculate offset for params on stack (in non-reversed order)
+                // Offset for caller-saved param on stack (1st to 6th param, offset from nested scope)
+                // Should skip all stored params and caller-saved registers before offsetting back into these
+                symbolOffset < PARAMS_IN_REGISTERS -> {
+                    val allContainerParams = functionStack.peek(scopeDiff)!!.params.size
+                    val stackContainerParams = max(allContainerParams - PARAMS_IN_REGISTERS, 0)
+                    PARAM_OFFSET - stackContainerParams - allContainerParams - 8 + (symbolOffset + 1)
+                }
+                // Offset for param on stack (contains 7th to last in non-reversed order)
                 else -> PARAM_OFFSET - (symbolOffset - PARAMS_IN_REGISTERS)
             }
             else -> throw Exception("Invalid id ${symbol.id}")
@@ -597,10 +603,10 @@ class CodeGenerationVisitor(
 
     private fun getConstructorArgLocation(param: String): InstructionArg? {
         // All constructor args from all superclasses are on stack - get offset in this
-        val constructor = currentClassDefinition?.getConstructor() ?: return null
-        val paramOffset = constructor.indexOfFirst { it.first == param }
+        val constructorFields = currentClassDefinition?.getConstructorFields() ?: return null
+        val paramOffset = constructorFields.indexOfFirst { it.id == param }
 
-        return InstructionArg(Register(OpReg1), IndirectRelative(-(constructor.size - paramOffset - 1)))
+        return InstructionArg(Register(OpReg1), IndirectRelative(-(constructorFields.size - paramOffset - 1)))
     }
 
     override fun postVisit(compExpr: CompExpr) {
@@ -1233,7 +1239,7 @@ class CodeGenerationVisitor(
 
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
-        val allFields = classDefinition.getAllFields()
+        val allFields = classDefinition.getInheritedFields()
         val numFields = allFields.size
 
         add(
@@ -1293,8 +1299,8 @@ class CodeGenerationVisitor(
         )
         add(
             Instruction(
-                InstructionType.MOV,
-                InstructionArg(Register(OpReg1), IndirectRelative(-vTableOffset)),
+                InstructionType.ADD,
+                InstructionArg(ImmediateValue("${vTableOffset * 8}"), Direct),
                 InstructionArg(Register(OpReg1), Direct),
                 comment = "Get pointer to entry for class '${objectInstantiation.classId}' in vtable"
             )
@@ -1323,7 +1329,7 @@ class CodeGenerationVisitor(
                 )
             )
 
-            currentClassDefinition!!.superclassArgs?.forEach {
+            currentClassDefinition!!.getSuperclassArgs()?.forEach {
                 it.accept(this)
             }
             currentClassDefinition = currentClassDefinition?.superclass
@@ -1392,32 +1398,41 @@ class CodeGenerationVisitor(
     }
 
     override fun postVisit(methodCall: MethodCall) {
-        // VTable lookup
-        val objectClass = getObjectClass(methodCall.objectId)
-        val classDefinition = classDefinitions.find { objectClass.className == it.className }!!
-        val vTablePointer = classDefinition.vTableOffset
-
-        // Find latest override of method
-        val methodOffset = classDefinition.getAllMethods(objectClass.castTo ?: objectClass.className).indexOfLast {
-            it.id == methodCall.methodId
-        }
         val numArgs = methodCall.args.size
-
         passFunctionArgs(numArgs)
 
+        // VTable lookup to find method offset (found in corresponding class or interface)
+        val objectClass = getObjectClass(methodCall.objectId)
+        val classDefinition = classDefinitions.find { objectClass.className == it.className }
+        val methodOffset = if (classDefinition == null) {
+            val interfaceDecl = interfaces.find { objectClass.className == it.id }!!
+            interfaceDecl.methodSignatures.indexOfFirst { it.id == methodCall.methodId }
+        } else {
+            classDefinition.vTable.indexOfFirst { it.id == methodCall.methodId }
+        }
+        val objectPointer = getIdLocation(methodCall.objectId)
         add(
             Instruction(
                 InstructionType.MOV,
-                InstructionArg(VTable, Indirect),
+                objectPointer,
                 InstructionArg(Register(OpReg1), Direct),
-                comment = "Move Vtable pointer to register"
+                comment = "Store object pointer in register"
             )
         )
         add(
             Instruction(
+                InstructionType.MOV,
+                InstructionArg(Register(OpReg1), IndirectRelative(-OBJECT_VTABLE_POINTER_OFFSET)),
+                InstructionArg(Register(OpReg1), Direct),
+                comment = "Get VTable pointer from object"
+            )
+        )
+
+        add(
+            Instruction(
                 InstructionType.CALL,
-                InstructionArg(Register(OpReg1), IndirectRelative(-(vTablePointer + methodOffset))),
-                comment = "Call method"
+                InstructionArg(Register(OpReg1), IndirectRelative(-methodOffset)),
+                comment = "Call dynamically located method"
             )
         )
         functionEpilogue(numArgs)
@@ -1461,12 +1476,15 @@ class CodeGenerationVisitor(
 
     override fun visit(staticClassField: StaticClassField) {
         val classDefinition = classDefinitions.find { staticClassField.classId == it.className }!!
-        val fieldDecl = classDefinition.getAllLocalFields().findLast { staticClassField.fieldId in it.ids }!!
+        val fieldDecl = classDefinition.lookupLocalField(staticClassField.fieldId) ?: throw Exception(
+            "Static field ${staticClassField.fieldId} not found"
+        )
         add(
             Instruction(
                 InstructionType.PUSH,
-                InstructionArg(Memory(fieldDecl.staticDataField), if (staticClassField.reference) Direct else Indirect),
-                comment = "Push field ${if (staticClassField.reference) "reference" else "value"} to stack"
+                if (staticClassField.reference) InstructionArg(ImmediateValue(fieldDecl.staticDataField), Direct)
+                else InstructionArg(Memory(fieldDecl.staticDataField), Indirect),
+                comment = "Push static field ${if (staticClassField.reference) "reference" else "value"} to stack"
             )
         )
     }
@@ -1481,9 +1499,11 @@ class CodeGenerationVisitor(
         val vTablePointer = classDefinition.vTableOffset
 
         // Find latest override of method
-        val methodOffset = classDefinition.getAllMethods().indexOfLast {
-            it.id == staticMethodCall.methodId
+        val methodOffset = classDefinition.vTable.indexOfFirst { it.id == staticMethodCall.methodId }
+        if (methodOffset == -1) {
+            throw Exception("Method ${staticMethodCall.methodId} not found in class ${staticMethodCall.classId}")
         }
+
         val numArgs = staticMethodCall.args.size
 
         passFunctionArgs(numArgs)
@@ -1770,6 +1790,8 @@ class CodeGenerationVisitor(
                 )
             )
         }
+
+        // Reference to array elements and class fields are pushed to the stack and can be popped
         for (id in arrayIds + classFields) {
             val name = when (id) {
                 is ClassField -> id.fieldId

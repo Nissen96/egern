@@ -23,11 +23,19 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
     override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
         val classId = ctx.CLASSNAME(0).text
         val hasSuperclass = ctx.CLASSNAME(1) != null
+        val constructor = ctx.constructor()?.let {
+            it.ID().mapIndexed { index, id ->
+                Parameter(
+                    id.text,
+                    getType(it.typeDecl(index)),
+                    it.MODIFIER(index)?.let { modifier -> Modifier.fromString(modifier.text) }
+                )
+            }
+        } ?: emptyList()
+
         return ClassDecl(
             classId,
-            if (ctx.paramList() != null) ctx.paramList().ID().mapIndexed { index, it ->
-                it.text to getType(ctx.paramList().typeDecl(index))
-            } else emptyList(),
+            constructor,
             if (hasSuperclass) ctx.CLASSNAME(1).text else "Base",
             if (ctx.argList() != null) ctx.argList().expr().map { it.accept(this) as Expr } else emptyList(),
             ctx.classBody().fieldDecl().map { it.accept(this) as FieldDecl },
@@ -214,13 +222,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             stmts.add(ReturnStmt(VoidExpr()))
         }
 
-        val paramList = mutableListOf<Pair<String, ExprType>>()
+        val paramList = ctx.paramList().ID().mapIndexed { index, it ->
+            Parameter(it.text, getType(ctx.paramList().typeDecl(index)))
+        }.toMutableList()
 
         // Add implicit object reference to non-static method calls
-        if (classId != null && Modifier.STATIC !in modifiers) paramList.add("this" to CLASS(classId))
-        paramList.addAll(ctx.paramList().ID().mapIndexed { index, it ->
-            it.text to getType(ctx.paramList().typeDecl(index))
-        })
+        if (classId != null && Modifier.STATIC !in modifiers) {
+            paramList.add(0, Parameter("this", CLASS(classId)))
+        }
 
         return FuncDecl(
             ctx.ID().text,
@@ -374,9 +383,9 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
           {
             var current-index = 0
             while (current-index < len(ctx.indexable())) {
-              ctx.ID() = ctx.indexable()[current-index]
-              ctx.block()
+              var ctx.ID() = ctx.indexable()[current-index]
               current-index += 1
+              ctx.block().stmt()
             }
           }
 
@@ -388,14 +397,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         val declareIterator = VarDecl(listOf(index.id), IntExpr(0))
 
         // Accept loop body and prepend a line assigning the iterator to the value at the current index of the iterable
-        // plus append a line incrementing this index
+        // followed by a line incrementing this index
         val block = ctx.block().accept(this) as Block
         val assignIterator = VarDecl(listOf(ctx.ID().text), ArrayIndexExpr(iterable, listOf(index)))
         val incrementIndex = VarAssign(
             listOf(index.id), emptyList(), emptyList(),
             ArithExpr(index, IntExpr(1), op = ArithOp.PLUS)
         )
-        block.stmts = listOf(assignIterator) + block.stmts + listOf(incrementIndex)
+        block.stmts = listOf(assignIterator, incrementIndex) + block.stmts
 
 
         // Build actual loop with a loop condition checking the index is in bounds + the newly built loop body
