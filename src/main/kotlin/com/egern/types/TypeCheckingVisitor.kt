@@ -175,7 +175,13 @@ class TypeCheckingVisitor(
     override fun visit(classField: ClassField) {
         val callerClass = getObjectClass(classField.objectId)
         val classDefinition = classDefinitions.find { it.className == callerClass.className }
-            ?: throw Exception("Class ${callerClass.className} not defined")
+        if (classDefinition == null) {
+            ErrorLogger.log(
+                classField,
+                "Class ${callerClass.className} not defined"
+            )
+            return
+        }
 
         // Check if field exists
         val fieldDecl = classDefinition.lookupLocalField(classField.fieldId)
