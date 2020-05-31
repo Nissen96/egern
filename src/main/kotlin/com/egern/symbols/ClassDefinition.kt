@@ -1,7 +1,6 @@
 package com.egern.symbols
 
 import com.egern.ast.*
-import com.egern.types.ExprType
 
 class ClassDefinition(
     val className: String,
@@ -53,7 +52,7 @@ class ClassDefinition(
         return interfaceDecl ?: superclass?.getInterface()
     }
 
-    fun getConstructorFields(): List<ConstructorField> {
+    fun getConstructorFields(): List<Parameter> {
         return classDecl.constructor
     }
 
@@ -87,7 +86,7 @@ class ClassDefinition(
         return getLocalFields().find { id in it.ids } ?: superclass?.lookupLocalField(id)
     }
 
-    fun lookupConstructorField(id: String): ConstructorField? {
+    fun lookupConstructorField(id: String): Parameter? {
         return getConstructorFields().find { id == it.id } ?: superclass?.lookupConstructorField(id)
     }
 

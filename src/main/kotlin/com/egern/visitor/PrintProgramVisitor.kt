@@ -136,7 +136,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         printIndented()
         funcDecl.modifiers.forEach { print("${it.modifier} ") }
         print("func ${funcDecl.id}(")
-        print(funcDecl.params.joinToString(", ") { "${it.first}: ${typeString(it.second)}" }) // Params
+        print(funcDecl.params.joinToString(", ") { "${it.id}: ${typeString(it.type)}" }) // Params
         println("): ${typeString(funcDecl.returnType)} {")
         level++
     }

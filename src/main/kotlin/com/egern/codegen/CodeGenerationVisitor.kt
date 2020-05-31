@@ -76,8 +76,8 @@ class CodeGenerationVisitor(
         return "0b0" + pointerMap.joinToString("")
     }
 
-    private fun getParamPointerMap(params: List<Pair<String, ExprType>>): List<Int> {
-        return params.map { isPointer(it.second) }
+    private fun getParamPointerMap(params: List<Parameter>): List<Int> {
+        return params.map { isPointer(it.type) }
     }
 
     private fun getVariablePointerMap(stmts: List<ASTNode>): List<Int> {
@@ -93,7 +93,7 @@ class CodeGenerationVisitor(
         return fields.map {
             when (it) {
                 is FieldDecl -> isPointer(deriveType(it.expr))
-                is ConstructorField -> isPointer(it.type)
+                is Parameter -> isPointer(it.type)
                 else -> throw Exception("Invalid field type")
             }
         }

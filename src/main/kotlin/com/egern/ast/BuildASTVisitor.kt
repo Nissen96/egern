@@ -20,22 +20,22 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         )
     }
 
-    private fun getConstructor(ctx: MainParser.ConstructorContext): List<ConstructorField> {
-        return ctx.ID().mapIndexed { index, it ->
-            ConstructorField(
-                it.text,
-                getType(ctx.typeDecl(index)),
-                ctx.MODIFIER(index)?.let { modifier -> Modifier.fromString(modifier.text) }
-            )
-        }
-    }
-
     override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
         val classId = ctx.CLASSNAME(0).text
         val hasSuperclass = ctx.CLASSNAME(1) != null
+        val constructor = ctx.constructor()?.let {
+            it.ID().mapIndexed { index, id ->
+                Parameter(
+                    id.text,
+                    getType(it.typeDecl(index)),
+                    it.MODIFIER(index)?.let { modifier -> Modifier.fromString(modifier.text) }
+                )
+            }
+        } ?: emptyList()
+
         return ClassDecl(
             classId,
-            ctx.constructor()?.let { getConstructor(it) } ?: emptyList(),
+            constructor,
             if (hasSuperclass) ctx.CLASSNAME(1).text else "Base",
             if (ctx.argList() != null) ctx.argList().expr().map { it.accept(this) as Expr } else emptyList(),
             ctx.classBody().fieldDecl().map { it.accept(this) as FieldDecl },
@@ -222,13 +222,14 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
             stmts.add(ReturnStmt(VoidExpr()))
         }
 
-        val paramList = mutableListOf<Pair<String, ExprType>>()
+        val paramList = ctx.paramList().ID().mapIndexed { index, it ->
+            Parameter(it.text, getType(ctx.paramList().typeDecl(index)))
+        }.toMutableList()
 
         // Add implicit object reference to non-static method calls
-        if (classId != null && Modifier.STATIC !in modifiers) paramList.add("this" to CLASS(classId))
-        paramList.addAll(ctx.paramList().ID().mapIndexed { index, it ->
-            it.text to getType(ctx.paramList().typeDecl(index))
-        })
+        if (classId != null && Modifier.STATIC !in modifiers) {
+            paramList.add(0, Parameter("this", CLASS(classId)))
+        }
 
         return FuncDecl(
             ctx.ID().text,

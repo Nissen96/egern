@@ -54,10 +54,10 @@ class SymbolVisitor : Visitor() {
         for ((paramOffset, param) in funcDecl.params.withIndex()) {
             symbolTable.insert(
                 Symbol(
-                    param.first,
+                    param.id,
                     SymbolType.Parameter,
                     currentScopeLevel,
-                    mutableMapOf("paramOffset" to paramOffset, "type" to param.second)
+                    mutableMapOf("paramOffset" to paramOffset, "type" to param.type)
                 )
             )
         }

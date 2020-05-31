@@ -4,7 +4,7 @@ import com.egern.visitor.Visitor
 
 class ClassDecl(
     val id: String,
-    val constructor: List<ConstructorField>,
+    val constructor: List<Parameter>,
     val superclass: String?,
     val superclassArgs: List<Expr>?,
     val fieldDecls: List<FieldDecl>,

@@ -91,7 +91,7 @@ class TypeCheckingVisitor(
         }
         funcCall.args.take(nParams).forEachIndexed { index, arg ->
             val argType = deriveType(arg)
-            val paramType = funcDecl.params[index].second
+            val paramType = funcDecl.params[index].type
             if (paramType is CLASS) {
                 val elementClass = (argType as CLASS).className
                 val elementSuperclasses = classDefinitions.find { it.className == elementClass }!!.getSuperclasses()
@@ -394,7 +394,7 @@ class TypeCheckingVisitor(
                     foundMethod = method
 
                     // Check signature (parameter and return types)
-                    val methodParams = method.params.drop(1).map { param -> param.second }
+                    val methodParams = method.params.drop(1).map { param -> param.type }
 
                     if (it.params.size != methodParams.size) {
                         ErrorLogger.log(
