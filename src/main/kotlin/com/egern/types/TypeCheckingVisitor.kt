@@ -462,7 +462,14 @@ class TypeCheckingVisitor(
     override fun postVisit(objectInstantiation: ObjectInstantiation) {
         // Check arguments fit the constructor parameters in number and types
         val nArgs = objectInstantiation.args.size
-        val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }!!
+        val classDefinition = classDefinitions.find { it.className == objectInstantiation.classId }
+        if (classDefinition == null) {
+            ErrorLogger.log(
+                objectInstantiation,
+                "Class ${objectInstantiation.classId} is undefined"
+            )
+            return
+        }
         val constructorFields = classDefinition.getConstructorFields()
         val nParams = constructorFields.size
         if (nArgs != nParams) {
