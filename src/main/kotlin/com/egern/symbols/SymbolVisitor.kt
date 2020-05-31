@@ -8,12 +8,8 @@ class SymbolVisitor : Visitor() {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
     private var fieldOffset = 0
-    private val baseClass = ClassDefinition(
-        "Base",
-        ClassDecl("Base", emptyList(), null, null, emptyList(), emptyList())
-    )
     var symbolTable = SymbolTable(0, null)
-    val classDefinitions = mutableListOf(baseClass)
+    val classDefinitions = mutableListOf<ClassDefinition>()
     val interfaces = mutableListOf<InterfaceDecl>()
 
     private fun returnToParentScope() {
@@ -124,7 +120,7 @@ class SymbolVisitor : Visitor() {
                 )
             )
         }
-        val classDefinition = ClassDefinition(classDecl.id, classDecl, baseClass)
+        val classDefinition = ClassDefinition(classDecl.id, classDecl)
         classDefinition.symbolTable = symbolTable
         classDefinitions.add(classDefinition)
         fieldOffset = classDecl.constructor.size

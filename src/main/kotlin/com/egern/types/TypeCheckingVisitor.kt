@@ -48,7 +48,7 @@ class TypeCheckingVisitor(
         }
 
         // Check if method overrides any static methods or overrides without the override modifier
-        val foundMethod = currentClass!!.superclass!!.lookupMethod(methodDecl.id)
+        val foundMethod = currentClass!!.superclass?.lookupMethod(methodDecl.id)
         if (foundMethod == null) {
             // Check if method overrides from interface
             val foundInterfaceMethod = currentClass!!.getInterface()?.methodSignatures?.find { it.id == methodDecl.id }
@@ -448,14 +448,8 @@ class TypeCheckingVisitor(
         // For each field id, check if it overrides any static field or constructor param
         fieldDecl.ids.forEach {
             // Check if any superclass contains a field of the same name
-            val superField = currentClass!!.superclass!!.lookupLocalField(it)
-            if (superField == null && fieldOverrides) {
-                // Attempt override of constructor field with local field
-                ErrorLogger.log(
-                    fieldDecl,
-                    "Constructor field $it cannot be overridden"
-                )
-            } else if (superField != null && Modifier.STATIC in superField.modifiers) {
+            val superField = currentClass!!.superclass?.lookupLocalField(it)
+            if (superField != null && Modifier.STATIC in superField.modifiers) {
                 // Attempt override of static super field
                 ErrorLogger.log(
                     fieldDecl,

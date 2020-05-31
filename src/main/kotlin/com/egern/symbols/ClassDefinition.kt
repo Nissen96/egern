@@ -39,9 +39,9 @@ class ClassDefinition(
     }
 
     fun getSuperclasses(includeInterface: Boolean = true): List<String> {
-        // Insert interface before Base class
+        // Optionally insert interface
         if (includeInterface && interfaceDecl != null) {
-            return listOf(className, interfaceDecl!!.id, "Base")
+            return listOf(className, interfaceDecl!!.id)
         }
 
         return listOf(className) + (superclass?.getSuperclasses(includeInterface) ?: emptyList())
