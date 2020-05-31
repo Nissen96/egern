@@ -81,12 +81,25 @@ class CodeGenerationVisitor(
     }
 
     private fun getVariablePointerMap(stmts: List<ASTNode>): List<Int> {
-        return stmts.filterIsInstance<VarDecl>().map { isPointer(deriveType(it.expr)) }
+        return stmts.flatMap {
+            when (it) {
+                is VarDecl -> listOf(isPointer(deriveType(it.expr)))
+                is WhileLoop -> getVariablePointerMap(it.block.stmts)
+                is Block -> getVariablePointerMap(it.stmts)
+                is IfElse -> {
+                    getVariablePointerMap(it.ifBlock.stmts) + when (it.elseBlock) {
+                        is IfElse -> getVariablePointerMap(listOf(it.elseBlock))
+                        is Block -> getVariablePointerMap(it.elseBlock.stmts)
+                        else -> emptyList()
+                    }
+                }
+                else -> emptyList()
+            }
+        }
     }
 
     private fun getFunctionPointerMap(funcDecl: FuncDecl): List<Int> {
-        val variables = getVariables(funcDecl.stmts)
-        return getVariablePointerMap(variables) + getParamPointerMap(funcDecl.params)
+        return getVariablePointerMap(funcDecl.stmts) + getParamPointerMap(funcDecl.params)
     }
 
     private fun getClassPointerMap(fields: List<Any>): List<Int> {
@@ -105,28 +118,6 @@ class CodeGenerationVisitor(
             is CLASS -> 1
             else -> 0
         }
-    }
-
-    private fun getVariables(stmts: List<ASTNode>): List<VarDecl> {
-        return stmts.map {
-            when (it) {
-                is VarDecl -> listOf(it)
-                is WhileLoop -> getVariables(it.block.stmts)
-                is IfElse -> {
-                    val ifVariables = getVariables(it.ifBlock.stmts).toMutableList()
-                    var elseBlock = it.elseBlock
-                    while (elseBlock != null && elseBlock is IfElse) {
-                        ifVariables.addAll(getVariables(elseBlock.ifBlock.stmts))
-                        elseBlock = elseBlock.elseBlock
-                    }
-                    if (elseBlock != null) {
-                        ifVariables.addAll(getVariables((elseBlock as Block).stmts))
-                    }
-                    ifVariables
-                }
-                else -> emptyList()
-            }
-        }.flatten()
     }
 
     override fun preVisit(program: Program) {

@@ -326,6 +326,7 @@ visit_params:
         cmpl    $0, -8(%rbp)
         je      .L34
         movl    -4(%rbp), %eax
+        negl    %eax
         cltq
         leaq    0(,%rax,8), %rdx
         movq    -40(%rbp), %rax
@@ -334,6 +335,7 @@ visit_params:
         movq    %rax, %rdi
         call    forward
         movl    -4(%rbp), %edx
+        negl    %edx
         movslq  %edx, %rdx
         leaq    0(,%rdx,8), %rcx
         movq    -40(%rbp), %rdx
@@ -420,9 +422,9 @@ visit_caller_saved_params:
         movl    $16, %eax
         subq    $1, %rax
         addq    %rdx, %rax
-        movl    $16, %esi
+        movl    $16, %ecx
         movl    $0, %edx
-        divq    %rsi
+        divq    %rcx
         imulq   $16, %rax, %rax
         subq    %rax, %rsp
         movq    %rsp, %rax
@@ -435,13 +437,11 @@ visit_caller_saved_params:
 .L40:
         movl    -72(%rbp), %edx
         movl    -52(%rbp), %eax
-        leal    (%rdx,%rax), %ecx
-        movl    -76(%rbp), %eax
-        subl    -52(%rbp), %eax
-        leal    -1(%rax), %edx
-        movslq  %ecx, %rax
+        addl    %edx, %eax
+        cltq
         movl    -368(%rbp,%rax,4), %ecx
         movq    -96(%rbp), %rax
+        movl    -52(%rbp), %edx
         movslq  %edx, %rdx
         movl    %ecx, (%rax,%rdx,4)
         addl    $1, -52(%rbp)
@@ -473,7 +473,7 @@ visit_caller_saved_params:
         movl    -100(%rbp), %eax
         subl    %eax, %edx
         movl    %edx, %eax
-        subl    $2, %eax
+        subl    $7, %eax
         movl    %eax, -108(%rbp)
         movl    -108(%rbp), %eax
         cltq
@@ -763,7 +763,7 @@ scan_stack_frame:
         cmpl    $0, -420(%rbp)
         je      .L55
         movq    -416(%rbp), %rax
-        leaq    16(%rax), %rdx
+        leaq    64(%rax), %rdx
         movq    -120(%rbp), %rcx
         movl    -100(%rbp), %eax
         cltq

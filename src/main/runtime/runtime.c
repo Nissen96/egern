@@ -112,7 +112,7 @@ void visit_params(long int num_params, int* bitmap, long int* params) {
     for (int i = 0; i < num_params; ++i) {
         int is_pointer = bitmap[num_params - i - 1];
         if (is_pointer) {
-            params[i] = (long int) forward((long int*) params[i]);
+            params[-i] = (long int) forward((long int*) params[-i]);
         }
     }
 
@@ -133,12 +133,12 @@ void visit_caller_saved_params(long int* rbp) {
     int prev_num_stack_params = max(prev_num_params - PARAMS_IN_REGISTERS, 0);
     int prev_num_register_params = min(prev_num_params, PARAMS_IN_REGISTERS);
     int register_param_bitmap[prev_num_register_params];
-    for (int i = 0; i < prev_num_register_params; i++) register_param_bitmap[prev_num_register_params - i - 1] = bitmap[prev_num_stack_params + i];
-
+    for (int i = 0; i < prev_num_register_params; i++) register_param_bitmap[i] = bitmap[prev_num_stack_params + i];
+    
     // Caller-saved params lie before all parameters stored in the current scope, plus the two first caller-saved registers
     int num_params = rbp[-NUM_PARAMETERS_OFFSET];
     int num_stack_params = max(num_params - PARAMS_IN_REGISTERS, 0);
-    int param_offset = PARAM_OFFSET - num_stack_params - num_params - 2;
+    int param_offset = PARAM_OFFSET - num_stack_params - num_params - 8 + 1;
     visit_params(prev_num_register_params, register_param_bitmap, rbp - param_offset);
 }
 
@@ -184,7 +184,7 @@ void scan_stack_frame(long int* rbp, long int* rsp, int is_top_frame) {
 
     // Handle params in registers for the top frame (caller saved just before allocation)
     if (is_top_frame) {
-        visit_params(num_register_params, register_param_bitmap, rsp + 2);
+        visit_params(num_register_params, register_param_bitmap, rsp + 8);
     }
 
     // Handle register saved parameters from enclosing scope

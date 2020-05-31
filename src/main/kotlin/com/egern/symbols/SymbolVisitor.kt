@@ -7,6 +7,7 @@ import com.egern.visitor.Visitor
 class SymbolVisitor : Visitor() {
     private var currentScopeLevel = 0
     private var varCountStack = stackOf(0)
+    private var fieldOffset = 0
     private val baseClass = ClassDefinition(
         "Base",
         ClassDecl("Base", emptyList(), null, null, emptyList(), emptyList())
@@ -97,12 +98,12 @@ class SymbolVisitor : Visitor() {
             symbolTable.insert(
                 Symbol(
                     id, SymbolType.Field, currentScopeLevel, mutableMapOf(
-                        "fieldOffset" to varCountStack.peek(),
+                        "fieldOffset" to fieldOffset,
                         "expr" to fieldDecl.expr
                     )
                 )
             )
-            varCountStack.apply { it + 1 }
+            fieldOffset++
         }
         fieldDecl.symbolTable = symbolTable
     }
@@ -130,7 +131,7 @@ class SymbolVisitor : Visitor() {
         val classDefinition = ClassDefinition(classDecl.id, classDecl, baseClass, classDecl.superclassArgs)
         classDefinition.symbolTable = symbolTable
         classDefinitions.add(classDefinition)
-        varCountStack.push(classDecl.constructor.size)
+        fieldOffset = classDecl.constructor.size
     }
 
     override fun postVisit(classDecl: ClassDecl) {
