@@ -120,10 +120,10 @@ class SymbolVisitor : Visitor() {
         for ((index, field) in classDecl.constructor.withIndex()) {
             symbolTable.insert(
                 Symbol(
-                    field.first,
+                    field.id,
                     SymbolType.Field,
                     currentScopeLevel,
-                    mutableMapOf("fieldOffset" to index, "type" to field.second)
+                    mutableMapOf("fieldOffset" to index, "type" to field.type)
                 )
             )
         }

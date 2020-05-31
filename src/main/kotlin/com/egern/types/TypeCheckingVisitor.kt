@@ -376,7 +376,7 @@ class TypeCheckingVisitor(
     override fun postVisit(classDecl: ClassDecl) {
         // Check constructor fields only has override modifier
         classDecl.constructor.forEach {
-            if (it.third != null && it.third != Modifier.OVERRIDE) {
+            if (it.modifier != null && it.modifier != Modifier.OVERRIDE) {
                 ErrorLogger.log(
                     classDecl,
                     "Invalid modifier for constructor field. Only override allowed"
@@ -475,7 +475,7 @@ class TypeCheckingVisitor(
 
         objectInstantiation.args.take(nParams).forEachIndexed { index, arg ->
             val argType = deriveType(arg)
-            val paramType = constructorFields[index].second
+            val paramType = constructorFields[index].type
             if (argType != paramType) {
                 ErrorLogger.log(
                     arg,

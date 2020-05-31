@@ -93,7 +93,7 @@ class CodeGenerationVisitor(
         return fields.map {
             when (it) {
                 is FieldDecl -> isPointer(deriveType(it.expr))
-                is Triple<*, *, *> -> isPointer(it.second as ExprType)
+                is ConstructorField -> isPointer(it.type)
                 else -> throw Exception("Invalid field type")
             }
         }
@@ -613,7 +613,7 @@ class CodeGenerationVisitor(
     private fun getConstructorArgLocation(param: String): InstructionArg? {
         // All constructor args from all superclasses are on stack - get offset in this
         val constructorFields = currentClassDefinition?.getConstructorFields() ?: return null
-        val paramOffset = constructorFields.indexOfFirst { it.first == param }
+        val paramOffset = constructorFields.indexOfFirst { it.id == param }
 
         return InstructionArg(Register(OpReg1), IndirectRelative(-(constructorFields.size - paramOffset - 1)))
     }

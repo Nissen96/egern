@@ -1,11 +1,10 @@
 package com.egern.ast
 
-import com.egern.types.ExprType
 import com.egern.visitor.Visitor
 
 class ClassDecl(
     val id: String,
-    val constructor: List<Triple<String, ExprType, Modifier?>>,
+    val constructor: List<ConstructorField>,
     val superclass: String?,
     val superclassArgs: List<Expr>?,
     val fieldDecls: List<FieldDecl>,

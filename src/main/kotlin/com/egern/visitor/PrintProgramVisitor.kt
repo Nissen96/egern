@@ -88,7 +88,7 @@ class PrintProgramVisitor(private val indentation: Int = 4) : Visitor() {
         printIndented("class ${classDecl.id}")
         if (classDecl.constructor.isNotEmpty()) {
             print("(${classDecl.constructor.joinToString(", ") {
-                "${if (it.third != null) it.third?.modifier + " " else ""}${it.first}: ${typeString(it.second)}"
+                "${if (it.modifier != null) it.modifier.modifier + " " else ""}${it.id}: ${typeString(it.type)}"
             }})")
         }
         print(": ${classDecl.superclass}(")

@@ -53,7 +53,7 @@ class ClassDefinition(
         return interfaceDecl ?: superclass?.getInterface()
     }
 
-    fun getConstructorFields(): List<Triple<String, ExprType, Modifier?>> {
+    fun getConstructorFields(): List<ConstructorField> {
         return classDecl.constructor
     }
 
@@ -61,12 +61,8 @@ class ClassDefinition(
         return classDecl.fieldDecls
     }
 
-    private fun getFields(): List<Any> {
-        return getConstructorFields() + getLocalFields()
-    }
-
     fun getInheritedFields(): List<Any> {
-        return (superclass?.getInheritedFields() ?: emptyList()) + getFields()
+        return (superclass?.getInheritedFields() ?: emptyList()) + getConstructorFields() + getLocalFields()
     }
 
     fun getNumConstructorArgsPerClass(): List<Int> {
@@ -91,8 +87,8 @@ class ClassDefinition(
         return getLocalFields().find { id in it.ids } ?: superclass?.lookupLocalField(id)
     }
 
-    fun lookupConstructorField(id: String): Triple<String, ExprType, Modifier?>? {
-        return getConstructorFields().find { id == it.first } ?: superclass?.lookupConstructorField(id)
+    fun lookupConstructorField(id: String): ConstructorField? {
+        return getConstructorFields().find { id == it.id } ?: superclass?.lookupConstructorField(id)
     }
 
     fun lookupField(
@@ -108,9 +104,9 @@ class ClassDefinition(
 
         // Find corresponding local field or constructor field to check if it overrides
         val localField = getLocalFields().find { id in it.ids }
-        val constructorField = getConstructorFields().find { id == it.first }
+        val constructorField = getConstructorFields().find { id == it.id }
         val fieldOverrides = localField != null && Modifier.OVERRIDE in localField.modifiers ||
-                constructorField != null && Modifier.OVERRIDE == constructorField.third
+                constructorField != null && Modifier.OVERRIDE == constructorField.modifier
 
         // Result is found if class has been reached or if an overridden field is found first
         if (classReached || fieldOverrides) {
