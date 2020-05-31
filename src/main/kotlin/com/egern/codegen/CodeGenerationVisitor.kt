@@ -1329,7 +1329,7 @@ class CodeGenerationVisitor(
                 )
             )
 
-            currentClassDefinition!!.superclassArgs?.forEach {
+            currentClassDefinition!!.getSuperclassArgs()?.forEach {
                 it.accept(this)
             }
             currentClassDefinition = currentClassDefinition?.superclass

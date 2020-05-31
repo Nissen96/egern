@@ -128,7 +128,7 @@ class SymbolVisitor : Visitor() {
                 )
             )
         }
-        val classDefinition = ClassDefinition(classDecl.id, classDecl, baseClass, classDecl.superclassArgs)
+        val classDefinition = ClassDefinition(classDecl.id, classDecl, baseClass)
         classDefinition.symbolTable = symbolTable
         classDefinitions.add(classDefinition)
         fieldOffset = classDecl.constructor.size

@@ -6,7 +6,6 @@ class ClassDefinition(
     val className: String,
     val classDecl: ClassDecl,
     var superclass: ClassDefinition? = null,
-    val superclassArgs: List<Expr>? = null,
     var interfaceDecl: InterfaceDecl? = null
 ) {
     var vTableOffset: Int = -1
@@ -70,6 +69,10 @@ class ClassDefinition(
 
     fun getLocalFieldsPerClass(): List<List<FieldDecl>> {
         return (superclass?.getLocalFieldsPerClass() ?: emptyList()) + listOf(classDecl.fieldDecls)
+    }
+
+    fun getSuperclassArgs(): List<Expr>? {
+        return classDecl.superclassArgs
     }
 
     fun getFieldOffset(fieldId: String, castToClass: String? = null): Int {
