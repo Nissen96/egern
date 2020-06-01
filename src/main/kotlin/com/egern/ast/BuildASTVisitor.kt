@@ -22,7 +22,6 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
 
     override fun visitClassDecl(ctx: MainParser.ClassDeclContext): ASTNode {
         val classId = ctx.CLASSNAME(0).text
-        val hasSuperclass = ctx.CLASSNAME(1) != null
         val constructor = ctx.constructor()?.let {
             it.ID().mapIndexed { index, id ->
                 Parameter(
@@ -36,7 +35,7 @@ class BuildASTVisitor : MainBaseVisitor<ASTNode>() {
         return ClassDecl(
             classId,
             constructor,
-            if (hasSuperclass) ctx.CLASSNAME(1).text else "Base",
+            ctx.CLASSNAME(1)?.text,
             if (ctx.argList() != null) ctx.argList().expr().map { it.accept(this) as Expr } else emptyList(),
             ctx.classBody().fieldDecl().map { it.accept(this) as FieldDecl },
             ctx.classBody().methodDecl().map { visitMethodDecl(it, classId) as FuncDecl },
